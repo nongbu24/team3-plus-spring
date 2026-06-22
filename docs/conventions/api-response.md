@@ -6,9 +6,9 @@
 
 ```json
 {
-  "success": true,
-  "data": {},
-  "message": "요청이 성공했습니다."
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {}
 }
 ```
 
@@ -16,7 +16,7 @@
 
 ```json
 {
-  "success": false,
+  "status": 400,
   "code": "PAYMENT_AMOUNT_MISMATCH",
   "message": "결제 금액이 주문 금액과 일치하지 않습니다."
 }

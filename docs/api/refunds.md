@@ -3,7 +3,7 @@
 결제 완료 이후 환불 요청을 담당합니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -32,19 +32,23 @@
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "refundId": 500,
-  "paymentId": 300,
-  "orderId": 200,
-  "status": "REQUESTED",
-  "refundAmount": 73000,
-  "restoredPointAmount": 5000,
-  "reason": "단순 변심으로 인한 환불 요청",
-  "requestedAt": "2026-06-22T19:00:00+09:00",
-  "completedAt": null
+  "status": 201,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "refundId": 500,
+    "paymentId": 300,
+    "orderId": 200,
+    "status": "REQUESTED",
+    "refundAmount": 73000,
+    "restoredPointAmount": 5000,
+    "reason": "단순 변심으로 인한 환불 요청",
+    "requestedAt": "2026-06-22T19:00:00+09:00",
+    "completedAt": null
+  }
 }
 ```
 

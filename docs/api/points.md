@@ -3,7 +3,7 @@
 회원의 현재 포인트 잔액 조회와 포인트 이력 조회를 담당합니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -19,12 +19,16 @@
 - 인증: 필요
 - HTTP Status: `200 OK`
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "userId": 1,
-  "balance": 5000
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "userId": 1,
+    "balance": 5000
+  }
 }
 ```
 
@@ -56,33 +60,37 @@
 | `page` | `Integer` | N | `0` | 페이지 번호 |
 | `size` | `Integer` | N | `10` | 페이지 크기 |
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "content": [
-    {
-      "pointHistoryId": 900,
-      "type": "EARN",
-      "amount": 730,
-      "balanceAfter": 5730,
-      "description": "결제 완료 포인트 적립",
-      "createdAt": "2026-06-22T18:35:00+09:00"
-    },
-    {
-      "pointHistoryId": 899,
-      "type": "USE",
-      "amount": -5000,
-      "balanceAfter": 5000,
-      "description": "주문 포인트 사용",
-      "createdAt": "2026-06-22T18:30:00+09:00"
-    }
-  ],
-  "page": 0,
-  "size": 10,
-  "totalElements": 2,
-  "totalPages": 1,
-  "hasNext": false
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "content": [
+      {
+        "pointHistoryId": 900,
+        "type": "EARN",
+        "amount": 730,
+        "balanceAfter": 5730,
+        "description": "결제 완료 포인트 적립",
+        "createdAt": "2026-06-22T18:35:00+09:00"
+      },
+      {
+        "pointHistoryId": 899,
+        "type": "USE",
+        "amount": -5000,
+        "balanceAfter": 5000,
+        "description": "주문 포인트 사용",
+        "createdAt": "2026-06-22T18:30:00+09:00"
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "hasNext": false
+  }
 }
 ```
 

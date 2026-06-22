@@ -3,7 +3,7 @@
 회원가입, 로그인/JWT 발급, 로그아웃을 담당합니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -15,7 +15,7 @@
 
 ## POST `/api/auth/signup`
 
-회원을 생성합니다. 회원가입 성공 시 기본 장바구니를 생성합니다.
+회원을 생성합니다. 회원가입 성공 시 기본 장바구니와 포인트 계정을 생성합니다.
 
 - 인증: 불필요
 - HTTP Status: `201 Created`
@@ -32,25 +32,32 @@
 ```json
 {
   "email": "customer@example.com",
-  "password": "Password123!",
+  "password": "Password123",
   "name": "홍길동",
   "phone": "010-1234-5678"
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "message": "홍길동 님의 회원가입이 완료되었습니다."
+  "status": 201,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "userId": 1,
+    "email": "customer@example.com",
+    "name": "홍길동"
+  }
 }
 ```
 
 ### 처리 규칙
 
 - 이메일은 중복 가입을 허용하지 않습니다.
+- 탈퇴한 회원의 이메일도 재가입에 사용할 수 없습니다.
 - 비밀번호는 서버에서 암호화해서 저장합니다.
-- 회원가입 성공 시 기본 장바구니를 생성합니다.
+- 회원가입 성공 시 기본 장바구니와 포인트 계정을 생성합니다.
 
 ### Errors
 
@@ -76,21 +83,25 @@
 ```json
 {
   "email": "customer@example.com",
-  "password": "Password123!"
+  "password": "Password123"
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "tokenType": "Bearer",
-  "accessToken": "eyJhbGciOi...",
-  "expiresIn": 3600,
-  "user": {
-    "userId": 1,
-    "email": "customer@example.com",
-    "name": "홍길동"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "tokenType": "Bearer",
+    "accessToken": "eyJhbGciOi...",
+    "expiresIn": 3600,
+    "user": {
+      "userId": 1,
+      "email": "customer@example.com",
+      "name": "홍길동"
+    }
   }
 }
 ```
@@ -125,11 +136,15 @@
 
 없음
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "message": "로그아웃이 완료되었습니다."
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "message": "로그아웃이 완료되었습니다."
+  }
 }
 ```
 
@@ -151,4 +166,5 @@
 - 인증 API는 `/api/auth` 하위에서 회원가입, 로그인/JWT 발급, 로그아웃을 담당합니다.
 - 비밀번호는 반드시 암호화해서 저장하고 응답에는 포함하지 않습니다.
 - 탈퇴한 회원은 로그인할 수 없도록 `deleted_at IS NULL` 조건을 적용합니다.
+- 탈퇴한 회원의 이메일은 영구적으로 재가입에 사용할 수 없습니다.
 - 로그아웃 정책은 토큰 blocklist 운영 여부에 따라 서버 처리 방식이 달라질 수 있습니다.

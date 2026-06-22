@@ -210,17 +210,17 @@ erDiagram
 
 회원가입, 로그인, 내 정보 조회, 회원 탈퇴의 기준 테이블입니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 회원 ID | id | BIGINT | NOT NULL | PK |
-| 로그인 이메일 | email | VARCHAR(100) | NOT NULL | UNIQUE |
+| 논리명 | 컬럼명 | 타입           | NULL | 제약/비고 |
+| --- | --- |--------------| --- | --- |
+| 회원 ID | id | BIGINT       | NOT NULL | PK |
+| 로그인 이메일 | email | VARCHAR(50)  | NOT NULL | UNIQUE |
 | 암호화 비밀번호 | password | VARCHAR(255) | NOT NULL | 응답에 포함하지 않음 |
-| 회원 이름 | name | VARCHAR(50) | NOT NULL |  |
-| 전화번호 | phone | VARCHAR(30) | NOT NULL |  |
-| 권한 | role | VARCHAR(30) | NOT NULL | USER, ADMIN |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL |  |
-| 탈퇴일시 | deleted_at | DATETIME | NULL | 회원 탈퇴 시 값 저장 |
+| 회원 이름 | name | VARCHAR(20)  | NOT NULL |  |
+| 전화번호 | phone | VARCHAR(20)  | NOT NULL |  |
+| 권한 | role | VARCHAR(20)  | NOT NULL | USER, ADMIN |
+| 생성일시 | created_at | DATETIME     | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME     | NULL |  |
+| 탈퇴일시 | deleted_at | DATETIME     | NULL | 회원 탈퇴 시 값 저장 |
 
 ### carts
 

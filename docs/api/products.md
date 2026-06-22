@@ -3,7 +3,7 @@
 상품은 조회와 검색 중심 도메인입니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -33,27 +33,31 @@
 | `page` | `Integer` | N | `0` | 페이지 번호 |
 | `size` | `Integer` | N | `10` | 페이지 크기 |
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "content": [
-    {
-      "productId": 10,
-      "categoryId": 1,
-      "categoryName": "키보드",
-      "name": "무선 키보드",
-      "price": 39000,
-      "stock": 12,
-      "status": "ON_SALE",
-      "createdAt": "2026-06-22T18:30:00+09:00"
-    }
-  ],
-  "page": 0,
-  "size": 10,
-  "totalElements": 1,
-  "totalPages": 1,
-  "hasNext": false
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "content": [
+      {
+        "productId": 10,
+        "categoryId": 1,
+        "categoryName": "키보드",
+        "name": "무선 키보드",
+        "price": 39000,
+        "stock": 12,
+        "status": "ON_SALE",
+        "createdAt": "2026-06-22T18:30:00+09:00"
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "hasNext": false
+  }
 }
 ```
 
@@ -88,20 +92,24 @@
 | --- | --- | --- |
 | `productId` | `Long` | 상품 ID |
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "productId": 10,
-  "categoryId": 1,
-  "categoryName": "키보드",
-  "name": "무선 키보드",
-  "description": "저소음 무선 키보드입니다.",
-  "price": 39000,
-  "stock": 12,
-  "status": "ON_SALE",
-  "createdAt": "2026-06-22T18:30:00+09:00",
-  "updatedAt": "2026-06-22T18:30:00+09:00"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "productId": 10,
+    "categoryId": 1,
+    "categoryName": "키보드",
+    "name": "무선 키보드",
+    "description": "저소음 무선 키보드입니다.",
+    "price": 39000,
+    "stock": 12,
+    "status": "ON_SALE",
+    "createdAt": "2026-06-22T18:30:00+09:00",
+    "updatedAt": "2026-06-22T18:30:00+09:00"
+  }
 }
 ```
 
@@ -134,7 +142,7 @@ Local Cache가 적용된 상품 검색 API입니다.
 | `page` | `Integer` | N | `0` | 페이지 번호 |
 | `size` | `Integer` | N | `10` | 페이지 크기 |
 
-### Response Data
+### Response Body
 
 상품 목록 조회와 같은 페이지 응답 형식을 사용합니다.
 
