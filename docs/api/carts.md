@@ -4,7 +4,7 @@
 장바구니는 항상 토큰의 회원 기준으로 동작하므로 URL에 `cartId`를 받지 않습니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -36,18 +36,22 @@
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "cartItemId": 100,
-  "productId": 10,
-  "productName": "무선 키보드",
-  "quantity": 2,
-  "unitPrice": 39000,
-  "lineAmount": 78000,
-  "stock": 12,
-  "status": "ON_SALE"
+  "status": 201,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "cartItemId": 100,
+    "productId": 10,
+    "productName": "무선 키보드",
+    "quantity": 2,
+    "unitPrice": 39000,
+    "lineAmount": 78000,
+    "stock": 12,
+    "status": "ON_SALE"
+  }
 }
 ```
 
@@ -90,25 +94,29 @@
 - 인증: 필요
 - HTTP Status: `200 OK`
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "cartId": 1,
-  "items": [
-    {
-      "cartItemId": 100,
-      "productId": 10,
-      "productName": "무선 키보드",
-      "quantity": 2,
-      "unitPrice": 39000,
-      "lineAmount": 78000,
-      "stock": 12,
-      "status": "ON_SALE"
-    }
-  ],
-  "totalQuantity": 2,
-  "totalAmount": 78000
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "cartId": 1,
+    "items": [
+      {
+        "cartItemId": 100,
+        "productId": 10,
+        "productName": "무선 키보드",
+        "quantity": 2,
+        "unitPrice": 39000,
+        "lineAmount": 78000,
+        "stock": 12,
+        "status": "ON_SALE"
+      }
+    ],
+    "totalQuantity": 2,
+    "totalAmount": 78000
+  }
 }
 ```
 
@@ -159,18 +167,22 @@
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "cartItemId": 100,
-  "productId": 10,
-  "productName": "무선 키보드",
-  "quantity": 3,
-  "unitPrice": 39000,
-  "lineAmount": 117000,
-  "stock": 12,
-  "status": "ON_SALE"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "cartItemId": 100,
+    "productId": 10,
+    "productName": "무선 키보드",
+    "quantity": 3,
+    "unitPrice": 39000,
+    "lineAmount": 117000,
+    "stock": 12,
+    "status": "ON_SALE"
+  }
 }
 ```
 
@@ -208,12 +220,16 @@
 
 없음
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "cartItemId": 100,
-  "deleted": true
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "cartItemId": 100,
+    "deleted": true
+  }
 }
 ```
 

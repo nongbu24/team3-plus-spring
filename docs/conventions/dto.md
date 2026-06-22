@@ -39,5 +39,3 @@ public class ConfirmPaymentRequest {
     private String portonePaymentId;
 }
 ```
-
-DTO와 JPA Entity 모두 `record`로 만들지 않는다.

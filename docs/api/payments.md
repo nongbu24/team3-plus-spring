@@ -3,7 +3,7 @@
 결제 승인 검증, 결제 상세 조회, PortOne 웹훅 수신을 담당합니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -34,18 +34,22 @@
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "paymentId": 300,
-  "orderId": 200,
-  "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
-  "status": "PAID",
-  "totalProductAmount": 78000,
-  "usedPointAmount": 5000,
-  "paymentAmount": 73000,
-  "approvedAt": "2026-06-22T18:35:00+09:00"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "paymentId": 300,
+    "orderId": 200,
+    "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
+    "status": "PAID",
+    "totalProductAmount": 78000,
+    "usedPointAmount": 5000,
+    "paymentAmount": 73000,
+    "approvedAt": "2026-06-22T18:35:00+09:00"
+  }
 }
 ```
 
@@ -87,20 +91,24 @@
 | --- | --- | --- |
 | `paymentId` | `Long` | 조회할 결제 ID |
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "paymentId": 300,
-  "orderId": 200,
-  "orderNumber": "ORD-20260622-000001",
-  "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
-  "status": "PAID",
-  "totalProductAmount": 78000,
-  "usedPointAmount": 5000,
-  "paymentAmount": 73000,
-  "approvedAt": "2026-06-22T18:35:00+09:00",
-  "createdAt": "2026-06-22T18:30:00+09:00"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "paymentId": 300,
+    "orderId": 200,
+    "orderNumber": "ORD-20260622-000001",
+    "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
+    "status": "PAID",
+    "totalProductAmount": 78000,
+    "usedPointAmount": 5000,
+    "paymentAmount": 73000,
+    "approvedAt": "2026-06-22T18:35:00+09:00",
+    "createdAt": "2026-06-22T18:30:00+09:00"
+  }
 }
 ```
 
@@ -146,11 +154,15 @@ PortOne에서 전달하는 웹훅 payload를 그대로 받습니다.
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "received": true
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "received": true
+  }
 }
 ```
 

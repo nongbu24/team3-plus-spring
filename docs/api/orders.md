@@ -3,7 +3,7 @@
 주문 생성, 내 주문 목록 조회, 주문 상세 조회, 결제 전 주문 취소를 담당합니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -35,27 +35,31 @@
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "orderId": 200,
-  "orderNumber": "ORD-20260622-000001",
-  "status": "PAYMENT_PENDING",
-  "totalProductAmount": 78000,
-  "usedPointAmount": 5000,
-  "paymentAmount": 73000,
-  "items": [
-    {
-      "orderItemId": 400,
-      "productId": 10,
-      "productName": "무선 키보드",
-      "quantity": 2,
-      "unitPrice": 39000,
-      "lineAmount": 78000
-    }
-  ],
-  "orderedAt": "2026-06-22T18:30:00+09:00"
+  "status": 201,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "orderId": 200,
+    "orderNumber": "ORD-20260622-000001",
+    "status": "PAYMENT_PENDING",
+    "totalProductAmount": 78000,
+    "usedPointAmount": 5000,
+    "paymentAmount": 73000,
+    "items": [
+      {
+        "orderItemId": 400,
+        "productId": 10,
+        "productName": "무선 키보드",
+        "quantity": 2,
+        "unitPrice": 39000,
+        "lineAmount": 78000
+      }
+    ],
+    "orderedAt": "2026-06-22T18:30:00+09:00"
+  }
 }
 ```
 
@@ -113,26 +117,30 @@
 | `size` | `Integer` | N | `10` | 페이지 크기 |
 | `status` | `String` | N | 없음 | 주문 상태 필터 |
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "content": [
-    {
-      "orderId": 200,
-      "orderNumber": "ORD-20260622-000001",
-      "status": "PAYMENT_PENDING",
-      "totalProductAmount": 78000,
-      "usedPointAmount": 5000,
-      "paymentAmount": 73000,
-      "orderedAt": "2026-06-22T18:30:00+09:00"
-    }
-  ],
-  "page": 0,
-  "size": 10,
-  "totalElements": 1,
-  "totalPages": 1,
-  "hasNext": false
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "content": [
+      {
+        "orderId": 200,
+        "orderNumber": "ORD-20260622-000001",
+        "status": "PAYMENT_PENDING",
+        "totalProductAmount": 78000,
+        "usedPointAmount": 5000,
+        "paymentAmount": 73000,
+        "orderedAt": "2026-06-22T18:30:00+09:00"
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "hasNext": false
+  }
 }
 ```
 
@@ -162,29 +170,33 @@
 | --- | --- | --- |
 | `orderId` | `Long` | 조회할 주문 ID |
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "orderId": 200,
-  "orderNumber": "ORD-20260622-000001",
-  "status": "PAYMENT_PENDING",
-  "totalProductAmount": 78000,
-  "usedPointAmount": 5000,
-  "paymentAmount": 73000,
-  "items": [
-    {
-      "orderItemId": 400,
-      "productId": 10,
-      "productName": "무선 키보드",
-      "quantity": 2,
-      "unitPrice": 39000,
-      "lineAmount": 78000,
-      "status": "ORDERED"
-    }
-  ],
-  "orderedAt": "2026-06-22T18:30:00+09:00",
-  "canceledAt": null
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "orderId": 200,
+    "orderNumber": "ORD-20260622-000001",
+    "status": "PAYMENT_PENDING",
+    "totalProductAmount": 78000,
+    "usedPointAmount": 5000,
+    "paymentAmount": 73000,
+    "items": [
+      {
+        "orderItemId": 400,
+        "productId": 10,
+        "productName": "무선 키보드",
+        "quantity": 2,
+        "unitPrice": 39000,
+        "lineAmount": 78000,
+        "status": "ORDERED"
+      }
+    ],
+    "orderedAt": "2026-06-22T18:30:00+09:00",
+    "canceledAt": null
+  }
 }
 ```
 
@@ -219,23 +231,27 @@
 
 없음
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "orderId": 200,
-  "orderNumber": "ORD-20260622-000001",
-  "previousStatus": "PAYMENT_PENDING",
-  "currentStatus": "CANCELED",
-  "restoredPointAmount": 5000,
-  "restoredStockItems": [
-    {
-      "orderItemId": 400,
-      "productId": 10,
-      "restoreQuantity": 2
-    }
-  ],
-  "canceledAt": "2026-06-22T18:40:00+09:00"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "orderId": 200,
+    "orderNumber": "ORD-20260622-000001",
+    "previousStatus": "PAYMENT_PENDING",
+    "currentStatus": "CANCELED",
+    "restoredPointAmount": 5000,
+    "restoredStockItems": [
+      {
+        "orderItemId": 400,
+        "productId": 10,
+        "restoreQuantity": 2
+      }
+    ],
+    "canceledAt": "2026-06-22T18:40:00+09:00"
+  }
 }
 ```
 

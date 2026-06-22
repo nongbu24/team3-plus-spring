@@ -6,7 +6,7 @@ PortOne 웹훅 수신과 처리 결과 기록을 담당합니다.
 웹훅 본문은 그대로 신뢰하지 않고, 필요한 결제 식별자를 추출한 뒤 서버 기준 데이터와 PortOne 조회 결과를 비교해 처리합니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
-아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
 
@@ -46,14 +46,18 @@ PortOne에서 전달하는 웹훅 payload를 그대로 받습니다.
 }
 ```
 
-### Response Data
+### Response Body
 
 ```json
 {
-  "received": true,
-  "processed": true,
-  "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
-  "reason": "PROCESSED"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "received": true,
+    "processed": true,
+    "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
+    "reason": "PROCESSED"
+  }
 }
 ```
 
@@ -61,10 +65,14 @@ PortOne에서 전달하는 웹훅 payload를 그대로 받습니다.
 
 ```json
 {
-  "received": true,
-  "processed": false,
-  "portonePaymentId": null,
-  "reason": "DUPLICATE_OR_IGNORED"
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "received": true,
+    "processed": false,
+    "portonePaymentId": null,
+    "reason": "DUPLICATE_OR_IGNORED"
+  }
 }
 ```
 
