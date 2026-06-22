@@ -1,0 +1,159 @@
+# 상품 API
+
+상품은 조회와 검색 중심 도메인입니다.
+
+성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
+아래 `Response Data` 예시는 wrapper의 `data` 안에 들어가는 값만 보여줍니다.
+
+## 엔드포인트
+
+| Method | Path | 설명 | 인증 |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/products` | 상품 목록 조회 | 불필요 |
+| `GET` | `/api/products/{productId}` | 상품 상세 조회 | 불필요 |
+| `GET` | `/api/v2/products` | Local Cache 적용 상품 검색 | 불필요 |
+
+## GET `/api/v1/products`
+
+상품 목록을 필터링, 정렬, 페이지네이션하여 조회합니다.
+
+- Method: `GET`
+- Path: `/api/v1/products`
+- 인증: 불필요
+- HTTP Status: `200 OK`
+
+### Query Parameters
+
+| 이름 | 타입 | 필수 | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| `categoryId` | `Long` | N | 없음 | 카테고리 ID |
+| `keyword` | `String` | N | 없음 | 상품명 검색어 |
+| `status` | `String` | N | 없음 | `ON_SALE`, `SOLD_OUT`, `DISCONTINUED` |
+| `sort` | `String` | N | `LATEST` | 정렬 기준 |
+| `page` | `Integer` | N | `0` | 페이지 번호 |
+| `size` | `Integer` | N | `10` | 페이지 크기 |
+
+### Response Data
+
+```json
+{
+  "content": [
+    {
+      "productId": 10,
+      "categoryId": 1,
+      "categoryName": "키보드",
+      "name": "무선 키보드",
+      "price": 39000,
+      "stock": 12,
+      "status": "ON_SALE",
+      "createdAt": "2026-06-22T18:30:00+09:00"
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1,
+  "hasNext": false
+}
+```
+
+### 처리 규칙
+
+- 사용자 상품 목록에는 `ON_SALE` 상태와 `deleted_at IS NULL` 조건을 기본 적용합니다.
+- `categoryId`, `keyword`, `status` 조건이 있으면 해당 조건으로 필터링합니다.
+- 기본 정렬은 최신순입니다.
+- 페이지 번호와 페이지 크기는 서버에서 검증합니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `VALIDATION_FAILED` | 400 | 쿼리 파라미터 형식 오류 |
+| `INVALID_ENUM_VALUE` | 400 | 잘못된 `status` 또는 `sort` |
+| `INVALID_PAGINATION` | 400 | 페이지 번호 또는 크기 오류 |
+| `CATEGORY_NOT_FOUND` | 404 | 카테고리 없음 |
+
+## GET `/api/products/{productId}`
+
+상품 상세 정보를 조회합니다.
+
+- Method: `GET`
+- Path: `/api/products/{productId}`
+- 인증: 불필요
+- HTTP Status: `200 OK`
+
+### Path Variables
+
+| 이름 | 타입 | 설명 |
+| --- | --- | --- |
+| `productId` | `Long` | 상품 ID |
+
+### Response Data
+
+```json
+{
+  "productId": 10,
+  "categoryId": 1,
+  "categoryName": "키보드",
+  "name": "무선 키보드",
+  "description": "저소음 무선 키보드입니다.",
+  "price": 39000,
+  "stock": 12,
+  "status": "ON_SALE",
+  "createdAt": "2026-06-22T18:30:00+09:00",
+  "updatedAt": "2026-06-22T18:30:00+09:00"
+}
+```
+
+### 처리 규칙
+
+- 삭제되지 않은 상품만 조회합니다.
+- 상품 상세 화면에 필요한 설명, 가격, 재고, 판매 상태를 반환합니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `PRODUCT_NOT_FOUND` | 404 | 상품이 없음 |
+
+## GET `/api/v2/products`
+
+Local Cache가 적용된 상품 검색 API입니다.
+
+- Method: `GET`
+- Path: `/api/v2/products`
+- 인증: 불필요
+- HTTP Status: `200 OK`
+
+### Query Parameters
+
+| 이름 | 타입 | 필수 | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| `keyword` | `String` | N | 없음 | 상품명 검색어 |
+| `categoryId` | `Long` | N | 없음 | 카테고리 ID |
+| `page` | `Integer` | N | `0` | 페이지 번호 |
+| `size` | `Integer` | N | `10` | 페이지 크기 |
+
+### Response Data
+
+상품 목록 조회와 같은 페이지 응답 형식을 사용합니다.
+
+### 처리 규칙
+
+- Local Cache가 적용된 상품 검색 API입니다.
+- 검색 조건과 페이지 응답 형식은 기본 상품 목록 조회와 동일하게 유지합니다.
+- 캐시 적용 여부와 무관하게 응답 데이터의 의미는 `/api/v1/products`와 일관되게 유지합니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `VALIDATION_FAILED` | 400 | 쿼리 파라미터 형식 오류 |
+| `INVALID_PAGINATION` | 400 | 페이지 번호 또는 크기 오류 |
+| `CATEGORY_NOT_FOUND` | 404 | 카테고리 없음 |
+
+## 설계 메모
+
+- 사용자 상품 목록에는 `ON_SALE` 상태와 `deleted_at IS NULL` 조건을 기본 적용합니다.
+- 상품 가격은 주문 생성 시 주문 상품에 스냅샷으로 저장합니다. 따라서 주문 생성 후 상품 가격이 바뀌어도 과거 주문 금액은 바뀌지 않습니다.
+- 상품 검색 API는 기본 조회 API인 `/api/v1/products`와 Local Cache 적용 API인 `/api/v2/products`를 구분합니다.
