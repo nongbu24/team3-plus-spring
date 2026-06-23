@@ -131,12 +131,13 @@ POST /api/payments/webhook
 
 ### PointHistoryType
 
-| 값 | 설명 |
-| --- | --- |
-| `EARN` | 포인트 적립 |
-| `USE` | 포인트 사용 |
+| 값         | 설명        |
+|-----------|-----------|
+| `EARN`    | 포인트 적립    |
+| `USE`     | 포인트 사용    |
 | `RESTORE` | 사용 포인트 복구 |
-| `EXPIRE` | 포인트 만료 |
+| `REVOKE`  | 적립 포인트 회수 |
+
 
 ### RefundStatus
 

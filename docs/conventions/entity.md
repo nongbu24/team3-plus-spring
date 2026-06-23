@@ -30,7 +30,7 @@ order.setStatus(OrderStatus.COMPLETED);
 Entity 생성은 정적 팩토리 메서드 또는 생성자를 사용한다.
 
 ```java
-Payment.createReadyPayment(order, portonePaymentId, amount);
+Payment.createReadyPayment(order, portOnePaymentId, amount);
 ```
 
 Entity의 조회용 접근자는 Lombok의 `@Getter`를 기본으로 사용한다.

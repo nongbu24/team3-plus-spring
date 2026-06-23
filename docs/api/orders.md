@@ -12,7 +12,7 @@
 | `POST` | `/api/orders` | 주문 생성 | 필요 |
 | `GET` | `/api/orders` | 내 주문 목록 조회 | 필요 |
 | `GET` | `/api/orders/{orderId}` | 주문 상세 조회 | 필요 |
-| `PATCH` | `/api/orders/{orderId}/cancel` | 결제 전 주문 취소 | 필요 |
+| `POST` | `/api/orders/{orderId}/cancel` | 결제 전 주문 취소 | 필요 |
 
 ## POST `/api/orders`
 
@@ -43,7 +43,9 @@
   "message": "요청이 성공했습니다.",
   "data": {
     "orderId": 200,
+    "paymentId": 300,
     "orderNumber": "ORD-20260622-000001",
+    "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
     "status": "PAYMENT_PENDING",
     "totalProductAmount": 78000,
     "usedPointAmount": 5000,
@@ -75,7 +77,6 @@
 | `quantity` | `Integer` | 주문 수량 |
 | `unitPrice` | `BigDecimal` | 주문 당시 상품 1개 가격 |
 | `lineAmount` | `BigDecimal` | 상품 가격 * 주문 수량 |
-| `status` | `String` | 주문 상품 상태 |
 
 ### 처리 규칙
 
@@ -190,8 +191,7 @@
         "productName": "무선 키보드",
         "quantity": 2,
         "unitPrice": 39000,
-        "lineAmount": 78000,
-        "status": "ORDERED"
+        "lineAmount": 78000
       }
     ],
     "orderedAt": "2026-06-22T18:30:00+09:00",
@@ -204,7 +204,7 @@
 
 - 주문 소유자만 상세 조회할 수 있습니다.
 - 주문 상품의 `productName`, `unitPrice`는 주문 생성 시점에 저장된 스냅샷 값입니다.
-- 결제 상세 정보는 결제 API인 `/api/payments/{paymentId}`에서 조회합니다.
+- 결제 확정 요청에는 주문 생성 응답의 `paymentId`와 `portOnePaymentId`를 사용합니다.
 
 ### Errors
 
@@ -214,7 +214,7 @@
 | `ORDER_NOT_FOUND` | 404 | 주문 없음 |
 | `ORDER_ACCESS_DENIED` | 403 | 타인의 주문 조회 |
 
-## PATCH `/api/orders/{orderId}/cancel`
+## POST `/api/orders/{orderId}/cancel`
 
 결제 전 주문을 취소합니다. 결제 완료 이후 취소는 환불 API에서 처리합니다.
 
@@ -243,13 +243,6 @@
     "previousStatus": "PAYMENT_PENDING",
     "currentStatus": "CANCELED",
     "restoredPointAmount": 5000,
-    "restoredStockItems": [
-      {
-        "orderItemId": 400,
-        "productId": 10,
-        "restoreQuantity": 2
-      }
-    ],
     "canceledAt": "2026-06-22T18:40:00+09:00"
   }
 }

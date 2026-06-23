@@ -16,7 +16,7 @@
 허용 가능한 로그:
 
 ```
-portonePaymentId
+portOnePaymentId
 orderId
 userId
 status
