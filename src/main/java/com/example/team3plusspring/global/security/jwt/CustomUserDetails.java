@@ -13,15 +13,10 @@ import java.util.List;
 @Getter
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
-
     private final User user;
 
     public Long getUserId() {
         return user.getId();
-    }
-
-    public String getEmail() {
-        return user.getEmail();
     }
 
     @Override
@@ -34,6 +29,7 @@ public class CustomUserDetails implements UserDetails {
         return user.getPassword();
     }
 
+    // 로그인 식별자
     @Override
     public String getUsername() {
         return user.getEmail();
