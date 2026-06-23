@@ -34,14 +34,16 @@ public class Product extends BaseEntity {
 
     private String category;
 
+    private Product(String name, String description, int price, int stock, ProductStatus status, String category) {
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stock = stock;
+        this.status = status;
+        this.category = category;
+    }
+
     public static Product create(String name, String description, int price, int stock, String category) {
-        Product product = new Product();
-        product.name = name;
-        product.description = description;
-        product.price = price;
-        product.stock = stock;
-        product.status = ProductStatus.ON_SALE;
-        product.category = category;
-        return product;
+        return new Product(name, description, price, stock, ProductStatus.ON_SALE, category);
     }
 }
