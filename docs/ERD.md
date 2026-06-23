@@ -289,6 +289,7 @@ erDiagram
 | 주문 상태 | status | VARCHAR(30) | NOT NULL | PAYMENT_PENDING, COMPLETED, CANCELED, REFUND_REQUESTED, REFUNDED |
 | 상품 총액 | total_product_amount | BIGINT | NOT NULL | 주문 상품 합계 |
 | 사용 포인트 | used_point_amount | BIGINT | NOT NULL | 기본값 0 |
+| 쿠폰 할인 금액 | used_coupon_amount | BIGINT | NULL | 쿠폰 미 사용 시 NULL |
 | 최종 결제 금액 | payment_amount | BIGINT | NOT NULL | 상품 총액 - 사용 포인트 |
 | 주문일시 | ordered_at | DATETIME | NOT NULL |  |
 | 취소일시 | canceled_at | DATETIME | NULL | 결제 전 취소 시 값 저장 |
@@ -323,6 +324,7 @@ erDiagram
 | 결제 상태 | status | VARCHAR(30) | NOT NULL | PENDING, PAID, FAILED, CANCELED, REFUNDED |
 | 상품 총액 | total_product_amount | BIGINT | NOT NULL | 서버 계산 값 |
 | 사용 포인트 | used_point_amount | BIGINT | NOT NULL | 서버 계산 값 |
+| 쿠폰 할인 금액 | used_coupon_amount | BIGINT | NULL | 서버 계산 값, 쿠폰 미 사용 시 NULL |
 | 최종 결제 금액 | payment_amount | BIGINT | NOT NULL | PortOne 승인 금액과 비교 |
 | 결제 승인일시 | approved_at | DATETIME | NULL |  |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
