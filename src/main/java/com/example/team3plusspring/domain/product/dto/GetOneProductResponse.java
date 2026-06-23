@@ -5,7 +5,7 @@ import com.example.team3plusspring.domain.product.entity.ProductStatus;
 import lombok.Getter;
 
 @Getter
-public class ProductResponse {
+public class GetOneProductResponse {
 
     private Long id;
     private String name;
@@ -15,10 +15,10 @@ public class ProductResponse {
     private ProductStatus status;
     private String category;
 
-    private ProductResponse() {}
+    private GetOneProductResponse() {}
 
-    public static ProductResponse from(Product product) {
-        ProductResponse response = new ProductResponse();
+    public static GetOneProductResponse from(Product product) {
+        GetOneProductResponse response = new GetOneProductResponse();
         response.id = product.getId();
         response.name = product.getName();
         response.description = product.getDescription();

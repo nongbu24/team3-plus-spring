@@ -1,6 +1,6 @@
 package com.example.team3plusspring.domain.product.controller;
 
-import com.example.team3plusspring.domain.product.dto.ProductResponse;
+import com.example.team3plusspring.domain.product.dto.GetOneProductResponse;
 import com.example.team3plusspring.domain.product.service.ProductService;
 import com.example.team3plusspring.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ public class ProductController {
 
     // 상품 상세 조회
     @GetMapping("/products/{productId}")
-    public ApiResponse<ProductResponse> getProduct(@PathVariable Long productId) {
+    public ApiResponse<GetOneProductResponse> getProduct(@PathVariable Long productId) {
         return ApiResponse.success(productService.getProduct(productId));
     }
 }

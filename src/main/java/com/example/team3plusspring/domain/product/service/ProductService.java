@@ -1,6 +1,6 @@
 package com.example.team3plusspring.domain.product.service;
 
-import com.example.team3plusspring.domain.product.dto.ProductResponse;
+import com.example.team3plusspring.domain.product.dto.GetOneProductResponse;
 import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.repository.ProductRepository;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -17,9 +17,9 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     // 상품 상세 조회
-    public ProductResponse getProduct(Long productId) {
+    public GetOneProductResponse getProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-        return ProductResponse.from(product);
+        return GetOneProductResponse.from(product);
     }
 }
