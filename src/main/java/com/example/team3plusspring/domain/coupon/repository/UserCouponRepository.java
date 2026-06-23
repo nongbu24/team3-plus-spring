@@ -13,7 +13,7 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
 	 * 발급 API에서 쿠폰을 발급해주기 전에 먼저 이 메서드로 체크해서,
 	 * 이미 발급받은 적이 있으면 COUPON_ALREADY_ISSUED 예외를 던지는 데 사용한다.
 	 */
-	boolean existByUserIdAndCouponEventId(Long userId, Long couponEventId);
+	boolean existsByUserIdAndCouponEventId(Long userId, Long couponEventId);
 
 	/**
 	 * 특정 회원이 발급 받은 모든 쿠폰을 조회한다.
