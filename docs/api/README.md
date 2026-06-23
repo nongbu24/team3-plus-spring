@@ -14,6 +14,7 @@
 | [users.md](./users.md) | 내 정보 조회, 회원 탈퇴 |
 | [products.md](./products.md) | 상품 상세 조회, 상품 목록 조회, 상품 검색 |
 | [carts.md](./carts.md) | 장바구니 상품 추가, 내 장바구니 조회, 수량 변경, 삭제 |
+| [coupons.md](./coupons.md) | 쿠폰 이벤트 등록/조회, 선착순 발급, 보유 쿠폰 조회 |
 | [orders.md](./orders.md) | 주문 생성, 주문 상세 조회, 내 주문 목록 조회, 결제 전 주문 취소 |
 | [payments.md](./payments.md) | 결제 승인 검증, PortOne 웹훅 수신 |
 | [refunds.md](./refunds.md) | 결제 후 환불 요청, 내 환불 목록 조회 |
@@ -41,6 +42,8 @@
 | 주문 | 주문 상세 조회 | GET | `/api/orders/{orderId}` | 필요 |
 | 주문 | 내 주문 목록 조회 | GET | `/api/orders` | 필요 |
 | 주문 | 결제 전 주문 취소 | POST | `/api/orders/{orderId}/cancel` | 필요 |
+| 쿠폰 | 쿠폰 이벤트 등록 | POST | `/api/coupon-events` | 필요 (관리자) |
+| 쿠폰 | 쿠폰 이벤트 목록 조회 | GET | `/api/coupon-events` | 불필요 |
 | 쿠폰 | 선착순 쿠폰 발급 요청 | POST | `/api/coupon-events/{eventId}/issue` | 필요 |
 | 쿠폰 | 내가 보유한 쿠폰 목록 조회 | GET | `/api/users/me/coupons` | 필요 |
 | 결제 | 결제 승인 검증 | POST | `/api/payments/confirm` | 필요 |

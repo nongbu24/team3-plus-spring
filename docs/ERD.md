@@ -158,6 +158,7 @@ erDiagram
     coupon_events {
         BIGINT id PK "쿠폰 이벤트 ID"
         VARCHAR name "쿠폰 이벤트명"
+        VARCHAR discount_type "할인 타입"
         BIGINT discount_amount "할인 금액"
         INT total_quantity "총 발급 수량"
         INT issued_quantity "발급 완료 수량"
@@ -385,6 +386,7 @@ erDiagram
 | --- | --- | --- | --- | --- |
 | 쿠폰 이벤트 ID | id | BIGINT | NOT NULL | PK |
 | 쿠폰 이벤트명 | name | VARCHAR(100) | NOT NULL |  |
+| 할인 타입 | discount_type | VARCHAR(20) | NOT NULL | FIXED, PERCENT |
 | 할인 금액 | discount_amount | BIGINT | NOT NULL | 원화 정수 |
 | 총 발급 수량 | total_quantity | INT | NOT NULL |  |
 | 발급 완료 수량 | issued_quantity | INT | NOT NULL | 기본값 0 |
