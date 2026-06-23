@@ -22,19 +22,18 @@ public class Product extends BaseEntity {
     private String description;
 
     @Column(nullable = false)
-    private Integer price;
+    private int price;
 
     @Column(nullable = false)
-    private Integer stock;
+    private int stock;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private ProductStatus status;
 
-    @Column
     private String category;
 
-    public static Product create(String name, String description, Integer price, Integer stock, String category) {
+    public static Product create(String name, String description, int price, int stock, String category) {
         Product product = new Product();
         product.name = name;
         product.description = description;
