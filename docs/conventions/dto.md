@@ -33,9 +33,9 @@ DTO는 `class`를 사용한다.
 public class ConfirmPaymentRequest {
 
     @NotNull
-    private Long orderId;
+    private Long paymentId;
 
     @NotBlank
-    private String portonePaymentId;
+    private String portOnePaymentId;
 }
 ```

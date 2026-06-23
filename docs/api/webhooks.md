@@ -55,7 +55,7 @@ PortOne에서 전달하는 웹훅 payload를 그대로 받습니다.
   "data": {
     "received": true,
     "processed": true,
-    "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
+    "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
     "reason": "PROCESSED"
   }
 }
@@ -70,7 +70,7 @@ PortOne에서 전달하는 웹훅 payload를 그대로 받습니다.
   "data": {
     "received": true,
     "processed": false,
-    "portonePaymentId": null,
+    "portOnePaymentId": null,
     "reason": "DUPLICATE_OR_IGNORED"
   }
 }

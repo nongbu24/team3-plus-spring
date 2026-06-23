@@ -21,6 +21,6 @@ public class CreateOrderRequest {
 - 0 이하 수량
 - 음수 금액
 - 음수 포인트
-- 빈 portonePaymentId
+- 빈 portOnePaymentId
 - 잘못된 Enum 값
 - 필수 값 누락

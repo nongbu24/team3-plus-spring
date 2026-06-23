@@ -1,6 +1,6 @@
 # 결제 API
 
-결제 승인 검증, 결제 상세 조회, PortOne 웹훅 수신을 담당합니다.
+결제 승인 검증, PortOne 웹훅 수신을 담당합니다.
 
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
 아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
@@ -10,7 +10,6 @@
 | Method | Path | 설명 | 인증 |
 | --- | --- | --- | --- |
 | `POST` | `/api/payments/confirm` | 결제 승인 검증 | 필요 |
-| `GET` | `/api/payments/{paymentId}` | 결제 상세 조회 | 필요 |
 | `POST` | `/api/payments/webhook` | PortOne 웹훅 수신 | 웹훅 검증 |
 
 ## POST `/api/payments/confirm`
@@ -25,12 +24,12 @@
 | 필드 | 타입 | 필수 | 설명 |
 | --- | --- | --- | --- |
 | `paymentId` | `Long` | Y | 서버에 저장된 결제 ID |
-| `portonePaymentId` | `String` | Y | PortOne 결제 ID |
+| `portOnePaymentId` | `String` | Y | PortOne 결제 ID |
 
 ```json
 {
   "paymentId": 300,
-  "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d"
+  "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d"
 }
 ```
 
@@ -43,7 +42,7 @@
   "data": {
     "paymentId": 300,
     "orderId": 200,
-    "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
+    "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
     "status": "PAID",
     "totalProductAmount": 78000,
     "usedPointAmount": 5000,
@@ -57,7 +56,7 @@
 
 - 인증된 회원의 결제 건만 승인 검증할 수 있습니다.
 - 결제 건에 연결된 주문이 결제 대기 상태인지 확인합니다.
-- 요청한 `portonePaymentId`가 서버에 저장된 결제 식별자와 일치하는지 확인합니다.
+- 요청한 `portOnePaymentId`가 서버에 저장된 결제 식별자와 일치하는지 확인합니다.
 - PortOne 결제 단건 조회 결과가 결제 성공 상태인지 확인합니다.
 - PortOne 승인 금액과 서버가 계산한 결제 금액이 일치해야 합니다.
 - 검증에 성공하면 결제 상태를 `PAID`, 주문 상태를 `COMPLETED`로 변경합니다.
@@ -77,54 +76,6 @@
 | `ORDER_NOT_FOUND` | 404 | 결제에 연결된 주문 없음 |
 | `ORDER_ACCESS_DENIED` | 403 | 타인의 주문에 연결된 결제 |
 | `EXTERNAL_API_FAILED` | 502 | PortOne API 호출 실패 |
-
-## GET `/api/payments/{paymentId}`
-
-결제 상세 정보를 조회합니다.
-
-- 인증: 필요
-- HTTP Status: `200 OK`
-
-### Path Variables
-
-| 이름 | 타입 | 설명 |
-| --- | --- | --- |
-| `paymentId` | `Long` | 조회할 결제 ID |
-
-### Response Body
-
-```json
-{
-  "status": 200,
-  "message": "요청이 성공했습니다.",
-  "data": {
-    "paymentId": 300,
-    "orderId": 200,
-    "orderNumber": "ORD-20260622-000001",
-    "portonePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
-    "status": "PAID",
-    "totalProductAmount": 78000,
-    "usedPointAmount": 5000,
-    "paymentAmount": 73000,
-    "approvedAt": "2026-06-22T18:35:00+09:00",
-    "createdAt": "2026-06-22T18:30:00+09:00"
-  }
-}
-```
-
-### 처리 규칙
-
-- 인증된 회원 본인의 결제 건만 조회할 수 있습니다.
-- 결제 금액은 서버에서 계산해 저장한 값을 반환합니다.
-- 주문 상세 정보가 필요하면 `/api/orders/{orderId}`를 사용합니다.
-
-### Errors
-
-| 코드 | HTTP | 발생 조건 |
-| --- | --- | --- |
-| `UNAUTHORIZED` | 401 | 토큰 누락 또는 인증 실패 |
-| `PAYMENT_NOT_FOUND` | 404 | 결제 없음 |
-| `PAYMENT_ACCESS_DENIED` | 403 | 타인의 결제 조회 |
 
 ## POST `/api/payments/webhook`
 

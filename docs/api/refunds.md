@@ -10,6 +10,7 @@
 | Method | Path | 설명 | 인증 |
 | --- | --- | --- | --- |
 | `POST` | `/api/refunds` | 결제 후 환불 요청 | 필요 |
+| `GET` | `/api/refunds` | 내 환불 목록 조회 | 필요 |
 
 ## POST `/api/refunds`
 
@@ -73,6 +74,63 @@
 | `REFUND_NOT_ALLOWED` | 409 | 환불 가능한 결제 상태가 아님 |
 | `REFUND_AMOUNT_INVALID` | 400 | 환불 금액 계산 오류 |
 | `EXTERNAL_API_FAILED` | 502 | PortOne 환불 API 호출 실패 |
+
+## GET `/api/refunds`
+
+인증된 회원 본인의 환불 목록을 조회합니다.
+
+- 인증: 필요
+- HTTP Status: `200 OK`
+
+### Query Parameters
+
+| 이름 | 타입 | 필수 | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| `page` | `Integer` | N | `0` | 페이지 번호 |
+| `size` | `Integer` | N | `10` | 페이지 크기 |
+| `status` | `String` | N | 없음 | 환불 상태 필터 |
+
+### Response Body
+
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "content": [
+      {
+        "refundId": 500,
+        "paymentId": 300,
+        "orderId": 200,
+        "status": "REQUESTED",
+        "refundAmount": 73000,
+        "restoredPointAmount": 5000,
+        "reason": "단순 변심으로 인한 환불 요청",
+        "requestedAt": "2026-06-22T19:00:00+09:00",
+        "completedAt": null
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "hasNext": false
+  }
+}
+```
+
+### 처리 규칙
+
+- 토큰의 회원 ID를 기준으로 본인 환불 내역만 조회합니다.
+- 기본 정렬은 환불 요청일 최신순입니다.
+- 환불 목록 화면에 필요한 요약 정보만 반환합니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | 토큰 누락 또는 인증 실패 |
+| `INVALID_PAGINATION` | 400 | 페이지 번호 또는 크기 오류 |
 
 ## 설계 메모
 

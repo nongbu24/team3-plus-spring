@@ -103,7 +103,6 @@ erDiagram
         BIGINT unit_price "주문 당시 단가"
         INT quantity "주문 수량"
         BIGINT line_amount "상품별 금액"
-        VARCHAR status "주문 상품 상태"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -309,13 +308,12 @@ erDiagram
 | 주문 당시 단가 | unit_price | BIGINT | NOT NULL | 가격 스냅샷 |
 | 주문 수량 | quantity | INT | NOT NULL | 1 이상 |
 | 상품별 금액 | line_amount | BIGINT | NOT NULL | unit_price * quantity |
-| 주문 상품 상태 | status | VARCHAR(30) | NOT NULL | ORDERED, CANCELED, REFUNDED |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
 
 ### payments
 
-결제 승인 검증과 결제 상세 조회의 기준 테이블입니다.
+결제 승인 검증의 기준 테이블입니다.
 
 | 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
 | --- | --- | --- | --- | --- |
