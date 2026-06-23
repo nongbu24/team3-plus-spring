@@ -199,6 +199,8 @@ POST /api/payments/webhook
 | `COUPON_EVENT_CLOSED` | 409 | 발급 종료된 쿠폰 이벤트 |
 | `COUPON_ALREADY_ISSUED` | 409 | 이미 발급받은 쿠폰 |
 | `COUPON_STOCK_EXHAUSTED` | 409 | 쿠폰 발급 수량 소진 |
+| `COUPON_ALREADY_USED` | 409 | 이미 사용된 쿠폰 |
+| `COUPON_NOT_USED` | 409 | 사용되지 않은 쿠폰은 복구할 수 없음 |
 | `PAYMENT_NOT_FOUND` | 404 | 결제 없음 |
 | `PAYMENT_ACCESS_DENIED` | 403 | 타인의 결제 접근 |
 | `PAYMENT_ALREADY_PROCESSED` | 409 | 이미 처리된 결제 |

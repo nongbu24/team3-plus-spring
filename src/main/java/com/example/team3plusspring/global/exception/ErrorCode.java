@@ -55,6 +55,8 @@ public enum ErrorCode {
     COUPON_EVENT_CLOSED(HttpStatus.CONFLICT, "발급 종료된 쿠폰 이벤트입니다."),
     COUPON_ALREADY_ISSUED(HttpStatus.CONFLICT, "이미 발급받은 쿠폰입니다."),
     COUPON_STOCK_EXHAUSTED(HttpStatus.CONFLICT, "쿠폰 발급 수량이 소진되었습니다."),
+    COUPON_ALREADY_USED(HttpStatus.CONFLICT, "이미 사용된 쿠폰입니다."),
+    COUPON_NOT_USED(HttpStatus.CONFLICT, "사용되지 않은 쿠폰은 복구할 수 없습니다."),
 
     // Payment
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제를 찾을 수 없습니다."),
