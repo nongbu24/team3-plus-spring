@@ -4,6 +4,7 @@ import com.example.team3plusspring.domain.product.dto.GetOneProductResponse;
 import com.example.team3plusspring.domain.product.service.ProductService;
 import com.example.team3plusspring.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,7 +16,7 @@ public class ProductController {
 
     // 상품 상세 조회
     @GetMapping("/{productId}")
-    public ApiResponse<GetOneProductResponse> getProduct(@PathVariable Long productId) {
-        return ApiResponse.success(productService.getProduct(productId));
+    public ResponseEntity<ApiResponse<GetOneProductResponse>> getProduct(@PathVariable Long productId) {
+        return ResponseEntity.ok(ApiResponse.success(productService.getProduct(productId)));
     }
 }
