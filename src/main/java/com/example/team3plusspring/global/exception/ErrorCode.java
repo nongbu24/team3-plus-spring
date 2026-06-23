@@ -43,6 +43,7 @@ public enum ErrorCode {
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 상품을 찾을 수 없습니다."),
     CART_ITEM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "타인의 장바구니 상품에 접근할 수 없습니다."),
     CART_STOCK_EXCEEDED(HttpStatus.CONFLICT, "장바구니 수량이 재고를 초과했습니다."),
+    CART_ITEM_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "장바구니 상품 수량은 1개 이상이어야 합니다."),
 
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
