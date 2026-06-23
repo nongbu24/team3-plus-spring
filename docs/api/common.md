@@ -103,11 +103,11 @@ POST /api/payments/webhook
 
 ### ProductStatus
 
-| 값 | 설명    |
-| --- |-------|
-| `ON_SALE` | 판매중   |
-| `SOLD_OUT` | 품절    |
-| `DISCONTINUED` | 판매 중지 |
+| 값 | 설명 |
+| --- |----|
+| `ON_SALE` | 판매중 |
+| `SOLD_OUT` | 품절 |
+| `DISCONTINUED` | 단종 |
 
 ### OrderStatus
 

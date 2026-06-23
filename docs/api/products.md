@@ -99,16 +99,13 @@
   "status": 200,
   "message": "요청이 성공했습니다.",
   "data": {
-    "productId": 10,
-    "categoryId": 1,
-    "categoryName": "키보드",
+    "id": 10,
     "name": "무선 키보드",
     "description": "저소음 무선 키보드입니다.",
     "price": 39000,
     "stock": 12,
     "status": "ON_SALE",
-    "createdAt": "2026-06-22T18:30:00+09:00",
-    "updatedAt": "2026-06-22T18:30:00+09:00"
+    "category": "키보드"
   }
 }
 ```
