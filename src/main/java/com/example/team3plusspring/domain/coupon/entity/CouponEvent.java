@@ -36,7 +36,7 @@ public class CouponEvent extends BaseEntity {
 	private DiscountType discountType;
 
 	@Column(name = "discount_amount", nullable = false)
-	private long discountAmount;
+	private int discountAmount;
 
 	@Column(name = "total_quantity", nullable = false)
 	private int totalQuantity;
@@ -54,7 +54,7 @@ public class CouponEvent extends BaseEntity {
 	@Column(name = "ends_at", nullable = false)
 	private LocalDateTime endsAt;
 
-	private CouponEvent(String name, DiscountType discountType, long discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+	private CouponEvent(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
 		if (discountType == DiscountType.PERCENT && discountAmount > 100) {
 			throw new BusinessException(ErrorCode.INVALID_DISCOUNT_AMOUNT);
 		}
@@ -72,7 +72,7 @@ public class CouponEvent extends BaseEntity {
 		this.endsAt = endsAt;
 	}
 
-	public static CouponEvent create(String name, DiscountType discountType, long discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+	public static CouponEvent create(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
 		return new CouponEvent(name, discountType, discountAmount, totalQuantity, startsAt, endsAt);
 	}
 
