@@ -31,8 +31,12 @@ public class CouponEvent extends BaseEntity {
 	@Column(nullable = false, length = 100)
 	private String name;
 
+	@Column(name = "discount_type", nullable = false, length = 20)
+	@Enumerated(EnumType.STRING)
+	private DiscountType discountType;
+
 	@Column(name = "discount_amount", nullable = false)
-	private long discountAmount;
+	private int discountAmount;
 
 	@Column(name = "total_quantity", nullable = false)
 	private int totalQuantity;
@@ -50,8 +54,16 @@ public class CouponEvent extends BaseEntity {
 	@Column(name = "ends_at", nullable = false)
 	private LocalDateTime endsAt;
 
-	private CouponEvent(String name, long discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+	private CouponEvent(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+		if (discountType == DiscountType.PERCENT && discountAmount > 100) {
+			throw new BusinessException(ErrorCode.INVALID_DISCOUNT_AMOUNT);
+		}
+		if (startsAt.isAfter(endsAt)) {
+			throw new BusinessException(ErrorCode.INVALID_COUPON_EVENT_PERIOD);
+		}
+
 		this.name = name;
+		this.discountType = discountType;
 		this.discountAmount = discountAmount;
 		this.totalQuantity = totalQuantity;
 		this.issuedQuantity = 0;
@@ -60,8 +72,8 @@ public class CouponEvent extends BaseEntity {
 		this.endsAt = endsAt;
 	}
 
-	public static CouponEvent create(String name, long discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
-		return new CouponEvent(name, discountAmount, totalQuantity, startsAt, endsAt);
+	public static CouponEvent create(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+		return new CouponEvent(name, discountType, discountAmount, totalQuantity, startsAt, endsAt);
 	}
 
 	// 쿠폰 발급 수량 증가 메서드
@@ -81,5 +93,14 @@ public class CouponEvent extends BaseEntity {
 	// 쿠폰 이벤트 종료 메서드
 	public void close() {
 		this.status = CouponEventStatus.CLOSED;
+	}
+
+	// 상품 총액 기준으로 실제 할인 금액을 계산하는 메서드
+	public long calculateDiscountAmount(long productAmount) {
+		if (discountType == DiscountType.PERCENT) {
+			return productAmount * discountAmount / 100;
+		}
+
+		return discountAmount;
 	}
 }
