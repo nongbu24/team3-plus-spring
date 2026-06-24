@@ -1,5 +1,7 @@
 package com.example.team3plusspring.domain.coupon.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -9,9 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.team3plusspring.domain.coupon.dto.CouponEventResponse;
 import com.example.team3plusspring.domain.coupon.dto.CreateCouponEventRequest;
 import com.example.team3plusspring.domain.coupon.dto.GetCouponEventListResponse;
+import com.example.team3plusspring.domain.coupon.dto.IssueCouponResponse;
 import com.example.team3plusspring.domain.coupon.entity.CouponEvent;
 import com.example.team3plusspring.domain.coupon.entity.CouponEventStatus;
+import com.example.team3plusspring.domain.coupon.entity.UserCoupon;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
+import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -23,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class CouponEventService {
 
 	private final CouponEventRepository couponEventRepository;
+	private final UserCouponRepository userCouponRepository;
 
 	/**
 	 * 쿠폰 이벤트를 등록하는 메서드
@@ -73,5 +79,27 @@ public class CouponEventService {
 
 		return couponEventRepository.findByStatus(CouponEventStatus.OPEN, pageable)
 			.map(GetCouponEventListResponse::from);
+	}
+
+	@Transactional
+	public IssueCouponResponse issueCoupon(Long userId, Long couponEventId) {
+
+		CouponEvent couponEvent = couponEventRepository.findById(couponEventId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.COUPON_EVENT_NOT_FOUND));
+
+		if (!couponEvent.isIssuable(LocalDateTime.now())) {
+			throw new BusinessException(ErrorCode.COUPON_EVENT_CLOSED);
+		}
+
+		if (userCouponRepository.existsByUserIdAndCouponEventId(userId, couponEventId)) {
+			throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
+		}
+
+		couponEvent.increaseIssuedQuantity();
+
+		UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId);
+		UserCoupon savedUserCoupon = userCouponRepository.save(userCoupon);
+
+		return IssueCouponResponse.from(savedUserCoupon);
 	}
 }
