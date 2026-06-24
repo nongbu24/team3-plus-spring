@@ -42,7 +42,7 @@
   "data": {
     "content": [
       {
-        "productId": 10,
+        "id": 10,
         "name": "무선 키보드",
         "price": 39000,
         "stock": 12,
@@ -63,7 +63,7 @@
 
 ### 처리 규칙
 
-- 사용자 상품 목록에는 `ON_SALE` 상태와 `deleted_at IS NULL` 조건을 기본 적용합니다.
+- 사용자 상품 목록에는 `ON_SALE` 상태 조건을 기본 적용합니다.
 - `categoryId`, `keyword`, `status` 조건이 있으면 해당 조건으로 필터링합니다.
 - 기본 정렬은 최신순입니다.
 - 페이지 번호와 페이지 크기는 서버에서 검증합니다.
@@ -105,7 +105,8 @@
     "price": 39000,
     "stock": 12,
     "status": "ON_SALE",
-    "category": "키보드"
+    "categoryId": 6,
+    "categoryName": "키보드/마우스"
   }
 }
 ```
