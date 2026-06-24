@@ -26,10 +26,6 @@ public class CouponEventService {
 			throw new BusinessException(ErrorCode.FORBIDDEN);
 		}
 
-		if (couponEventRepository.existsByName(request.getName())) {
-			throw new BusinessException(ErrorCode.COUPON_EVENT_NAME_ALREADY_EXISTS);
-		}
-
 		CouponEvent couponEvent = CouponEvent.create(
 			request.getName(),
 			request.getDiscountType(),
