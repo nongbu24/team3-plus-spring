@@ -23,7 +23,4 @@ public class Category extends BaseEntity {
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
     private boolean isActive;
-
-    @Column
-    private LocalDateTime deletedAt;
 }
