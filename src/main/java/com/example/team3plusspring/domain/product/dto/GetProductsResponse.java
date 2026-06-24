@@ -7,22 +7,20 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class GetOneProductResponse {
+public class GetProductsResponse {
 
     private final Long id;
     private final String name;
-    private final String description;
     private final int price;
     private final int stock;
     private final ProductStatus status;
     private final Long categoryId;
     private final String categoryName;
 
-    public static GetOneProductResponse from(Product product) {
-        return new GetOneProductResponse(
+    public static GetProductsResponse from(Product product) {
+        return new GetProductsResponse(
                 product.getId(),
                 product.getName(),
-                product.getDescription(),
                 product.getPrice(),
                 product.getStock(),
                 product.getStatus(),

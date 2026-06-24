@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.product.entity;
 
+import com.example.team3plusspring.domain.category.entity.Category;
 import com.example.team3plusspring.global.entity.BaseEntity;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -34,9 +35,11 @@ public class Product extends BaseEntity {
     @Column(nullable = false, length = 30)
     private ProductStatus status;
 
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
-    private Product(String name, String description, int price, int stock, ProductStatus status, String category) {
+    private Product(String name, String description, int price, int stock, ProductStatus status, Category category) {
         this.name = name;
         this.description = description;
         this.price = price;
@@ -45,7 +48,7 @@ public class Product extends BaseEntity {
         this.category = category;
     }
 
-    public static Product create(String name, String description, int price, int stock, String category) {
+    public static Product create(String name, String description, int price, int stock, Category category) {
         return new Product(name, description, price, stock, ProductStatus.ON_SALE, category);
     }
 
