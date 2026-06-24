@@ -84,7 +84,7 @@ public class CouponEventService {
 	@Transactional
 	public IssueCouponResponse issueCoupon(Long userId, Long couponEventId) {
 
-		CouponEvent couponEvent = couponEventRepository.findById(couponEventId)
+		CouponEvent couponEvent = couponEventRepository.findByIdForUpdate(couponEventId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.COUPON_EVENT_NOT_FOUND));
 
 		if (!couponEvent.isIssuable(LocalDateTime.now())) {
