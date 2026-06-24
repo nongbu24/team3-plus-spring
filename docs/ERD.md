@@ -382,19 +382,19 @@ erDiagram
 
 선착순 쿠폰 발급 이벤트를 저장합니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 쿠폰 이벤트 ID | id | BIGINT | NOT NULL | PK |
+| 논리명 | 컬럼명 | 타입           | NULL | 제약/비고 |
+| --- | --- |--------------| --- | --- |
+| 쿠폰 이벤트 ID | id | BIGINT       | NOT NULL | PK |
 | 쿠폰 이벤트명 | name | VARCHAR(100) | NOT NULL |  |
-| 할인 타입 | discount_type | VARCHAR(20) | NOT NULL | FIXED, PERCENT |
-| 할인 금액 | discount_amount | BIGINT | NOT NULL | 원화 정수 |
-| 총 발급 수량 | total_quantity | INT | NOT NULL |  |
-| 발급 완료 수량 | issued_quantity | INT | NOT NULL | 기본값 0 |
-| 이벤트 상태 | status | VARCHAR(30) | NOT NULL | OPEN, CLOSED |
-| 발급 시작일시 | starts_at | DATETIME | NOT NULL |  |
-| 발급 종료일시 | ends_at | DATETIME | NOT NULL |  |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL |  |
+| 할인 타입 | discount_type | VARCHAR(20)  | NOT NULL | FIXED, PERCENT |
+| 할인 금액 | discount_amount | INT          | NOT NULL | 원화 정수 |
+| 총 발급 수량 | total_quantity | INT          | NOT NULL |  |
+| 발급 완료 수량 | issued_quantity | INT          | NOT NULL | 기본값 0 |
+| 이벤트 상태 | status | VARCHAR(30)  | NOT NULL | OPEN, CLOSED |
+| 발급 시작일시 | starts_at | DATETIME     | NOT NULL |  |
+| 발급 종료일시 | ends_at | DATETIME     | NOT NULL |  |
+| 생성일시 | created_at | DATETIME     | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME     | NULL |  |
 
 ### user_coupons
 
