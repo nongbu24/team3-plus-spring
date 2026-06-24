@@ -35,8 +35,8 @@
   "discountType": "PERCENT",
   "discountAmount": 10,
   "totalQuantity": 100,
-  "startsAt": "2026-06-23T00:00:00+09:00",
-  "endsAt": "2026-06-30T23:59:59+09:00"
+  "startsAt": "2026-06-23T00:00:00",
+  "endsAt": "2026-06-30T23:59:59"
 }
 ```
 
@@ -53,8 +53,8 @@
     "totalQuantity": 100,
     "issuedQuantity": 0,
     "status": "OPEN",
-    "startsAt": "2026-06-23T00:00:00+09:00",
-    "endsAt": "2026-06-30T23:59:59+09:00"
+    "startsAt": "2026-06-23T00:00:00",
+    "endsAt": "2026-06-30T23:59:59"
   }
 }
 ```
