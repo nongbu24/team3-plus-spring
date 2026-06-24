@@ -21,11 +21,11 @@
 ### Request Body
 
 | 필드 | 타입 | 필수 | 설명 |
-| --- | --- | --- | --- |
+| --- |----| --- | --- |
 | `name` | `String` | Y | 쿠폰 이벤트명 |
 | `discountType` | `String` | Y | `FIXED`, `PERCENT` |
-| `discountAmount` | `Long` | Y | 할인 금액 또는 할인율 |
-| `totalQuantity` | `Integer` | Y | 총 발급 수량 |
+| `discountAmount` | `int` | Y | 할인 금액 또는 할인율 |
+| `totalQuantity` | `int` | Y | 총 발급 수량 |
 | `startsAt` | `String` | Y | 발급 시작일시 |
 | `endsAt` | `String` | Y | 발급 종료일시 |
 
