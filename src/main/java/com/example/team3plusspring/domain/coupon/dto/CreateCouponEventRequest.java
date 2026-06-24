@@ -19,7 +19,7 @@ public class CreateCouponEventRequest {
 	private DiscountType discountType;
 
 	@Positive(message = "할인 금액은 0보다 커야 합니다.")
-	private long discountAmount;
+	private int discountAmount;
 
 	@Positive(message = "총 발급 수량은 0보다 커야 합니다.")
 	private int totalQuantity;
