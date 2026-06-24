@@ -55,6 +55,13 @@ public class CouponEvent extends BaseEntity {
 	private LocalDateTime endsAt;
 
 	private CouponEvent(String name, DiscountType discountType, long discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+		if (discountType == DiscountType.PERCENT && discountAmount > 100) {
+			throw new BusinessException(ErrorCode.INVALID_DISCOUNT_AMOUNT);
+		}
+		if (startsAt.isAfter(endsAt)) {
+			throw new BusinessException(ErrorCode.INVALID_COUPON_EVENT_PERIOD);
+		}
+
 		this.name = name;
 		this.discountType = discountType;
 		this.discountAmount = discountAmount;
