@@ -9,6 +9,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "products")
 @Getter
@@ -38,6 +40,8 @@ public class Product extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    private LocalDateTime deletedAt;
 
     private Product(String name, String description, int price, int stock, ProductStatus status, Category category) {
         this.name = name;
