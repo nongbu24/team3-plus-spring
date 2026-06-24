@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v2/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/search/popular").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/coupon-events").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
                         .requestMatchers("/error").permitAll()
 
