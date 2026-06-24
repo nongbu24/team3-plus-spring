@@ -21,4 +21,6 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
 	 * 로그인한 유저의 userId로 그 사람이 가진 쿠폰을 전부 가져오는 데 사용한다.
 	 */
 	List<UserCoupon> findAllByUserId(Long userId);
+
+	long countByCouponEventId(Long couponEventId);
 }
