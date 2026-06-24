@@ -1,6 +1,8 @@
 package com.example.team3plusspring.domain.product.entity;
 
 import com.example.team3plusspring.global.entity.BaseEntity;
+import com.example.team3plusspring.global.exception.BusinessException;
+import com.example.team3plusspring.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -45,5 +47,15 @@ public class Product extends BaseEntity {
 
     public static Product create(String name, String description, int price, int stock, String category) {
         return new Product(name, description, price, stock, ProductStatus.ON_SALE, category);
+    }
+
+    public boolean hasEnoughStock(int quantity) {
+        return this.stock >= quantity;
+    }
+
+    public void validateStatus() {
+        if (this.status != ProductStatus.ON_SALE) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
+        }
     }
 }

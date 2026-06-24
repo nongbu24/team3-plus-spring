@@ -1,0 +1,108 @@
+@baseUrl = http://localhost:8080
+@email = cart-user@example.com
+@password = Password123
+@onSaleProductId = 1
+@soldOutProductId = 45
+@notFoundProductId = 999999
+
+### 1. 회원가입 - 장바구니 테스트 회원 생성
+POST {{baseUrl}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "name": "CartTester",
+  "phone": "010-1234-5678"
+}
+
+### 2. 로그인 - accessToken 저장
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+%}
+
+### 3. 장바구니 상품 추가 성공 - 신규 상품 담기
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "productId": {{onSaleProductId}},
+  "quantity": 2
+}
+
+### 4. 장바구니 상품 추가 성공 - 같은 상품 수량 증가
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "productId": {{onSaleProductId}},
+  "quantity": 3
+}
+
+### 5. 실패 - 인증 토큰 없음
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+
+{
+  "productId": {{onSaleProductId}},
+  "quantity": 1
+}
+
+### 6. 실패 - 상품 ID 누락
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "quantity": 1
+}
+
+### 7. 실패 - 수량 1 미만
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "productId": {{onSaleProductId}},
+  "quantity": 0
+}
+
+### 8. 실패 - 존재하지 않는 상품
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "productId": {{notFoundProductId}},
+  "quantity": 1
+}
+
+### 9. 실패 - 판매중이 아닌 상품
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "productId": {{soldOutProductId}},
+  "quantity": 1
+}
+
+### 10. 실패 - 재고 초과
+POST {{baseUrl}}/api/carts/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "productId": {{onSaleProductId}},
+  "quantity": 999999
+}

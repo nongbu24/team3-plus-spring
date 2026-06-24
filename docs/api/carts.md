@@ -24,10 +24,10 @@
 
 ### Request Body
 
-| 필드 | 타입 | 필수 | 설명 |
-| --- | --- | --- | --- |
+| 필드 | 타입     | 필수 | 설명 |
+| --- |--------| --- | --- |
 | `productId` | `Long` | Y | 장바구니에 담을 상품 ID |
-| `quantity` | `Integer` | Y | 담을 수량. 1 이상 |
+| `quantity` | `int`  | Y | 담을 수량. 1 이상 |
 
 ```json
 {
@@ -48,25 +48,21 @@
     "productName": "무선 키보드",
     "quantity": 2,
     "unitPrice": 39000,
-    "lineAmount": 78000,
-    "stock": 12,
-    "status": "ON_SALE"
+    "lineAmount": 78000
   }
 }
 ```
 
 ### 장바구니 상품 응답 필드
 
-| 필드 | 타입 | 설명 |
-| --- | --- | --- |
-| `cartItemId` | `Long` | 장바구니 상품 ID |
-| `productId` | `Long` | 상품 ID |
+| 필드 | 타입       | 설명 |
+| --- |----------| --- |
+| `cartItemId` | `Long`   | 장바구니 상품 ID |
+| `productId` | `Long`   | 상품 ID |
 | `productName` | `String` | 상품명 |
-| `quantity` | `Integer` | 장바구니에 담긴 수량 |
-| `unitPrice` | `BigDecimal` | 상품 1개 가격 |
-| `lineAmount` | `BigDecimal` | 해당 상품의 총 금액 |
-| `stock` | `Integer` | 현재 재고 |
-| `status` | `String` | 상품 판매 상태 |
+| `quantity` | `int`    | 장바구니에 담긴 수량 |
+| `unitPrice` | `int`    | 상품 1개 가격 |
+| `lineAmount` | `int`    | 해당 상품의 총 금액 |
 
 ### 처리 규칙
 
