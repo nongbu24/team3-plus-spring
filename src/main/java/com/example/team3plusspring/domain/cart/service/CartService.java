@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.cart.service;
 
 import com.example.team3plusspring.domain.cart.dto.AddCartItemRequest;
 import com.example.team3plusspring.domain.cart.dto.AddCartItemResponse;
+import com.example.team3plusspring.domain.cart.dto.CartItemDetailResponse;
 import com.example.team3plusspring.domain.cart.dto.GetCartResponse;
 import com.example.team3plusspring.domain.cart.entity.Cart;
 import com.example.team3plusspring.domain.cart.entity.CartItem;
@@ -73,36 +74,31 @@ public class CartService {
         //  장바구니 아이템 조회
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
 
-        //  상세 정보 매핑 및 총계 계산
-        int totalQuantity = 0;
-        int totalAmount = 0;
-
-        List<GetCartResponse.CartItemDetail> itemDetails = cartItems.stream().map(item -> {
+        // 상세 정보 매핑 및 총계 계산
+        List<CartItemDetailResponse> itemDetails = cartItems.stream().map(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
             int lineAmount = product.getPrice() * item.getQuantity();
 
-            // 총계 누적
-            // (필요 시 totalQuantity, totalAmount 변수에 누적)
-
-            return GetCartResponse.CartItemDetail.builder()
-                    .cartItemId(item.getId())
-                    .productId(product.getId())
-                    .productName(product.getName())
-                    .quantity(item.getQuantity())
-                    .unitPrice(product.getPrice())
-                    .lineAmount(lineAmount)
-                    .stock(product.getStock())
-                    .status(product.getStatus())
-                    .build();
+            // 팩토리 메서드 사용하여 변환
+            return CartItemDetailResponse.of(
+                    item.getId(),
+                    product.getId(),
+                    product.getName(),
+                    item.getQuantity(),
+                    product.getPrice(),
+                    lineAmount,
+                    product.getStock(),
+                    product.getStatus()
+            );
         }).toList();
 
-        return GetCartResponse.builder()
-                .cartId(cart.getId())
-                .items(itemDetails)
-                .totalQuantity(cartItems.stream().mapToInt(CartItem::getQuantity).sum())
-                .totalAmount(itemDetails.stream().mapToInt(GetCartResponse.CartItemDetail::getLineAmount).sum())
-                .build();
+        // 총계 계산
+        int totalQuantity = cartItems.stream().mapToInt(CartItem::getQuantity).sum();
+        int totalAmount = itemDetails.stream().mapToInt(CartItemDetailResponse::getLineAmount).sum();
+
+        // 팩토리 메서드 사용하여 결과 반환
+        return GetCartResponse.of(cart.getId(), itemDetails, totalQuantity, totalAmount);
     }
 }

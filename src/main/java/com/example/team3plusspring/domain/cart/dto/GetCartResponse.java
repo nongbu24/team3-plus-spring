@@ -1,28 +1,19 @@
 package com.example.team3plusspring.domain.cart.dto;
 
-import com.example.team3plusspring.domain.product.entity.ProductStatus;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 @Getter
-@Builder
+@RequiredArgsConstructor
 public class GetCartResponse {
-    private Long cartId;
-    private List<CartItemDetail> items;
-    private int totalQuantity;
-    private int totalAmount;
+    private final Long cartId;
+    private final List<CartItemDetailResponse> items;
+    private final int totalQuantity;
+    private final int totalAmount;
 
-    @Getter
-    @Builder
-    public static class CartItemDetail {
-        private Long cartItemId;
-        private Long productId;
-        private String productName;
-        private int quantity;
-        private int unitPrice;
-        private int lineAmount;
-        private int stock;
-        private ProductStatus status;
+    // 팩토리 메서드: 여러 값을 조합하여 객체를 생성할 때 사용
+    public static GetCartResponse of(Long cartId, List<CartItemDetailResponse> items, int totalQuantity, int totalAmount) {
+        return new GetCartResponse(cartId, items, totalQuantity, totalAmount);
     }
 }
