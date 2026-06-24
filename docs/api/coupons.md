@@ -64,3 +64,49 @@
 | 코드 | HTTP | 발생 조건 |
 | --- | --- | --- |
 | VALIDATION_FAILED | 400 | 요청 본문 형식 오류 또는 필수 값 누락 |
+
+## GET `/api/coupon-events`
+
+발급 중인(`OPEN`) 쿠폰 이벤트 목록을 조회합니다.
+
+- 인증: 불필요
+- HTTP Status: `200 OK`
+- 종료된(`CLOSED`) 쿠폰 이벤트는 목록에 노출되지 않습니다.
+
+### Query Parameter
+
+| 이름 | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `page` | `int` | `0` | 0부터 시작하는 페이지 번호 |
+| `size` | `int` | `10` | 페이지당 조회할 쿠폰 이벤트 수 |
+
+### Response Body
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "name": "여름 시즌 쿠폰",
+        "discountType": "PERCENT",
+        "discountAmount": 10,
+        "totalQuantity": 100,
+        "issuedQuantity": 0,
+        "status": "OPEN",
+        "startsAt": "2026-06-23T00:00:00",
+        "endsAt": "2026-06-30T23:59:59"
+      }
+    ],
+    "totalElements": 1,
+    "totalPages": 1,
+    "size": 10,
+    "number": 0,
+    "first": true,
+    "last": true,
+    "numberOfElements": 1,
+    "empty": false
+  }
+}
+```
