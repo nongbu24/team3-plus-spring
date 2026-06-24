@@ -12,7 +12,7 @@ public class GetCartResponse {
     private final int totalQuantity;
     private final int totalAmount;
 
-    // 팩토리 메서드: 여러 값을 조합하여 객체를 생성할 때 사용
+
     public static GetCartResponse of(Long cartId, List<CartItemDetailResponse> items, int totalQuantity, int totalAmount) {
         return new GetCartResponse(cartId, items, totalQuantity, totalAmount);
     }

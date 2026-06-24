@@ -1,5 +1,7 @@
 package com.example.team3plusspring.domain.cart.dto;
 
+import com.example.team3plusspring.domain.cart.entity.CartItem;
+import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.entity.ProductStatus;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +18,17 @@ public class CartItemDetailResponse {
     private final int stock;
     private final ProductStatus status;
 
-    // 팩토리 메서드: 개별 아이템 상세 정보 생성 시 사용
-    public static CartItemDetailResponse of(Long cartItemId, Long productId, String productName,
-                                            int quantity, int unitPrice, int lineAmount,
-                                            int stock, ProductStatus status) {
-        return new CartItemDetailResponse(cartItemId, productId, productName, quantity, unitPrice, lineAmount, stock, status);
+    public static CartItemDetailResponse of(CartItem cartItem, Product product) {
+        int lineAmount = product.getPrice() * cartItem.getQuantity();
+        return new CartItemDetailResponse(
+                cartItem.getId(),
+                product.getId(),
+                product.getName(),
+                cartItem.getQuantity(),
+                product.getPrice(),
+                lineAmount,
+                product.getStock(),
+                product.getStatus()
+        );
     }
 }

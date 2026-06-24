@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,38 +69,38 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public GetCartResponse getMyCart(CustomUserDetails userDetails) {
-        // 장바구니 조회
+        // 1. 장바구니 조회
         Cart cart = cartRepository.findByUserId(userDetails.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
 
-        //  장바구니 아이템 조회
+        // 2. 장바구니 아이템 조회
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
 
-        // 상세 정보 매핑 및 총계 계산
-        List<CartItemDetailResponse> itemDetails = cartItems.stream().map(item -> {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        // 3. 상품 ID 목록 추출
+        List<Long> productIds = cartItems.stream()
+                .map(CartItem::getProductId)
+                .toList(); // distinct() 제거
 
-            int lineAmount = product.getPrice() * item.getQuantity();
+        // 4. 상품들을 한 번에 조회
+        Map<Long, Product> productMap = productRepository.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, product -> product));
 
-            // 팩토리 메서드 사용하여 변환
-            return CartItemDetailResponse.of(
-                    item.getId(),
-                    product.getId(),
-                    product.getName(),
-                    item.getQuantity(),
-                    product.getPrice(),
-                    lineAmount,
-                    product.getStock(),
-                    product.getStatus()
-            );
-        }).toList();
+        // 5. 상세 정보 매핑
+        List<CartItemDetailResponse> itemDetails = cartItems.stream()
+                .map(item -> {
+                    Product product = productMap.get(item.getProductId());
+                    if (product == null) {
+                        throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+                    }
+                    return CartItemDetailResponse.of(item, product);
+                })
+                .toList();
 
-        // 총계 계산
-        int totalQuantity = cartItems.stream().mapToInt(CartItem::getQuantity).sum();
-        int totalAmount = itemDetails.stream().mapToInt(CartItemDetailResponse::getLineAmount).sum();
-
-        // 팩토리 메서드 사용하여 결과 반환
-        return GetCartResponse.of(cart.getId(), itemDetails, totalQuantity, totalAmount);
+        return GetCartResponse.of(
+                cart.getId(),
+                itemDetails,
+                cartItems.stream().mapToInt(CartItem::getQuantity).sum(),
+                itemDetails.stream().mapToInt(CartItemDetailResponse::getLineAmount).sum()
+        );
     }
 }
