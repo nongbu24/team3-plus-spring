@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.cart.service;
 
 import com.example.team3plusspring.domain.cart.dto.AddCartItemRequest;
 import com.example.team3plusspring.domain.cart.dto.AddCartItemResponse;
+import com.example.team3plusspring.domain.cart.dto.GetCartResponse;
 import com.example.team3plusspring.domain.cart.entity.Cart;
 import com.example.team3plusspring.domain.cart.entity.CartItem;
 import com.example.team3plusspring.domain.cart.repository.CartItemRepository;
@@ -14,6 +15,8 @@ import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +47,7 @@ public class CartService {
                         throw new BusinessException(ErrorCode.CART_STOCK_EXCEEDED);
                     }
 
-                    existingCartItem.addQuantity(request.getQuantity());    // 이미 존재하는 경우 기존 장바구니 아이템 수량 증가
+                    existingCartItem.addQuantity(request.getQuantity());
 
                     return existingCartItem;
                 })
@@ -59,5 +62,47 @@ public class CartService {
         CartItem savedCartItem = cartItemRepository.save(cartItem);
 
         return AddCartItemResponse.of(savedCartItem, product);
+    }
+
+    @Transactional(readOnly = true)
+    public GetCartResponse getMyCart(CustomUserDetails userDetails) {
+        // 장바구니 조회
+        Cart cart = cartRepository.findByUserId(userDetails.getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+
+        //  장바구니 아이템 조회
+        List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
+
+        //  상세 정보 매핑 및 총계 계산
+        int totalQuantity = 0;
+        int totalAmount = 0;
+
+        List<GetCartResponse.CartItemDetail> itemDetails = cartItems.stream().map(item -> {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+            int lineAmount = product.getPrice() * item.getQuantity();
+
+            // 총계 누적
+            // (필요 시 totalQuantity, totalAmount 변수에 누적)
+
+            return GetCartResponse.CartItemDetail.builder()
+                    .cartItemId(item.getId())
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .quantity(item.getQuantity())
+                    .unitPrice(product.getPrice())
+                    .lineAmount(lineAmount)
+                    .stock(product.getStock())
+                    .status(product.getStatus())
+                    .build();
+        }).toList();
+
+        return GetCartResponse.builder()
+                .cartId(cart.getId())
+                .items(itemDetails)
+                .totalQuantity(cartItems.stream().mapToInt(CartItem::getQuantity).sum())
+                .totalAmount(itemDetails.stream().mapToInt(GetCartResponse.CartItemDetail::getLineAmount).sum())
+                .build();
     }
 }
