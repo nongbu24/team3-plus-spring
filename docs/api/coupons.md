@@ -15,7 +15,7 @@
 
 쿠폰 이벤트를 등록합니다.
 
-- 인증: 필요 (관리자 권한 체크는 추후 적용)
+- 인증: 필요 
 - HTTP Status: `201 Created`
 
 ### Request Body
