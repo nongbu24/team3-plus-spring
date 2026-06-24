@@ -52,10 +52,12 @@ public class PaymentController {
 
 ```java
 @PostMapping("/payments/confirm")
-public ApiResponse<ConfirmPaymentResponse> confirmPayment(
+public ResponseEntity<ApiResponse<ConfirmPaymentResponse>> confirmPayment(
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @Valid @RequestBody ConfirmPaymentRequest request
 ) {
-    return ApiResponse.success(paymentService.confirmPayment(userDetails.getUserId(), request));
+    ConfirmPaymentResponse response = paymentService.confirmPayment(userDetails.getUserId(), request);
+
+    return ResponseEntity.ok(ApiResponse.success(response));
 }
 ```

@@ -159,7 +159,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void 로그인_정상자격증명_토큰과회원요약을반환한다() throws Exception {
+    void 로그인_정상자격증명_토큰을반환한다() throws Exception {
         // given
         String email = uniqueEmail();
         signup(email, "Password123");
@@ -175,12 +175,10 @@ class AuthControllerTest {
                                 """.formatted(email)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(BODY_STATUS))
-                .andExpect(jsonPath("$.data.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.data.accessToken").isString())
-                .andExpect(jsonPath("$.data.expiresIn").isNumber())
-                .andExpect(jsonPath("$.data.user.userId").isNumber())
-                .andExpect(jsonPath("$.data.user.email").value(email))
-                .andExpect(jsonPath("$.data.user.name").value("홍길동"))
+                .andExpect(jsonPath("$.data.tokenType").doesNotExist())
+                .andExpect(jsonPath("$.data.expiresIn").doesNotExist())
+                .andExpect(jsonPath("$.data.user").doesNotExist())
                 .andExpect(jsonPath("$.data.password").doesNotExist());
     }
 

@@ -38,10 +38,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public long getAccessTokenExpiresInSeconds() {
-        return accessTokenExpirationMillis / 1000;
-    }
-
     public Claims parseClaims(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
