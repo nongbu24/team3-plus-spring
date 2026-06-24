@@ -1,6 +1,5 @@
 package com.example.team3plusspring.domain.product.entity;
 
-import com.example.team3plusspring.domain.category.entity.Category;
 import com.example.team3plusspring.global.entity.BaseEntity;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -8,8 +7,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
