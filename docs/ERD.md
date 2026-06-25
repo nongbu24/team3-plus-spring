@@ -65,7 +65,6 @@ erDiagram
         BOOLEAN is_active "사용 여부"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
-        DATETIME deleted_at "삭제일시"
     }
 
     products {
@@ -78,7 +77,6 @@ erDiagram
         VARCHAR status "판매 상태"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
-        DATETIME deleted_at "삭제일시"
     }
 
     orders {
