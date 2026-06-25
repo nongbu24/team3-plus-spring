@@ -15,7 +15,7 @@
 | [products.md](./products.md) | 상품 상세 조회, 상품 목록 조회, 상품 검색 |
 | [carts.md](./carts.md) | 장바구니 상품 추가, 내 장바구니 조회, 수량 변경, 삭제 |
 | [coupons.md](./coupons.md) | 쿠폰 이벤트 등록/조회, 선착순 발급, 보유 쿠폰 조회 |
-| [orders.md](./orders.md) | 주문 생성, 주문 상세 조회, 내 주문 목록 조회, 결제 전 주문 취소 |
+| [orders.md](./orders.md) | 상품 바로 주문 생성, 장바구니 상품 주문 생성, 주문 상세 조회, 내 주문 목록 조회, 결제 전 주문 취소 |
 | [payments.md](./payments.md) | 결제 승인 검증, PortOne 웹훅 수신 |
 | [refunds.md](./refunds.md) | 결제 후 환불 요청, 내 환불 목록 조회 |
 | [webhooks.md](./webhooks.md) | PortOne 웹훅 수신 |
@@ -37,7 +37,8 @@
 | 장바구니 | 내 장바구니 조회 | GET | `/api/carts` | 필요 |
 | 장바구니 | 장바구니 수량 변경 | PATCH | `/api/carts/items/{cartItemId}` | 필요 |
 | 장바구니 | 장바구니 상품 삭제 | DELETE | `/api/carts/items/{cartItemId}` | 필요 |
-| 주문 | 주문 생성 | POST | `/api/orders` | 필요 |
+| 주문 | 상품에서 바로 주문 생성 | POST | `/api/orders/direct` | 필요 |
+| 주문 | 장바구니 상품 주문 생성 | POST | `/api/orders/carts` | 필요 |
 | 주문 | 주문 상세 조회 | GET | `/api/orders/{orderId}` | 필요 |
 | 주문 | 내 주문 목록 조회 | GET | `/api/orders` | 필요 |
 | 주문 | 결제 전 주문 취소 | POST | `/api/orders/{orderId}/cancel` | 필요 |

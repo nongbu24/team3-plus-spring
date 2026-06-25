@@ -27,4 +27,14 @@ public class ProductService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         return GetOneProductResponse.of(product, category);
     }
+
+    @Transactional
+    public Product getOrderableProductAndDecreaseStock(Long productId, int quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        product.decreaseStock(quantity);
+
+        return product;
+    }
 }

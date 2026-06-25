@@ -50,6 +50,8 @@ public enum ErrorCode {
     ORDER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "타인의 주문에 접근할 수 없습니다."),
     ORDER_CANCEL_NOT_ALLOWED(HttpStatus.CONFLICT, "결제대기 상태가 아니라 직접 취소할 수 없습니다."),
     ORDER_STOCK_SHORTAGE(HttpStatus.CONFLICT, "주문 생성 중 재고가 부족합니다."),
+    ORDER_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 주문 상태 변경입니다."),
+    ORDER_DISCOUNT_AMOUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "할인 금액은 상품 총액을 초과할 수 없습니다."),
 
     // Coupon
     COUPON_EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "쿠폰 이벤트를 찾을 수 없습니다."),
@@ -69,12 +71,12 @@ public enum ErrorCode {
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 승인 금액이 일치하지 않습니다."),
     PAYMENT_STATUS_NOT_PAID(HttpStatus.BAD_REQUEST, "PortOne 결제 상태가 성공 상태가 아닙니다."),
     PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST, "결제 웹훅 요청이 올바르지 않습니다."),
+    PAYMENT_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 결제 상태 변경입니다."),
 
     // Refund
     REFUND_NOT_ALLOWED(HttpStatus.CONFLICT, "환불 가능한 결제 상태가 아닙니다."),
     REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "환불 내역을 찾을 수 없습니다."),
     REFUND_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "환불 금액이 올바르지 않습니다."),
-
 
     // Search
     POPULAR_SEARCH_KEYWORD_NOT_FOUND(HttpStatus.NOT_FOUND, "인기 검색어를 찾을 수 없습니다."),

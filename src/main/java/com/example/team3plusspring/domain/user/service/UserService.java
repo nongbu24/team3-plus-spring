@@ -18,7 +18,13 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserMeResponse getMyInfo(Long userId) {
         User user = findActiveUser(userId);
+
         return UserMeResponse.from(user);
+    }
+
+    @Transactional(readOnly = true)
+    public void validateActiveUser(Long userId) {
+        findActiveUser(userId);
     }
 
     @Transactional
