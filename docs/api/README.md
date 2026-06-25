@@ -18,6 +18,7 @@
 | [orders.md](./orders.md) | 상품 바로 주문 생성, 장바구니 상품 주문 생성, 주문 상세 조회, 내 주문 목록 조회, 결제 전 주문 취소 |
 | [payments.md](./payments.md) | 결제 승인 검증, PortOne 웹훅 수신 |
 | [refunds.md](./refunds.md) | 결제 후 환불 요청, 내 환불 목록 조회 |
+| [chat.md](./chat.md) | 1:1 문의 채팅방 생성/조회, 메시지 조회, 실시간 채팅 |
 | [webhooks.md](./webhooks.md) | PortOne 웹훅 수신 |
 
 ## 엔드포인트 요약
@@ -50,6 +51,13 @@
 | 결제 | PortOne 웹훅 수신 | POST | `/api/payments/webhook` | 웹훅 검증 |
 | 환불 | 결제 후 환불 요청 | POST | `/api/refunds` | 필요 |
 | 환불 | 내 환불 목록 조회 | GET | `/api/refunds` | 필요 |
+| 채팅 | 내 1:1 문의 채팅방 생성 | POST | `/api/chat/rooms/me` | 필요 |
+| 채팅 | 채팅방 목록 조회 | GET | `/api/chat/rooms` | 필요 |
+| 채팅 | 문의 상태 변경 | PATCH | `/api/chat/rooms/{roomId}/status` | 필요 (관리자) |
+| 채팅 | 채팅방 최근 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages` | 필요 |
+| 채팅 | 특정 메시지 이전 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages/before/{lastMessageId}` | 필요 |
+| 채팅 | 재연결 후 미수신 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages/after/{lastReceivedMessageId}` | 필요 |
+| 채팅 | 전체 최근 메시지 조회 | GET | `/api/chat/messages` | 필요 (관리자) |
 
 ## 설계 메모
 
@@ -58,3 +66,4 @@
 - 장바구니 API는 인증된 회원의 장바구니를 기준으로 동작하므로 URL에 `cartId`를 노출하지 않습니다.
 - 주문 취소는 결제 전 주문에 대해서만 허용합니다.
 - 결제 승인 검증과 PortOne 웹훅 처리는 중복 요청이 들어올 수 있으므로 멱등성을 고려해야 합니다.
+- 채팅은 REST API와 STOMP WebSocket을 함께 사용하며, 실시간 메시지는 `/sub/chat/{roomId}`로 구독합니다.
