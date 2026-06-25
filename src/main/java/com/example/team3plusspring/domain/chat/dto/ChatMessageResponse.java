@@ -1,12 +1,18 @@
 package com.example.team3plusspring.domain.chat.dto;
 
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChatMessageResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
