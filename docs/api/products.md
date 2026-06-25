@@ -48,15 +48,15 @@
         "stock": 12,
         "status": "ON_SALE",
         "categoryId": 1,
-        "categoryName": "키보드",
-        "createdAt": "2026-06-22T18:30:00+09:00"
+        "categoryName": "키보드"
       }
     ],
-    "page": 0,
+    "totalElements": 45,
+    "totalPages": 5,
+    "number": 0,
     "size": 10,
-    "totalElements": 1,
-    "totalPages": 1,
-    "hasNext": false
+    "first": true,
+    "last": false
   }
 }
 ```
@@ -65,6 +65,7 @@
 
 - 사용자 상품 목록에는 `ON_SALE` 상태 조건을 기본 적용합니다.
 - `categoryId`, `keyword`, `status` 조건이 있으면 해당 조건으로 필터링합니다.
+- 존재하지 않는 categoryId는 빈 목록을 반환합니다.
 - 기본 정렬은 최신순입니다.
 - 페이지 번호와 페이지 크기는 서버에서 검증합니다.
 
@@ -75,7 +76,6 @@
 | `VALIDATION_FAILED` | 400 | 쿼리 파라미터 형식 오류 |
 | `INVALID_ENUM_VALUE` | 400 | 잘못된 `status` 또는 `sort` |
 | `INVALID_PAGINATION` | 400 | 페이지 번호 또는 크기 오류 |
-| `CATEGORY_NOT_FOUND` | 404 | 카테고리 없음 |
 
 ## GET `/api/products/{productId}`
 
@@ -156,10 +156,9 @@ Local Cache가 적용된 상품 검색 API입니다.
 | --- | --- | --- |
 | `VALIDATION_FAILED` | 400 | 쿼리 파라미터 형식 오류 |
 | `INVALID_PAGINATION` | 400 | 페이지 번호 또는 크기 오류 |
-| `CATEGORY_NOT_FOUND` | 404 | 카테고리 없음 |
 
 ## 설계 메모
 
-- 사용자 상품 목록에는 `ON_SALE` 상태와 `deleted_at IS NULL` 조건을 기본 적용합니다.
+- 사용자 상품 목록에는 `ON_SALE` 상태 조건을 기본 적용합니다.
 - 상품 가격은 주문 생성 시 주문 상품에 스냅샷으로 저장합니다. 따라서 주문 생성 후 상품 가격이 바뀌어도 과거 주문 금액은 바뀌지 않습니다.
 - 상품 검색 API는 기본 조회 API인 `/api/v1/products`와 Local Cache 적용 API인 `/api/v2/products`를 구분합니다.
