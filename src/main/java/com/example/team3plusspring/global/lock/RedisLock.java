@@ -6,10 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 메서드에 분산 락을 적용하기 위한 어노테이션
- * 메서드 실행 전 Redis에 락을 걸고, 실행이 끝나면(정상/예외 상관없이) 락을 해제한다.
- * 락 획득에 실패하면 maxRetry 횟수만큼 retryDelayMillis 간격으로 재시도하며,
- * 모두 실패하면 예외가 발생한다.
+ * 메서드에 분산 락(Redisson 공정 락)을 적용하기 위한 어노테이션
+ * 락을 잡으려는 스레드들을 대기 큐에 도착한 순서대로 줄 세워서,
+ * 스핀 락처럼 운에 따라 아무나 락을 잡는 게 아니라 "먼저 온 요청이 먼저 처리되는 것"을 보장한다.
  */
 
 @Target(ElementType.METHOD)
@@ -28,18 +27,12 @@ public @interface RedisLock {
 	int argIndex() default 0;
 
 	/**
-	 * 락의 유효시간(초). 이 시간이 지나면 Redis에서 자동으로 키가 삭제된다.
-	 * 서버 장애로 락 해제가 안 되는 상황을 방지하기 위한 안전장치
+	 * 락을 기다릴 수 있는 최대 시간(초). 이 시간 안에 내 차례가 안 오면 포기한다.
 	 */
-	long timeout() default 5;
+	long waitTime() default 5;
 
 	/**
-	 * 락 획득 실패 시 재시도할 최대 횟수
+	 * 락을 획득한 뒤 최대로 들고 있을 수 있는 시간(초). 이 시간이 지나면 자동으로 풀린다.
 	 */
-	int maxRetry() default 5;
-
-	/**
-	 * 재시도 사이의 대기 시간(ms)
-	 */
-	int retryDelayMillis() default 100;
+	long leaseTime() default 3;
 }
