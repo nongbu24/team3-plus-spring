@@ -79,6 +79,18 @@ public enum ErrorCode {
     REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "환불 내역을 찾을 수 없습니다."),
     REFUND_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "환불 금액이 올바르지 않습니다."),
 
+    // Point
+    POINT_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 계정을 찾을 수 없습니다."),
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "포인트 잔액이 부족합니다."),
+    POINT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 이력을 찾을 수 없습니다."),
+
+    // Chat
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
+    CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 채팅방에 접근할 수 없습니다."),
+    CHAT_ROOM_ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 채팅방입니다."),
+    INVALID_CHAT_STATUS_TRANSITION(HttpStatus.CONFLICT, "변경할 수 없는 문의 상태입니다."),
+    ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "관리자를 찾을 수 없습니다."),
+
     // Search
     POPULAR_SEARCH_KEYWORD_NOT_FOUND(HttpStatus.NOT_FOUND, "인기 검색어를 찾을 수 없습니다."),
 
