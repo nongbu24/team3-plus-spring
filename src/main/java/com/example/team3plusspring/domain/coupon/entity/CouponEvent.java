@@ -87,7 +87,7 @@ public class CouponEvent extends BaseEntity {
 	}
 
 	// 상품 총액 기준으로 실제 할인 금액을 계산하는 메서드
-	public long calculateDiscountAmount(long productAmount) {
+	public int calculateDiscountAmount(int productAmount) {
 		if (discountType == DiscountType.PERCENT) {
 			return productAmount * discountAmount / 100;
 		}

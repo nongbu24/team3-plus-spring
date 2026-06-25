@@ -118,12 +118,12 @@
 
 ### 장바구니 응답 필드
 
-| 필드 | 타입 | 설명 |
-| --- | --- | --- |
-| `cartId` | `Long` | 장바구니 ID |
-| `items` | `List` | 장바구니 상품 목록 |
+| 필드 | 타입        | 설명 |
+| --- |-----------| --- |
+| `cartId` | `Long`    | 장바구니 ID |
+| `items` | `List`    | 장바구니 상품 목록 |
 | `totalQuantity` | `Integer` | 장바구니 전체 상품 수량 |
-| `totalAmount` | `BigDecimal` | 장바구니 전체 금액 |
+| `totalAmount` | `Integer` | 장바구니 전체 금액 |
 
 ### 처리 규칙
 

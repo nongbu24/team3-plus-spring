@@ -15,10 +15,9 @@
 | [products.md](./products.md) | 상품 상세 조회, 상품 목록 조회, 상품 검색 |
 | [carts.md](./carts.md) | 장바구니 상품 추가, 내 장바구니 조회, 수량 변경, 삭제 |
 | [coupons.md](./coupons.md) | 쿠폰 이벤트 등록/조회, 선착순 발급, 보유 쿠폰 조회 |
-| [orders.md](./orders.md) | 주문 생성, 주문 상세 조회, 내 주문 목록 조회, 결제 전 주문 취소 |
+| [orders.md](./orders.md) | 상품 바로 주문 생성, 장바구니 상품 주문 생성, 주문 상세 조회, 내 주문 목록 조회, 결제 전 주문 취소 |
 | [payments.md](./payments.md) | 결제 승인 검증, PortOne 웹훅 수신 |
 | [refunds.md](./refunds.md) | 결제 후 환불 요청, 내 환불 목록 조회 |
-| [points.md](./points.md) | 내 포인트 잔액 조회, 내 포인트 이력 조회 |
 | [webhooks.md](./webhooks.md) | PortOne 웹훅 수신 |
 
 ## 엔드포인트 요약
@@ -38,7 +37,8 @@
 | 장바구니 | 내 장바구니 조회 | GET | `/api/carts` | 필요 |
 | 장바구니 | 장바구니 수량 변경 | PATCH | `/api/carts/items/{cartItemId}` | 필요 |
 | 장바구니 | 장바구니 상품 삭제 | DELETE | `/api/carts/items/{cartItemId}` | 필요 |
-| 주문 | 주문 생성 | POST | `/api/orders` | 필요 |
+| 주문 | 상품에서 바로 주문 생성 | POST | `/api/orders/direct` | 필요 |
+| 주문 | 장바구니 상품 주문 생성 | POST | `/api/orders/carts` | 필요 |
 | 주문 | 주문 상세 조회 | GET | `/api/orders/{orderId}` | 필요 |
 | 주문 | 내 주문 목록 조회 | GET | `/api/orders` | 필요 |
 | 주문 | 결제 전 주문 취소 | POST | `/api/orders/{orderId}/cancel` | 필요 |
@@ -50,8 +50,6 @@
 | 결제 | PortOne 웹훅 수신 | POST | `/api/payments/webhook` | 웹훅 검증 |
 | 환불 | 결제 후 환불 요청 | POST | `/api/refunds` | 필요 |
 | 환불 | 내 환불 목록 조회 | GET | `/api/refunds` | 필요 |
-| 포인트 | 내 포인트 잔액 조회 | GET | `/api/points/me` | 필요 |
-| 포인트 | 내 포인트 이력 조회 | GET | `/api/points/histories` | 필요 |
 
 ## 설계 메모
 
@@ -60,4 +58,3 @@
 - 장바구니 API는 인증된 회원의 장바구니를 기준으로 동작하므로 URL에 `cartId`를 노출하지 않습니다.
 - 주문 취소는 결제 전 주문에 대해서만 허용합니다.
 - 결제 승인 검증과 PortOne 웹훅 처리는 중복 요청이 들어올 수 있으므로 멱등성을 고려해야 합니다.
-- 포인트 잔액과 이력은 `points.md`에서 함께 관리합니다. 잔액은 `/api/points/me`, 이력은 `/api/points/histories`를 사용합니다.

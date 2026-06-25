@@ -10,8 +10,8 @@ public class CreateOrderRequest {
     @NotEmpty
     private List<OrderItemRequest> items;
 
-    @PositiveOrZero
-    private Integer usedPointAmount;
+    @Positive
+    private Integer quantity;
 }
 ```
 
@@ -20,7 +20,6 @@ public class CreateOrderRequest {
 - 빈 상품 목록
 - 0 이하 수량
 - 음수 금액
-- 음수 포인트
 - 빈 portOnePaymentId
 - 잘못된 Enum 값
 - 필수 값 누락

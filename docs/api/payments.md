@@ -45,8 +45,8 @@
     "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
     "status": "PAID",
     "totalProductAmount": 78000,
-    "usedPointAmount": 5000,
-    "paymentAmount": 73000,
+    "usedCouponAmount": 10000,
+    "paymentAmount": 68000,
     "approvedAt": "2026-06-22T18:35:00+09:00"
   }
 }

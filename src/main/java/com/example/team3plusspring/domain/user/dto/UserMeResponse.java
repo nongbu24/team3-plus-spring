@@ -11,18 +11,16 @@ public class UserMeResponse {
     private final String name;
     private final String phone;
     private final String role;
-    private final Long pointBalance;
 
-    private UserMeResponse(User user, Long pointBalance) {
+    private UserMeResponse(User user) {
         this.userId = user.getId();
         this.email = user.getEmail();
         this.name = user.getName();
         this.phone = user.getPhone();
         this.role = user.getRole().name();
-        this.pointBalance = pointBalance;
     }
 
-    public static UserMeResponse from(User user, Long pointBalance) {
-        return new UserMeResponse(user, pointBalance);
+    public static UserMeResponse from(User user) {
+        return new UserMeResponse(user);
     }
 }

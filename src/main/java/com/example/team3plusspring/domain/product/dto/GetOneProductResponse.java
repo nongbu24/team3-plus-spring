@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.product.dto;
 
+import com.example.team3plusspring.domain.category.entity.Category;
 import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.entity.ProductStatus;
 import lombok.Getter;
@@ -15,9 +16,10 @@ public class GetOneProductResponse {
     private final int price;
     private final int stock;
     private final ProductStatus status;
-    private final String category;
+    private final Long categoryId;
+    private final String categoryName;
 
-    public static GetOneProductResponse from(Product product) {
+    public static GetOneProductResponse of(Product product, Category category) {
         return new GetOneProductResponse(
                 product.getId(),
                 product.getName(),
@@ -25,7 +27,8 @@ public class GetOneProductResponse {
                 product.getPrice(),
                 product.getStock(),
                 product.getStatus(),
-                product.getCategory()
+                category.getId(),
+                category.getName()
         );
     }
 }
