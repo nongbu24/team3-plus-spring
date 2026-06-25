@@ -250,18 +250,18 @@ erDiagram
 
 주문 생성, 주문 목록/상세 조회, 결제 전 주문 취소의 기준 테이블입니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- |---|
-| 주문 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id|
-| 주문번호 | order_number | VARCHAR(50) | NOT NULL | UNIQUE |
+| 논리명 | 컬럼명 | 타입 | NULL     | 제약/비고                                                            |
+| --- | --- | --- |----------|------------------------------------------------------------------|
+| 주문 ID | id | BIGINT | NOT NULL | PK                                                               |
+| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id                                                     |
+| 주문번호 | order_number | VARCHAR(50) | NOT NULL | UNIQUE                                                           |
 | 주문 상태 | status | VARCHAR(30) | NOT NULL | PAYMENT_PENDING, COMPLETED, CANCELED, REFUND_REQUESTED, REFUNDED |
-| 상품 총액 | total_product_amount | INT | NOT NULL | 주문 상품 합계 |
-| 쿠폰 할인 금액 | used_coupon_amount | INT | NULL | 쿠폰 미 사용 시 NULL |
-| 최종 결제 금액 | payment_amount | INT | NOT NULL | 상품 총액 - 쿠폰 할인 금액 |
-| 취소일시 | canceled_at | DATETIME | NULL | 결제 전 취소 시 값 저장 |
-| 생성일시 | created_at | DATETIME | NOT NULL |                                                                |
-| 수정일시 | updated_at | DATETIME | NULL |                                                                |
+| 상품 총액 | total_product_amount | INT | NOT NULL | 주문 상품 합계                                                         |
+| 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 쿠폰 미 사용 시 0                                                      |
+| 최종 결제 금액 | payment_amount | INT | NOT NULL | 상품 총액 - 쿠폰 할인 금액                                                 |
+| 취소일시 | canceled_at | DATETIME | NULL     | 결제 전 취소 시 값 저장                                                   |
+| 생성일시 | created_at | DATETIME | NOT NULL |                                                                  |
+| 수정일시 | updated_at | DATETIME | NULL     |                                                                  |
 
 ### order_items
 
@@ -283,18 +283,18 @@ erDiagram
 
 결제 승인 검증의 기준 테이블입니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL     | 제약/비고 |
-| --- | --- | --- |----------| --- |
-| 결제 ID | id | BIGINT | NOT NULL | PK |
-| 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id, UNIQUE |
-| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NOT NULL | UNIQUE, 결제 승인 검증 시 저장 가능 |
+| 논리명 | 컬럼명 | 타입 | NULL     | 제약/비고                                     |
+| --- | --- | --- |----------|-------------------------------------------|
+| 결제 ID | id | BIGINT | NOT NULL | PK                                        |
+| 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id, UNIQUE                     |
+| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NOT NULL | UNIQUE, 결제 승인 검증 시 저장 가능                  |
 | 결제 상태 | status | VARCHAR(30) | NOT NULL | PENDING, PAID, FAILED, CANCELED, REFUNDED |
-| 상품 총액 | total_product_amount | INT | NOT NULL | 서버 계산 값 |
-| 쿠폰 할인 금액 | used_coupon_amount | INT | NULL     | 서버 계산 값, 쿠폰 미 사용 시 NULL |
-| 최종 결제 금액 | payment_amount | INT | NOT NULL | PortOne 승인 금액과 비교 |
-| 결제 승인일시 | approved_at | DATETIME | NULL     |  |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL     |  |
+| 상품 총액 | total_product_amount | INT | NOT NULL | 서버 계산 값                                   |
+| 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 서버 계산 값, 쿠폰 미 사용 시 0                      |
+| 최종 결제 금액 | payment_amount | INT | NOT NULL | PortOne 승인 금액과 비교                         |
+| 결제 승인일시 | approved_at | DATETIME | NULL     |                                           |
+| 생성일시 | created_at | DATETIME | NOT NULL |                                           |
+| 수정일시 | updated_at | DATETIME | NULL     |                                           |
 
 ### refunds
 
