@@ -34,19 +34,20 @@ public class Product extends BaseEntity {
     @Column(nullable = false, length = 30)
     private ProductStatus status;
 
-    private String category;
+    @Column(name = "category_id")
+    private Long categoryId;
 
-    private Product(String name, String description, int price, int stock, ProductStatus status, String category) {
+    private Product(String name, String description, int price, int stock, ProductStatus status, Long categoryId) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.stock = stock;
         this.status = status;
-        this.category = category;
+        this.categoryId = categoryId;
     }
 
-    public static Product create(String name, String description, int price, int stock, String category) {
-        return new Product(name, description, price, stock, ProductStatus.ON_SALE, category);
+    public static Product create(String name, String description, int price, int stock, Long categoryId) {
+        return new Product(name, description, price, stock, ProductStatus.ON_SALE, categoryId);
     }
 
     public boolean hasEnoughStock(int quantity) {

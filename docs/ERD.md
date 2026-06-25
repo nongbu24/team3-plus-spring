@@ -259,7 +259,6 @@ erDiagram
 | 사용 여부 | is_active | BOOLEAN | NOT NULL | 기본값 true |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
-| 삭제일시 | deleted_at | DATETIME | NULL |  |
 
 ### products
 
@@ -276,7 +275,6 @@ erDiagram
 | 판매 상태 | status | VARCHAR(30)  | NOT NULL | ON_SALE, SOLD_OUT, DISCONTINUED |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
-| 삭제일시 | deleted_at | DATETIME | NULL | 사용자 조회에서 제외 |
 
 ### orders
 
