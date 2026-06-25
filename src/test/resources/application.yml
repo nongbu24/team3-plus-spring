@@ -15,9 +15,6 @@ spring:
     init:
       mode: always
 
-REDIS_HOST: localhost
-REDIS_PORT: 6379
-
 jwt:
   secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
   access-token-expiration-millis: 3600000

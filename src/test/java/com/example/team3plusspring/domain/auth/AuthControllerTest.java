@@ -4,6 +4,7 @@ import com.example.team3plusspring.domain.cart.repository.CartRepository;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.repository.UserRepository;
 import com.example.team3plusspring.global.exception.ErrorCode;
+import com.example.team3plusspring.support.RedisTestContainerSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class AuthControllerTest {
+class AuthControllerTest extends RedisTestContainerSupport {
     private static final int BODY_STATUS = 200;
     private static final int CREATED_STATUS = 201;
 
