@@ -1,3 +1,21 @@
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE cart_items;
+TRUNCATE TABLE carts;
+TRUNCATE TABLE chat_messages;
+TRUNCATE TABLE chat_members;
+TRUNCATE TABLE chat_rooms;
+TRUNCATE TABLE order_items;
+TRUNCATE TABLE orders;
+TRUNCATE TABLE payments;
+TRUNCATE TABLE user_coupons;
+TRUNCATE TABLE coupon_events;
+TRUNCATE TABLE products;
+TRUNCATE TABLE categories;
+TRUNCATE TABLE users;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
 INSERT INTO categories (id, name, is_active, created_at, updated_at)
 VALUES
     (1, '스마트폰', true, NOW(), NULL),
