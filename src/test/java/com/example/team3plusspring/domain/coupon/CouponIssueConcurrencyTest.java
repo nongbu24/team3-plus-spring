@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,8 @@ class CouponIssueConcurrencyTest {
 
 		ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 		CountDownLatch latch = new CountDownLatch(threadCount);
+		AtomicInteger successCount = new AtomicInteger();
+		AtomicInteger failCount = new AtomicInteger();
 
 		// when
 		for (int i = 0; i < threadCount; i++) {
@@ -56,7 +59,9 @@ class CouponIssueConcurrencyTest {
 			executor.submit(() -> {
 				try {
 					couponEventService.issueCoupon(userId, couponEvent.getId());
+					successCount.incrementAndGet();
 				} catch (Exception e) {
+					failCount.incrementAndGet();
 					System.out.println(Thread.currentThread().getName() + " 실패: " + e.getMessage());
 				} finally {
 					latch.countDown();
@@ -70,9 +75,12 @@ class CouponIssueConcurrencyTest {
 		CouponEvent result = couponEventRepository.findById(couponEvent.getId()).orElseThrow();
 		long actualIssuedCount = userCouponRepository.countByCouponEventId(couponEvent.getId());
 
+		System.out.println("성공: " + successCount.get() + ", 실패: " + failCount.get());
 		System.out.println("실제 발급된 쿠폰 수: " + actualIssuedCount);
 
-		assertThat(actualIssuedCount).isLessThanOrEqualTo(totalQuantity);
+		assertThat(successCount.get()).isEqualTo(totalQuantity);
+		assertThat(failCount.get()).isEqualTo(threadCount - totalQuantity);
+		assertThat(actualIssuedCount).isEqualTo(totalQuantity);
 		assertThat(result.getIssuedQuantity()).isEqualTo(actualIssuedCount);
 	}
 }
