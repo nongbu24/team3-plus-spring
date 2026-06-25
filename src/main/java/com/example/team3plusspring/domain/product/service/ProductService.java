@@ -43,6 +43,11 @@ public class ProductService {
             Long categoryId, String keyword, ProductStatus status,
             String sort, int page, int size) {
 
+        // 페이지 유효성 검증
+        if (page < 0 || size <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_PAGINATION);
+        }
+
         // 정렬 조건
         Sort sorting = switch (sort) {
             case "PRICE_ASC" -> Sort.by("price").ascending();
