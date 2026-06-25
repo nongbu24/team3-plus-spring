@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class UserCouponService {
@@ -26,6 +28,10 @@ public class UserCouponService {
     public int calculateDiscountAmount(UserCoupon userCoupon, int totalProductAmount) {
         CouponEvent couponEvent = couponEventRepository.findById(userCoupon.getCouponEventId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_EVENT_NOT_FOUND));
+
+        if (!couponEvent.isIssuable(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.COUPON_EVENT_CLOSED);
+        }
 
         int discountAmount = couponEvent.calculateDiscountAmount(totalProductAmount);
 
