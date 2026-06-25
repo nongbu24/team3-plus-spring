@@ -38,6 +38,7 @@ public class CouponEventController {
 	 * @param request 쿠폰 이벤트 등록 요청 DTO
 	 * @return 등록된 쿠폰 이벤트 응답 DTO
 	 */
+
 	@PostMapping
 	public ResponseEntity<ApiResponse<CouponEventResponse>> createCouponEvent(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -55,6 +56,7 @@ public class CouponEventController {
 	 * @param size 페이지당 조회할 쿠폰 이벤트 수 (기본값 10)
 	 * @return 쿠폰 이벤트 목록 응답 DTO를 담은 페이지
 	 */
+
 	@GetMapping
 	public ResponseEntity<ApiResponse<Page<GetCouponEventListResponse>>> getCouponEvents(
 		@RequestParam(defaultValue = "0") int page,
@@ -62,6 +64,16 @@ public class CouponEventController {
 
 		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(couponEventService.getCouponEvents(page, size)));
 	}
+
+	/**
+	 * 쿠폰을 발급받는 API
+	 * 로그인한 유저가 본인 명의로 특정 쿠폰 이벤트의 쿠폰을 발급받음
+	 * 이미 발급받은 적이 있거나, 재고가 소진됐거나, 발급 기간이 아니면 발급할 수 없음
+	 *
+	 * @param userDetails 인증된 사용자 정보
+	 * @param couponEventId 발급받을 쿠폰 이벤트 ID
+	 * @return 발급된 쿠폰 응답 DTO
+	 */
 
 	@PostMapping("/{couponEventId}/issue")
 	public ResponseEntity<ApiResponse<IssueCouponResponse>> issueCoupon(

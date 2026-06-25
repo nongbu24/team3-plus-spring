@@ -20,6 +20,7 @@ import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
+import com.example.team3plusspring.global.lock.RedisLock;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +40,7 @@ public class CouponEventService {
 	 * @param request 쿠폰 이벤트 등록 요청 DTO
 	 * @return 등록된 쿠폰 이벤트 응답 DTO
 	 */
+
 	@Transactional
 	public CouponEventResponse createCouponEvent(UserRole role, CreateCouponEventRequest request) {
 
@@ -72,6 +74,7 @@ public class CouponEventService {
 	 * @param size 페이지당 조회할 쿠폰 이벤트 수
 	 * @return 쿠폰 이벤트 목록 응답 DTO를 담은 페이지
 	 */
+
 	@Transactional(readOnly = true)
 	public Page<GetCouponEventListResponse> getCouponEvents(int page, int size) {
 
@@ -81,10 +84,23 @@ public class CouponEventService {
 			.map(GetCouponEventListResponse::from);
 	}
 
+	/**
+	 * 쿠폰을 발급하는 메서드
+	 * 쿠폰 이벤트가 발급 가능 상태(OPEN, 발급 기간 내)인지, 이미 발급받은 적이 있는지 확인한 뒤
+	 * 발급 수량을 1 증가시키고 UserCoupon을 생성함
+	 * 동시에 여러 요청이 들어와도 재고를 초과해서 발급되지 않도록, 분산 락(@RedisLock)으로
+	 * 같은 쿠폰 이벤트에 대한 동시 접근을 한 번에 하나씩만 허용함
+	 *
+	 * @param userId 쿠폰을 발급받는 사용자 ID
+	 * @param couponEventId 발급받을 쿠폰 이벤트 ID
+	 * @return 발급된 쿠폰 응답 DTO
+	 */
+
 	@Transactional
+	@RedisLock(key = "lock:coupon:", argIndex = 1)
 	public IssueCouponResponse issueCoupon(Long userId, Long couponEventId) {
 
-		CouponEvent couponEvent = couponEventRepository.findByIdForUpdate(couponEventId)
+		CouponEvent couponEvent = couponEventRepository.findById(couponEventId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.COUPON_EVENT_NOT_FOUND));
 
 		if (!couponEvent.isIssuable(LocalDateTime.now())) {
