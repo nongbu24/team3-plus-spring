@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.order.facade;
 
+import com.example.team3plusspring.domain.coupon.entity.UserCoupon;
 import com.example.team3plusspring.domain.coupon.service.UserCouponService;
 import com.example.team3plusspring.domain.order.dto.CreateDirectOrderRequest;
 import com.example.team3plusspring.domain.order.dto.CreateOrderResponse;
@@ -41,24 +42,22 @@ public class OrderFacade {
         );
 
         // 3. int usedCouponAmount = 0; 설정
+        UserCoupon userCoupon = null;
         int totalProductAmount = product.getPrice() * request.getQuantity();
         int usedCouponAmount = 0;
 
         // 4. if CouponId 존재 -> Coupon 조회 (request.getCouponId 활용) -> usedCouponAmount 변경
         if (request.getUserCouponId() != null) {
-            usedCouponAmount = userCouponService.calculateDiscountAmount(
-                    userId,
-                    request.getUserCouponId(),
-                    totalProductAmount
-            );
+            userCoupon = userCouponService.getUsableCouponForUpdate(userId, request.getUserCouponId());
+            usedCouponAmount = userCouponService.calculateDiscountAmount(userCoupon, totalProductAmount);
         }
 
         // 5. Order 생성
         Order order = orderService.createOrder(userId, totalProductAmount, usedCouponAmount);
 
         // 6. 쿠폰 사용처리
-        if (request.getUserCouponId() != null) {
-            userCouponService.useCoupon(userId, request.getUserCouponId(), order.getId());
+        if (userCoupon != null) {
+            userCouponService.useCoupon(userCoupon, order.getId());
         }
 
         // 8. OrderItem 생성

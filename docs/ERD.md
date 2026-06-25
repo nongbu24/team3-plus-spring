@@ -80,9 +80,9 @@ erDiagram
         BIGINT user_id FK "회원 ID"
         VARCHAR order_number UK "주문번호"
         VARCHAR status "주문 상태"
-        BIGINT total_product_amount "상품 총액"
-        BIGINT used_coupon_amount "쿠폰 할인 금액"
-        BIGINT payment_amount "최종 결제 금액"
+        INT total_product_amount "상품 총액"
+        INT used_coupon_amount "쿠폰 할인 금액"
+        INT payment_amount "최종 결제 금액"
         DATETIME ordered_at "주문일시"
         DATETIME canceled_at "취소일시"
         DATETIME created_at "생성일시"
@@ -94,9 +94,9 @@ erDiagram
         BIGINT order_id FK "주문 ID"
         BIGINT product_id FK "상품 ID"
         VARCHAR product_name "주문 당시 상품명"
-        BIGINT unit_price "주문 당시 단가"
+        INT unit_price "주문 당시 단가"
         INT quantity "주문 수량"
-        BIGINT line_amount "상품별 금액"
+        INT line_amount "상품별 금액"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -106,9 +106,9 @@ erDiagram
         BIGINT order_id FK "주문 ID"
         VARCHAR portone_payment_id UK "PortOne 결제 ID"
         VARCHAR status "결제 상태"
-        BIGINT total_product_amount "상품 총액"
-        BIGINT used_coupon_amount "쿠폰 할인 금액"
-        BIGINT payment_amount "최종 결제 금액"
+        INT total_product_amount "상품 총액"
+        INT used_coupon_amount "쿠폰 할인 금액"
+        INT payment_amount "최종 결제 금액"
         DATETIME approved_at "결제 승인일시"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
@@ -119,7 +119,7 @@ erDiagram
         BIGINT payment_id FK "결제 ID"
         BIGINT order_id FK "주문 ID"
         VARCHAR status "환불 상태"
-        BIGINT refund_amount "환불 금액"
+        INT refund_amount "환불 금액"
         VARCHAR reason "환불 사유"
         DATETIME requested_at "환불 요청일시"
         DATETIME completed_at "환불 완료일시"
@@ -131,7 +131,7 @@ erDiagram
         BIGINT id PK "쿠폰 이벤트 ID"
         VARCHAR name "쿠폰 이벤트명"
         VARCHAR discount_type "할인 타입"
-        BIGINT discount_amount "할인 금액"
+        INT discount_amount "할인 금액"
         INT total_quantity "총 발급 수량"
         INT issued_quantity "발급 완료 수량"
         VARCHAR status "이벤트 상태"
@@ -308,7 +308,7 @@ erDiagram
 | 결제 ID | payment_id | BIGINT | NOT NULL | FK: payments.id, 중복 환불 방지를 위해 UNIQUE 권장 |
 | 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id |
 | 환불 상태 | status | VARCHAR(30) | NOT NULL | REQUESTED, APPROVED, REJECTED, COMPLETED, FAILED |
-| 환불 금액 | refund_amount | BIGINT | NOT NULL | 서버 계산 값 |
+| 환불 금액 | refund_amount | INT | NOT NULL | 서버 계산 값 |
 | 환불 사유 | reason | VARCHAR(255) | NOT NULL |  |
 | 환불 요청일시 | requested_at | DATETIME | NOT NULL |  |
 | 환불 완료일시 | completed_at | DATETIME | NULL |  |
@@ -337,16 +337,16 @@ erDiagram
 
 회원이 보유한 쿠폰 목록을 저장합니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 회원 쿠폰 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id |
-| 쿠폰 이벤트 ID | coupon_event_id | BIGINT | NOT NULL | FK: coupon_events.id |
-| 사용 주문 ID | order_id | BIGINT | NULL | FK: orders.id |
+| 논리명 | 컬럼명 | 타입          | NULL | 제약/비고 |
+| --- | --- |-------------| --- | --- |
+| 회원 쿠폰 ID | id | BIGINT      | NOT NULL | PK |
+| 회원 ID | user_id | BIGINT      | NOT NULL | FK: users.id |
+| 쿠폰 이벤트 ID | coupon_event_id | BIGINT      | NOT NULL | FK: coupon_events.id |
+| 사용 주문 ID | order_id | BIGINT      | NULL | FK: orders.id |
 | 쿠폰 상태 | status | VARCHAR(30) | NOT NULL | ISSUED, USED, EXPIRED |
-| 발급일시 | issued_at | DATETIME | NOT NULL |  |
-| 사용일시 | used_at | DATETIME | NULL |  |
-| 만료일시 | expired_at | DATETIME | NULL |  |
+| 발급일시 | issued_at | DATETIME    | NOT NULL |  |
+| 사용일시 | used_at | DATETIME    | NULL |  |
+| 만료일시 | expired_at | DATETIME    | NULL |  |
 
 - 같은 회원이 같은 쿠폰 이벤트에서 중복 발급받지 못하도록 `(user_id, coupon_event_id)`에 UNIQUE 제약을 둡니다.
 

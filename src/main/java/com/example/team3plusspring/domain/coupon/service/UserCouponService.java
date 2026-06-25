@@ -17,32 +17,23 @@ public class UserCouponService {
     private final UserCouponRepository userCouponRepository;
     private final CouponEventRepository couponEventRepository;
 
-    @Transactional(readOnly = true)
-    public int calculateDiscountAmount(Long userId, Long userCouponId, int totalProductAmount) {
-        UserCoupon userCoupon = findOwnedUserCoupon(userId, userCouponId);
+    @Transactional
+    public UserCoupon getUsableCouponForUpdate(Long userId, Long userCouponId) {
+        return userCouponRepository.findByIdAndUserIdForUpdate(userCouponId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
 
+    public int calculateDiscountAmount(UserCoupon userCoupon, int totalProductAmount) {
         CouponEvent couponEvent = couponEventRepository.findById(userCoupon.getCouponEventId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_EVENT_NOT_FOUND));
 
-        long discountAmount = couponEvent.calculateDiscountAmount(totalProductAmount);
+        int discountAmount = couponEvent.calculateDiscountAmount(totalProductAmount);
 
-        return (int) Math.min(discountAmount, totalProductAmount);
+        return Math.min(discountAmount, totalProductAmount);
     }
 
     @Transactional
-    public void useCoupon(Long userId, Long userCouponId, Long orderId) {
-        UserCoupon userCoupon = findOwnedUserCoupon(userId, userCouponId);
+    public void useCoupon(UserCoupon userCoupon, Long orderId) {
         userCoupon.markAsUsed(orderId);
-    }
-
-    private UserCoupon findOwnedUserCoupon(Long userId, Long userCouponId) {
-        UserCoupon userCoupon = userCouponRepository.findById(userCouponId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        if (!userCoupon.getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
-        }
-
-        return userCoupon;
     }
 }
