@@ -1,7 +1,5 @@
 package com.example.team3plusspring.domain.user.service;
 
-import com.example.team3plusspring.domain.point.entity.PointAccount;
-import com.example.team3plusspring.domain.point.repository.PointAccountRepository;
 import com.example.team3plusspring.domain.user.dto.UserDeleteResponse;
 import com.example.team3plusspring.domain.user.dto.UserMeResponse;
 import com.example.team3plusspring.domain.user.entity.User;
@@ -16,15 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-    private final PointAccountRepository pointAccountRepository;
 
     @Transactional(readOnly = true)
     public UserMeResponse getMyInfo(Long userId) {
         User user = findActiveUser(userId);
-        PointAccount pointAccount = pointAccountRepository.findByUserId(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.POINT_ACCOUNT_NOT_FOUND));
 
-        return UserMeResponse.from(user, pointAccount.getBalance());
+        return UserMeResponse.from(user);
+    }
+
+    @Transactional(readOnly = true)
+    public void validateActiveUser(Long userId) {
+        findActiveUser(userId);
     }
 
     @Transactional

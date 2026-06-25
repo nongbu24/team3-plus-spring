@@ -3,8 +3,6 @@ package com.example.team3plusspring.domain.auth.service;
 import com.example.team3plusspring.domain.auth.dto.*;
 import com.example.team3plusspring.domain.cart.entity.Cart;
 import com.example.team3plusspring.domain.cart.repository.CartRepository;
-import com.example.team3plusspring.domain.point.entity.PointAccount;
-import com.example.team3plusspring.domain.point.repository.PointAccountRepository;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.repository.UserRepository;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -20,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private final UserRepository userRepository;
     private final CartRepository cartRepository;
-    private final PointAccountRepository pointAccountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -38,7 +35,6 @@ public class AuthService {
         );
         User savedUser = userRepository.save(user);
         cartRepository.save(Cart.create(savedUser));
-        pointAccountRepository.save(PointAccount.create(savedUser));
 
         return SignupResponse.from(savedUser);
     }

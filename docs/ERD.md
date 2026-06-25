@@ -7,8 +7,6 @@
 ```mermaid
 erDiagram
     users ||--|| carts : owns
-    users ||--|| point_accounts : has
-    users ||--o{ point_histories : records
     users ||--o{ orders : places
     users ||--o{ user_coupons : owns
 
@@ -20,14 +18,10 @@ erDiagram
 
     orders ||--o{ order_items : contains
     orders ||--|| payments : paid_by
-    orders ||--o{ point_histories : creates
     orders ||--o{ user_coupons : uses
 
-    payments ||--o{ point_histories : creates
     payments ||--o| refunds : refunded_by
     payments ||--o{ webhook_events : verified_by
-
-    refunds ||--o{ point_histories : restores
 
     coupon_events ||--o{ user_coupons : issues
 
@@ -84,9 +78,9 @@ erDiagram
         BIGINT user_id FK "회원 ID"
         VARCHAR order_number UK "주문번호"
         VARCHAR status "주문 상태"
-        BIGINT total_product_amount "상품 총액"
-        BIGINT used_point_amount "사용 포인트"
-        BIGINT payment_amount "최종 결제 금액"
+        INT total_product_amount "상품 총액"
+        INT used_coupon_amount "쿠폰 할인 금액"
+        INT payment_amount "최종 결제 금액"
         DATETIME ordered_at "주문일시"
         DATETIME canceled_at "취소일시"
         DATETIME created_at "생성일시"
@@ -98,9 +92,9 @@ erDiagram
         BIGINT order_id FK "주문 ID"
         BIGINT product_id FK "상품 ID"
         VARCHAR product_name "주문 당시 상품명"
-        BIGINT unit_price "주문 당시 단가"
+        INT unit_price "주문 당시 단가"
         INT quantity "주문 수량"
-        BIGINT line_amount "상품별 금액"
+        INT line_amount "상품별 금액"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -110,9 +104,9 @@ erDiagram
         BIGINT order_id FK "주문 ID"
         VARCHAR portone_payment_id UK "PortOne 결제 ID"
         VARCHAR status "결제 상태"
-        BIGINT total_product_amount "상품 총액"
-        BIGINT used_point_amount "사용 포인트"
-        BIGINT payment_amount "최종 결제 금액"
+        INT total_product_amount "상품 총액"
+        INT used_coupon_amount "쿠폰 할인 금액"
+        INT payment_amount "최종 결제 금액"
         DATETIME approved_at "결제 승인일시"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
@@ -123,8 +117,7 @@ erDiagram
         BIGINT payment_id FK "결제 ID"
         BIGINT order_id FK "주문 ID"
         VARCHAR status "환불 상태"
-        BIGINT refund_amount "환불 금액"
-        BIGINT restored_point_amount "복구 포인트"
+        INT refund_amount "환불 금액"
         VARCHAR reason "환불 사유"
         DATETIME requested_at "환불 요청일시"
         DATETIME completed_at "환불 완료일시"
@@ -132,32 +125,11 @@ erDiagram
         DATETIME updated_at "수정일시"
     }
 
-    point_accounts {
-        BIGINT id PK "포인트 계정 ID"
-        BIGINT user_id FK "회원 ID"
-        BIGINT balance "현재 포인트 잔액"
-        DATETIME created_at "생성일시"
-        DATETIME updated_at "수정일시"
-    }
-
-    point_histories {
-        BIGINT id PK "포인트 이력 ID"
-        BIGINT user_id FK "회원 ID"
-        BIGINT order_id FK "주문 ID"
-        BIGINT payment_id FK "결제 ID"
-        BIGINT refund_id FK "환불 ID"
-        VARCHAR type "이력 타입"
-        BIGINT amount "변경 포인트"
-        BIGINT balance_after "변경 후 잔액"
-        VARCHAR description "이력 설명"
-        DATETIME created_at "생성일시"
-    }
-
     coupon_events {
         BIGINT id PK "쿠폰 이벤트 ID"
         VARCHAR name "쿠폰 이벤트명"
         VARCHAR discount_type "할인 타입"
-        BIGINT discount_amount "할인 금액"
+        INT discount_amount "할인 금액"
         INT total_quantity "총 발급 수량"
         INT issued_quantity "발급 완료 수량"
         VARCHAR status "이벤트 상태"
@@ -278,20 +250,18 @@ erDiagram
 
 주문 생성, 주문 목록/상세 조회, 결제 전 주문 취소의 기준 테이블입니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- |---|
-| 주문 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id|
-| 주문번호 | order_number | VARCHAR(50) | NOT NULL | UNIQUE |
+| 논리명 | 컬럼명 | 타입 | NULL     | 제약/비고                                                            |
+| --- | --- | --- |----------|------------------------------------------------------------------|
+| 주문 ID | id | BIGINT | NOT NULL | PK                                                               |
+| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id                                                     |
+| 주문번호 | order_number | VARCHAR(50) | NOT NULL | UNIQUE                                                           |
 | 주문 상태 | status | VARCHAR(30) | NOT NULL | PAYMENT_PENDING, COMPLETED, CANCELED, REFUND_REQUESTED, REFUNDED |
-| 상품 총액 | total_product_amount | BIGINT | NOT NULL | 주문 상품 합계 |
-| 사용 포인트 | used_point_amount | BIGINT | NOT NULL | 기본값 0 |
-| 쿠폰 할인 금액 | used_coupon_amount | BIGINT | NULL | 쿠폰 미 사용 시 NULL |
-| 최종 결제 금액 | payment_amount | BIGINT | NOT NULL | 상품 총액 - 쿠폰 할인 금액 - 사용 포인트 |
-| 주문일시 | ordered_at | DATETIME | NOT NULL |    |
-| 취소일시 | canceled_at | DATETIME | NULL | 결제 전 취소 시 값 저장 |
-| 생성일시 | created_at | DATETIME | NOT NULL |                                                                |
-| 수정일시 | updated_at | DATETIME | NULL |                                                                |
+| 상품 총액 | total_product_amount | INT | NOT NULL | 주문 상품 합계                                                         |
+| 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 쿠폰 미 사용 시 0                                                      |
+| 최종 결제 금액 | payment_amount | INT | NOT NULL | 상품 총액 - 쿠폰 할인 금액                                                 |
+| 취소일시 | canceled_at | DATETIME | NULL     | 결제 전 취소 시 값 저장                                                   |
+| 생성일시 | created_at | DATETIME | NOT NULL |                                                                  |
+| 수정일시 | updated_at | DATETIME | NULL     |                                                                  |
 
 ### order_items
 
@@ -303,9 +273,9 @@ erDiagram
 | 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id |
 | 상품 ID | product_id | BIGINT | NOT NULL | FK: products.id |
 | 주문 당시 상품명 | product_name | VARCHAR(100) | NOT NULL | 상품명 스냅샷 |
-| 주문 당시 단가 | unit_price | BIGINT | NOT NULL | 가격 스냅샷 |
+| 주문 당시 단가 | unit_price | INT | NOT NULL | 가격 스냅샷 |
 | 주문 수량 | quantity | INT | NOT NULL | 1 이상 |
-| 상품별 금액 | line_amount | BIGINT | NOT NULL | unit_price * quantity |
+| 상품별 금액 | line_amount | INT | NOT NULL | unit_price * quantity |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
 
@@ -313,19 +283,18 @@ erDiagram
 
 결제 승인 검증의 기준 테이블입니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 결제 ID | id | BIGINT | NOT NULL | PK |
-| 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id, UNIQUE |
-| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NULL | UNIQUE, 결제 승인 검증 시 저장 가능 |
+| 논리명 | 컬럼명 | 타입 | NULL     | 제약/비고                                     |
+| --- | --- | --- |----------|-------------------------------------------|
+| 결제 ID | id | BIGINT | NOT NULL | PK                                        |
+| 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id, UNIQUE                     |
+| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NOT NULL | UNIQUE, 결제 승인 검증 시 저장 가능                  |
 | 결제 상태 | status | VARCHAR(30) | NOT NULL | PENDING, PAID, FAILED, CANCELED, REFUNDED |
-| 상품 총액 | total_product_amount | BIGINT | NOT NULL | 서버 계산 값 |
-| 사용 포인트 | used_point_amount | BIGINT | NOT NULL | 서버 계산 값 |
-| 쿠폰 할인 금액 | used_coupon_amount | BIGINT | NULL | 서버 계산 값, 쿠폰 미 사용 시 NULL |
-| 최종 결제 금액 | payment_amount | BIGINT | NOT NULL | PortOne 승인 금액과 비교 |
-| 결제 승인일시 | approved_at | DATETIME | NULL |  |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL |  |
+| 상품 총액 | total_product_amount | INT | NOT NULL | 서버 계산 값                                   |
+| 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 서버 계산 값, 쿠폰 미 사용 시 0                      |
+| 최종 결제 금액 | payment_amount | INT | NOT NULL | PortOne 승인 금액과 비교                         |
+| 결제 승인일시 | approved_at | DATETIME | NULL     |                                           |
+| 생성일시 | created_at | DATETIME | NOT NULL |                                           |
+| 수정일시 | updated_at | DATETIME | NULL     |                                           |
 
 ### refunds
 
@@ -337,42 +306,12 @@ erDiagram
 | 결제 ID | payment_id | BIGINT | NOT NULL | FK: payments.id, 중복 환불 방지를 위해 UNIQUE 권장 |
 | 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id |
 | 환불 상태 | status | VARCHAR(30) | NOT NULL | REQUESTED, APPROVED, REJECTED, COMPLETED, FAILED |
-| 환불 금액 | refund_amount | BIGINT | NOT NULL | 서버 계산 값 |
-| 복구 포인트 | restored_point_amount | BIGINT | NOT NULL | 기본값 0 |
+| 환불 금액 | refund_amount | INT | NOT NULL | 서버 계산 값 |
 | 환불 사유 | reason | VARCHAR(255) | NOT NULL |  |
 | 환불 요청일시 | requested_at | DATETIME | NOT NULL |  |
 | 환불 완료일시 | completed_at | DATETIME | NULL |  |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
-
-### point_accounts
-
-회원별 현재 포인트 잔액을 관리합니다.
-
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 포인트 계정 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id, UNIQUE |
-| 현재 포인트 잔액 | balance | BIGINT | NOT NULL | 0 이상 |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL |  |
-
-### point_histories
-
-포인트 적립, 사용, 복구, 만료 이력을 저장합니다.
-
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 포인트 이력 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id |
-| 주문 ID | order_id | BIGINT | NULL | FK: orders.id |
-| 결제 ID | payment_id | BIGINT | NULL | FK: payments.id |
-| 환불 ID | refund_id | BIGINT | NULL | FK: refunds.id |
-| 이력 타입 | type | VARCHAR(30) | NOT NULL | EARN, USE, RESTORE, EXPIRE |
-| 변경 포인트 | amount | BIGINT | NOT NULL | 사용은 음수, 적립/복구는 양수 |
-| 변경 후 잔액 | balance_after | BIGINT | NOT NULL |  |
-| 이력 설명 | description | VARCHAR(255) | NULL |  |
-| 생성일시 | created_at | DATETIME | NOT NULL | 이력 발생 시각 |
 
 ### coupon_events
 
@@ -396,16 +335,16 @@ erDiagram
 
 회원이 보유한 쿠폰 목록을 저장합니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 회원 쿠폰 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id |
-| 쿠폰 이벤트 ID | coupon_event_id | BIGINT | NOT NULL | FK: coupon_events.id |
-| 사용 주문 ID | order_id | BIGINT | NULL | FK: orders.id |
+| 논리명 | 컬럼명 | 타입          | NULL | 제약/비고 |
+| --- | --- |-------------| --- | --- |
+| 회원 쿠폰 ID | id | BIGINT      | NOT NULL | PK |
+| 회원 ID | user_id | BIGINT      | NOT NULL | FK: users.id |
+| 쿠폰 이벤트 ID | coupon_event_id | BIGINT      | NOT NULL | FK: coupon_events.id |
+| 사용 주문 ID | order_id | BIGINT      | NULL | FK: orders.id |
 | 쿠폰 상태 | status | VARCHAR(30) | NOT NULL | ISSUED, USED, EXPIRED |
-| 발급일시 | issued_at | DATETIME | NOT NULL |  |
-| 사용일시 | used_at | DATETIME | NULL |  |
-| 만료일시 | expired_at | DATETIME | NULL |  |
+| 발급일시 | issued_at | DATETIME    | NOT NULL |  |
+| 사용일시 | used_at | DATETIME    | NULL |  |
+| 만료일시 | expired_at | DATETIME    | NULL |  |
 
 - 같은 회원이 같은 쿠폰 이벤트에서 중복 발급받지 못하도록 `(user_id, coupon_event_id)`에 UNIQUE 제약을 둡니다.
 
@@ -445,8 +384,6 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 | 관계 | 설명 |
 | --- | --- |
 | users - carts | 회원은 하나의 기본 장바구니를 가집니다. |
-| users - point_accounts | 회원은 하나의 포인트 계정을 가집니다. |
-| users - point_histories | 회원은 여러 포인트 이력을 가질 수 있습니다. |
 | users - orders | 회원은 여러 주문을 생성할 수 있습니다. |
 | users - user_coupons | 회원은 여러 쿠폰을 보유할 수 있습니다. |
 | categories - products | 카테고리는 여러 상품을 분류할 수 있습니다. |
@@ -457,6 +394,5 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 | orders - payments | 주문은 하나의 결제와 연결됩니다. |
 | payments - refunds | 결제 완료 이후 환불 요청이 생성될 수 있습니다. |
 | payments - webhook_events | 결제는 여러 웹훅 이벤트와 연결될 수 있습니다. |
-| refunds - point_histories | 환불은 포인트 복구 이력을 만들 수 있습니다. |
 | coupon_events - user_coupons | 쿠폰 이벤트는 여러 회원 쿠폰을 발급합니다. |
 | orders - user_coupons | 쿠폰을 사용한 경우 회원 쿠폰이 주문과 연결됩니다. |

@@ -85,4 +85,14 @@ public class ProductService {
                 GetProductsResponse.of(product, categoryMap.get(product.getCategoryId()))
         );
     }
+
+    @Transactional
+    public Product getOrderableProductAndDecreaseStock(Long productId, int quantity) {
+        Product product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        product.decreaseStock(quantity);
+
+        return product;
+    }
 }

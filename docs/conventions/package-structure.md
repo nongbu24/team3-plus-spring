@@ -27,7 +27,6 @@ com.example.payment
      ├─ product
      ├─ order
      ├─ payment
-     ├─ point
      ├─ membership
      └─ subscription
 ```

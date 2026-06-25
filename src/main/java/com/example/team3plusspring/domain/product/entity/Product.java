@@ -50,6 +50,17 @@ public class Product extends BaseEntity {
         return new Product(name, description, price, stock, ProductStatus.ON_SALE, categoryId);
     }
 
+    // 재고 차감 메서드
+    public void decreaseStock(int quantity) {
+        validateStatus();
+
+        if (!hasEnoughStock(quantity) || quantity <= 0) {
+            throw new BusinessException(ErrorCode.ORDER_STOCK_SHORTAGE);
+        }
+
+        this.stock -= quantity;
+    }
+
     public boolean hasEnoughStock(int quantity) {
         return this.stock >= quantity;
     }
