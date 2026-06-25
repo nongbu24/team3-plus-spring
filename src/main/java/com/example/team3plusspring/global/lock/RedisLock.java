@@ -8,7 +8,8 @@ import java.lang.annotation.Target;
 /**
  * 메서드에 분산 락을 적용하기 위한 어노테이션
  * 메서드 실행 전 Redis에 락을 걸고, 실행이 끝나면(정상/예외 상관없이) 락을 해제한다.
- * 동시에 같은 락 키로 들어온 다른 요청은 락 획득에 실패하며 즉시 예외가 발생한다.(fail-fast 전략)
+ * 락 획득에 실패하면 maxRetry 횟수만큼 retryDelayMillis 간격으로 재시도하며,
+ * 모두 실패하면 예외가 발생한다.
  */
 
 @Target(ElementType.METHOD)
@@ -31,4 +32,14 @@ public @interface RedisLock {
 	 * 서버 장애로 락 해제가 안 되는 상황을 방지하기 위한 안전장치
 	 */
 	long timeout() default 5;
+
+	/**
+	 * 락 획득 실패 시 재시도할 최대 횟수
+	 */
+	int maxRetry() default 5;
+
+	/**
+	 * 재시도 사이의 대기 시간(ms)
+	 */
+	int retryDelayMillis() default 100;
 }

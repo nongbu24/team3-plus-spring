@@ -32,7 +32,8 @@ public class RedisLockAspect {
 
 	/**
 	 * @RedisLock이 붙은 메서드 실행을 가로채서 락을 걸고, 메서드 실행 후 락을 해제한다
-	 * 락 획득에 실패하면 메서드를 실행하지 않고 즉시 예외를 던진다(재시도하지 않음)
+	 * 락 획득에 실패하면 maxRetry 횟수만큼 retryDelayMillis 간격으로 재시도하고,
+	 * 모두 실패하면 예외를 던진다
 	 *
 	 * @param joinPoint 가로챈 메서드 호출 정보
 	 * @param redisLock 메서드에 붙은 @RedisLock 어노테이션 정보
@@ -46,7 +47,17 @@ public class RedisLockAspect {
 		Object lockTarget = joinPoint.getArgs()[redisLock.argIndex()];
 		String key = redisLock.key() + lockTarget;
 
-		boolean locked = lockService.tryLock(key, value, redisLock.timeout());
+		boolean locked = false;
+		int retry = 0;
+
+		while (retry < redisLock.maxRetry()) {
+			locked = lockService.tryLock(key, value, redisLock.timeout());
+			if (locked) {
+				break;
+			}
+			retry++;
+			Thread.sleep(redisLock.retryDelayMillis());
+		}
 
 		if (!locked) {
 			log.info("락 획득 실패 : {}", Thread.currentThread().getName());
