@@ -50,9 +50,10 @@ public class ProductService {
 
         // 정렬 조건
         Sort sorting = switch (sort) {
+            case "LATEST" -> Sort.by("createdAt").descending();
             case "PRICE_ASC" -> Sort.by("price").ascending();
             case "PRICE_DESC" -> Sort.by("price").descending();
-            default -> Sort.by("createdAt").descending();
+            default -> throw new BusinessException(ErrorCode.INVALID_ENUM_VALUE);
         };
 
         // 페이지 조건
