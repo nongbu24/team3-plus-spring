@@ -26,12 +26,10 @@ public class UserCouponService {
     }
 
     public int calculateDiscountAmount(UserCoupon userCoupon, int totalProductAmount) {
+        userCoupon.validateUsablePeriod(LocalDateTime.now());
+
         CouponEvent couponEvent = couponEventRepository.findById(userCoupon.getCouponEventId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_EVENT_NOT_FOUND));
-
-        if (!couponEvent.isIssuable(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.COUPON_EVENT_CLOSED);
-        }
 
         int discountAmount = couponEvent.calculateDiscountAmount(totalProductAmount);
 

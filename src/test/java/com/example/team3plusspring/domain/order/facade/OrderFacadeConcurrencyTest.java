@@ -205,7 +205,7 @@ class OrderFacadeConcurrencyTest {
     }
 
     @Test
-    void 시작전쿠폰으로상품에서바로주문하면_주문생성에실패한다() {
+    void 만료된회원쿠폰으로상품에서바로주문하면_주문생성에실패한다() {
         // given
         User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
         Product product = productRepository.save(Product.create("keyboard", "mechanical keyboard", 10_000, 5, 1L));
@@ -214,10 +214,12 @@ class OrderFacadeConcurrencyTest {
                 DiscountType.FIXED,
                 3_000,
                 100,
-                LocalDateTime.now().plusDays(1),
-                LocalDateTime.now().plusDays(2)
+                LocalDateTime.now().minusDays(10),
+                LocalDateTime.now().plusDays(10)
         ));
         UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
+        ReflectionTestUtils.setField(userCoupon, "expiredAt", LocalDateTime.now().minusDays(1));
+        userCouponRepository.saveAndFlush(userCoupon);
 
         // when & then
         assertThatThrownBy(() -> orderFacade.createDirectOrder(
@@ -225,37 +227,7 @@ class OrderFacadeConcurrencyTest {
                 directOrderRequest(product.getId(), 2, userCoupon.getId())
         ))
                 .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.COUPON_EVENT_CLOSED));
-
-        assertThat(orderRepository.count()).isZero();
-        assertThat(orderItemRepository.count()).isZero();
-        assertThat(paymentRepository.count()).isZero();
-        assertThat(userCouponRepository.findById(userCoupon.getId()).orElseThrow().getStatus()).isEqualTo(UserCouponStatus.ISSUED);
-        assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(5);
-    }
-
-    @Test
-    void 종료된쿠폰으로상품에서바로주문하면_주문생성에실패한다() {
-        // given
-        User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
-        Product product = productRepository.save(Product.create("keyboard", "mechanical keyboard", 10_000, 5, 1L));
-        CouponEvent couponEvent = couponEventRepository.save(CouponEvent.create(
-                "order discount",
-                DiscountType.FIXED,
-                3_000,
-                100,
-                LocalDateTime.now().minusDays(2),
-                LocalDateTime.now().minusDays(1)
-        ));
-        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
-
-        // when & then
-        assertThatThrownBy(() -> orderFacade.createDirectOrder(
-                user.getId(),
-                directOrderRequest(product.getId(), 2, userCoupon.getId())
-        ))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.COUPON_EVENT_CLOSED));
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.COUPON_EXPIRED));
 
         assertThat(orderRepository.count()).isZero();
         assertThat(orderItemRepository.count()).isZero();

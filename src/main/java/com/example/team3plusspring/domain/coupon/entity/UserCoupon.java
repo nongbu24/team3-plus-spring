@@ -61,6 +61,12 @@ public class UserCoupon {
 		return new UserCoupon(userId, couponEventId);
 	}
 
+	public void validateUsablePeriod(LocalDateTime now) {
+		if (expiredAt != null && now.isAfter(expiredAt)) {
+			throw new BusinessException(ErrorCode.COUPON_EXPIRED);
+		}
+	}
+
 	// 쿠폰 사용 처리 메서드
 	public void markAsUsed(Long orderId) {
 		if (status != UserCouponStatus.ISSUED) {
