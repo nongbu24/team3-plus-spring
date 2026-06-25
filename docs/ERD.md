@@ -9,6 +9,8 @@ erDiagram
     users ||--|| carts : owns
     users ||--o{ orders : places
     users ||--o{ user_coupons : owns
+    users ||--o{ chat_members : joins
+
     categories ||--o{ products : classifies
     products ||--o{ cart_items : added_to
     products ||--o{ order_items : ordered_as
@@ -258,7 +260,7 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 
 ### chat_messages
 
-채팅방에 저장된 일반 메시지를 저장합니다.
+채팅방에 저장된 일반 메시지와 입장/퇴장 시스템 메시지를 저장합니다.
 
 | 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
 | --- | --- | --- | --- | --- |
@@ -472,6 +474,7 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 | users - carts                | 회원은 하나의 기본 장바구니를 가집니다. |
 | users - orders               | 회원은 여러 주문을 생성할 수 있습니다. |
 | users - user_coupons         | 회원은 여러 쿠폰을 보유할 수 있습니다. |
+| users - chat_members         | 회원은 여러 채팅방 참여자로 기록될 수 있습니다. |
 | chat_rooms - chat_messages   | 채팅방은 여러 메시지를 가집니다. |
 | chat_rooms - chat_members    | 채팅방은 고객과 담당 관리자 참여자를 가집니다. |
 | categories - products        | 카테고리는 여러 상품을 분류할 수 있습니다. |

@@ -19,7 +19,7 @@
 | [payments.md](./payments.md) | 결제 승인 검증, PortOne 웹훅 수신 |
 | [refunds.md](./refunds.md) | 결제 후 환불 요청, 내 환불 목록 조회 |
 | [webhooks.md](./webhooks.md) | PortOne 웹훅 수신 |
-| [chat.md](./chat.md) | 1:1 문의 채팅방 생성, 채팅방 목록 조회, 문의 상태 변경, 채팅 메시지 조회 |
+| [chat.md](./chat.md) | 1:1 문의 채팅방 생성/조회, 메시지 조회, 실시간 채팅 |
 
 ## 엔드포인트 요약
 
@@ -67,4 +67,5 @@
 - 장바구니 API는 인증된 회원의 장바구니를 기준으로 동작하므로 URL에 `cartId`를 노출하지 않습니다.
 - 주문 취소는 결제 전 주문에 대해서만 허용합니다.
 - 결제 승인 검증과 PortOne 웹훅 처리는 중복 요청이 들어올 수 있으므로 멱등성을 고려해야 합니다.
+- 채팅은 REST API와 STOMP WebSocket을 함께 사용하며, 실시간 메시지는 `/sub/chat/{roomId}`로 구독합니다.
 - 채팅 문의 상태는 `WAITING -> IN_PROGRESS -> COMPLETED` 단방향 흐름으로 관리합니다.

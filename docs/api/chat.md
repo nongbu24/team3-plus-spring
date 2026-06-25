@@ -1,8 +1,9 @@
 # 채팅 API
 
-고객의 1:1 문의 채팅방 생성, 채팅방 목록 조회, 문의 상태 변경, 채팅 메시지 조회를 담당합니다.
+고객의 1:1 문의 채팅방 생성, 채팅방 목록 조회, 문의 상태 변경, 채팅 메시지 조회, 실시간 채팅 송수신을 담당합니다.
+채팅은 REST API와 STOMP WebSocket을 함께 사용합니다.
 
-성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
+성공/실패 응답은 REST API에서 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
 아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
 ## 엔드포인트
@@ -16,6 +17,16 @@
 | `GET` | `/api/chat/rooms/{roomId}/messages/before/{lastMessageId}` | 특정 메시지 이전 메시지 조회 | 필요 |
 | `GET` | `/api/chat/rooms/{roomId}/messages/after/{lastMessageId}` | 재연결 후 미수신 메시지 조회 | 필요 |
 | `GET` | `/api/chat/messages` | 전체 최근 메시지를 채팅방별로 조회 | 필요 (관리자) |
+
+## WebSocket/STOMP 엔드포인트
+
+| 구분 | Destination | 설명 | 인증 |
+| --- | --- | --- | --- |
+| 연결 | `/ws` | SockJS STOMP 연결 엔드포인트 | 필요 |
+| Subscribe | `/sub/chat/{roomId}` | 채팅방 메시지 구독 | 필요 |
+| Publish | `/pub/chat.enter` | 채팅방 입장 이벤트 발행 | 필요 |
+| Publish | `/pub/chat.send` | 채팅 메시지 발행 | 필요 |
+| Publish | `/pub/chat.leave` | 채팅방 퇴장 이벤트 발행 | 필요 |
 
 ## POST `/api/chat/rooms/me`
 
@@ -333,6 +344,14 @@
 - 클라이언트가 화면에 순서대로 붙일 수 있도록 메시지는 `messageId` 오름차순으로 반환합니다.
 - 미수신 메시지가 없으면 빈 배열을 반환합니다.
 
+### 재연결 복구 흐름
+
+- 클라이언트는 마지막으로 받은 `messageId`를 저장합니다.
+- 네트워크가 끊기면 STOMP를 자동 재연결합니다.
+- 재연결에 성공하면 이 API로 `lastMessageId` 이후 메시지를 요청합니다.
+- 서버는 `messageId > lastMessageId`인 메시지를 오래된 순서부터 반환합니다.
+- 클라이언트는 반환된 메시지를 화면에 붙이고 다시 실시간 구독을 이어갑니다.
+
 ### Errors
 
 | 코드 | HTTP | 발생 조건 |
@@ -574,7 +593,9 @@ Authorization: Bearer {accessToken}
 ## 설계 메모
 
 - 채팅 REST API는 `/api/chat` 하위에서 채팅방과 메시지 조회를 담당합니다.
+- 실시간 채팅은 SockJS STOMP를 사용하며, 클라이언트 발행 prefix는 `/pub`, 서버 구독 prefix는 `/sub`입니다.
 - 관리자는 `WAITING -> IN_PROGRESS` 상태 변경 시 담당자로 배정됩니다.
 - 담당자가 없는 채팅방을 관리자가 메시지 조회해도 담당자로 배정되지는 않습니다.
+- 담당자가 없는 대기 상태 채팅방에 관리자가 입장하거나 메시지를 보내면 해당 관리자가 담당자로 배정되고 상태가 `IN_PROGRESS`로 변경됩니다.
 - 담당 관리자가 이미 배정된 채팅방은 다른 관리자가 접근할 수 없습니다.
 - 문의 상태는 `WAITING -> IN_PROGRESS -> COMPLETED` 단방향 흐름으로 관리합니다.
