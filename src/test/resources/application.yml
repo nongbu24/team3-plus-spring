@@ -6,9 +6,9 @@ spring:
     driver-class-name: org.h2.Driver
 
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: create-drop
-    defer-datasource-initialization: true
 
 jwt:
   secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
