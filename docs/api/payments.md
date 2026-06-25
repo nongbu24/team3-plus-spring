@@ -5,7 +5,6 @@
 성공/실패 응답은 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
 아래 `Response Body` 예시는 공통 응답 wrapper 전체를 보여줍니다.
 
-## 엔드포인트
 
 | Method | Path | 설명 | 인증 |
 | --- | --- | --- | --- |
@@ -45,8 +44,7 @@
     "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
     "status": "PAID",
     "totalProductAmount": 78000,
-    "usedPointAmount": 5000,
-    "paymentAmount": 73000,
+    "paymentAmount": 78000,
     "approvedAt": "2026-06-22T18:35:00+09:00"
   }
 }

@@ -24,7 +24,7 @@ createOrder()
 confirmPayment()
 refundPayment()
 decreaseStock()
-restoreUsedPoint()
+restoreCoupon()
 refreshMembershipGrade()
 ```
 
@@ -54,7 +54,7 @@ handleWebhook()
 paymentAmount
 orderTotalAmount
 currentUserId
-usedPointAmount
+usedCouponAmount
 ```
 
 비권장:
