@@ -88,7 +88,7 @@ public class ProductService {
 
     @Transactional
     public Product getOrderableProductAndDecreaseStock(Long productId, int quantity) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         product.decreaseStock(quantity);

@@ -54,7 +54,7 @@ public class Product extends BaseEntity {
     public void decreaseStock(int quantity) {
         validateStatus();
 
-        if (!hasEnoughStock(quantity)) {
+        if (!hasEnoughStock(quantity) || quantity <= 0) {
             throw new BusinessException(ErrorCode.ORDER_STOCK_SHORTAGE);
         }
 
