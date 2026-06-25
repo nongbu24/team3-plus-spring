@@ -76,15 +76,6 @@ public class CouponEvent extends BaseEntity {
 		return new CouponEvent(name, discountType, discountAmount, totalQuantity, startsAt, endsAt);
 	}
 
-	// 쿠폰 발급 수량 증가 메서드
-	public void increaseIssuedQuantity() {
-		if (issuedQuantity >= totalQuantity) {
-			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
-		}
-
-		this.issuedQuantity += 1;
-	}
-
 	// 쿠폰 발급 가능 여부 확인 메서드
 	public boolean isIssuable(LocalDateTime now) {
 		return status == CouponEventStatus.OPEN && !now.isBefore(startsAt) && !now.isAfter(endsAt);

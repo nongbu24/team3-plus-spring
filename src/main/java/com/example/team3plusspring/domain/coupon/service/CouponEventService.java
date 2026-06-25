@@ -111,7 +111,10 @@ public class CouponEventService {
 			throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
 		}
 
-		couponEvent.increaseIssuedQuantity();
+		long updatedRows = couponEventRepository.increaseIssuedQuantity(couponEventId);
+		if (updatedRows == 0) {
+			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
+		}
 
 		UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId);
 		UserCoupon savedUserCoupon = userCouponRepository.save(userCoupon);
