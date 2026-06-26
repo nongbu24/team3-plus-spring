@@ -81,7 +81,7 @@ public class CouponEventService {
 
 		Pageable pageable = PageRequest.of(page, size);
 
-		return couponEventRepository.findByStatus(CouponEventStatus.OPEN, pageable)
+		return couponEventRepository.findOpenCouponEvents(LocalDateTime.now(), pageable)
 			.map(GetCouponEventListResponse::from);
 	}
 
