@@ -94,7 +94,7 @@ class ChatControllerTest {
         Number roomId = com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.data.roomId");
 
         assertThat(chatRoomRepository.findById(roomId.longValue())).isPresent();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserId(roomId.longValue(), user.getId())).isTrue();
+        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(roomId.longValue(), user.getId())).isTrue();
     }
 
     @Test
@@ -158,7 +158,7 @@ class ChatControllerTest {
 
         assertThat(updatedRoom.getAdminId()).isEqualTo(admin.getId());
         assertThat(updatedRoom.getStatus()).isEqualTo(ChatStatus.IN_PROGRESS);
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserId(room.getId(), admin.getId())).isTrue();
+        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isTrue();
     }
 
     @Test
@@ -184,7 +184,7 @@ class ChatControllerTest {
         ChatRoom updatedRoom = chatRoomRepository.findById(room.getId()).orElseThrow();
 
         assertThat(updatedRoom.getAdminId()).isNull();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserId(room.getId(), admin.getId())).isFalse();
+        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isFalse();
     }
 
     @Test
@@ -235,8 +235,8 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
-        ChatMessage firstMessage = chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "첫 번째 메시지"));
-        ChatMessage secondMessage = chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "두 번째 메시지"));
+        ChatMessage firstMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "첫 번째 메시지"));
+        ChatMessage secondMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "두 번째 메시지"));
         String accessToken = accessToken(user);
 
         // when & then
@@ -258,7 +258,7 @@ class ChatControllerTest {
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
         ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
-        chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "문의 메시지"));
+        chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "문의 메시지"));
         String accessToken = accessToken(admin);
 
         // when & then
@@ -270,7 +270,7 @@ class ChatControllerTest {
         ChatRoom updatedRoom = chatRoomRepository.findById(room.getId()).orElseThrow();
 
         assertThat(updatedRoom.getAdminId()).isNull();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserId(room.getId(), admin.getId())).isFalse();
+        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isFalse();
     }
 
     @Test
@@ -287,7 +287,7 @@ class ChatControllerTest {
         ChatRoom updatedRoom = chatRoomRepository.findById(room.getId()).orElseThrow();
         assertThat(updatedRoom.getAdminId()).isNull();
         assertThat(updatedRoom.getAdminName()).isNull();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserId(room.getId(), admin.getId())).isFalse();
+        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isFalse();
     }
 
     @Test
@@ -327,9 +327,9 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
-        ChatMessage firstMessage = chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "첫 번째 메시지"));
-        ChatMessage secondMessage = chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "두 번째 메시지"));
-        chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "세 번째 메시지"));
+        ChatMessage firstMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "첫 번째 메시지"));
+        ChatMessage secondMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "두 번째 메시지"));
+        chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "세 번째 메시지"));
         String accessToken = accessToken(user);
 
         // when & then
@@ -348,9 +348,9 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
-        ChatMessage firstMessage = chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "첫 번째 메시지"));
-        ChatMessage secondMessage = chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "두 번째 메시지"));
-        ChatMessage thirdMessage = chatMessageRepository.save(new ChatMessage(user.getId(), user.getName(), room, "세 번째 메시지"));
+        ChatMessage firstMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "첫 번째 메시지"));
+        ChatMessage secondMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "두 번째 메시지"));
+        ChatMessage thirdMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "세 번째 메시지"));
         String accessToken = accessToken(user);
 
         // when & then
@@ -454,7 +454,7 @@ class ChatControllerTest {
         assertThat(updatedRoom.getAdminId()).isEqualTo(admin.getId());
         assertThat(updatedRoom.getAdminName()).isEqualTo("관리자");
         assertThat(updatedRoom.getStatus()).isEqualTo(ChatStatus.IN_PROGRESS);
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserId(room.getId(), admin.getId())).isTrue();
+        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isTrue();
     }
 
     private User saveUser(String name) {
