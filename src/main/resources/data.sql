@@ -82,3 +82,17 @@ VALUES
 
     -- 결제 테스트용 상품
     (53, 20, '결제 테스트 상품 1000원', 'PortOne 결제 검증 테스트를 위한 1,000원 상품입니다.', 1000, 999, 'ON_SALE', NOW(), NULL);
+
+INSERT INTO users (id, email, password, name, phone, role, created_at, updated_at, deleted_at)
+VALUES
+    (1, 'admin@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '관리자', '010-0000-0001', 'ADMIN', NOW(), NULL, NULL),
+    (2, 'user01@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '김민준', '010-1000-0001', 'USER', NOW(), NULL, NULL),
+    (3, 'user02@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '이서연', '010-1000-0002', 'USER', NOW(), NULL, NULL),
+    (4, 'user03@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '박지훈', '010-1000-0003', 'USER', NOW(), NULL, NULL),
+    (5, 'user04@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '최하은', '010-1000-0004', 'USER', NOW(), NULL, NULL),
+    (6, 'user05@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '정도윤', '010-1000-0005', 'USER', NOW(), NULL, NULL),
+    (7, 'user06@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '강수아', '010-1000-0006', 'USER', NOW(), NULL, NULL),
+    (8, 'user07@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '조현우', '010-1000-0007', 'USER', NOW(), NULL, NULL),
+    (9, 'user08@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '윤지아', '010-1000-0008', 'USER', NOW(), NULL, NULL),
+    (10, 'user09@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '장서준', '010-1000-0009', 'USER', NOW(), NULL, NULL),
+    (11, 'user10@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '임채원', '010-1000-0010', 'USER', NOW(), NULL, NULL);

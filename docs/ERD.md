@@ -9,7 +9,6 @@ erDiagram
     users ||--|| carts : owns
     users ||--o{ orders : places
     users ||--o{ user_coupons : owns
-
     categories ||--o{ products : classifies
     products ||--o{ cart_items : added_to
     products ||--o{ order_items : ordered_as
@@ -24,6 +23,9 @@ erDiagram
     payments ||--o{ webhook_events : verified_by
 
     coupon_events ||--o{ user_coupons : issues
+
+    chat_rooms ||--o{ chat_messages : contains
+    chat_rooms ||--o{ chat_members : has
 
     users {
         BIGINT id PK "회원 ID"
@@ -40,6 +42,40 @@ erDiagram
     carts {
         BIGINT id PK "장바구니 ID"
         BIGINT user_id FK "회원 ID"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
+    }
+
+    chat_rooms {
+        BIGINT id PK "채팅방 ID"
+        VARCHAR name "채팅방 이름"
+        BIGINT customer_id "문의 고객 ID"
+        VARCHAR customer_name "문의 고객 이름"
+        BIGINT admin_id "담당 관리자 ID"
+        VARCHAR admin_name "담당 관리자 이름"
+        VARCHAR status "문의 상태"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
+    }
+
+    chat_messages {
+        BIGINT id PK "채팅 메시지 ID"
+        BIGINT sender_id "발신자 ID"
+        VARCHAR sender_name "발신자 이름"
+        BIGINT chat_room_id FK "채팅방 ID"
+        VARCHAR content "메시지 내용"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
+    }
+
+    chat_members {
+        BIGINT id PK "참여자 ID"
+        BIGINT room_id FK "채팅방 ID"
+        BIGINT user_id "회원 ID 스냅샷"
+        VARCHAR user_name "회원 이름"
+        VARCHAR role "참여자 권한"
+        DATETIME joined_at "참여일시"
+        DATETIME left_at "퇴장일시"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -202,6 +238,54 @@ erDiagram
 | 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id, UNIQUE |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
+
+### chat_rooms
+
+CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
+
+| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
+| --- | --- | --- | --- | --- |
+| 채팅방 ID | id | BIGINT | NOT NULL | PK |
+| 채팅방 이름 | name | VARCHAR(255) | NULL |  |
+| 문의 고객 ID | customer_id | BIGINT | NOT NULL | users.id 값 스냅샷 |
+| 문의 고객 이름 | customer_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
+| 담당 관리자 ID | admin_id | BIGINT | NULL | 담당 관리자 배정 시 저장 |
+| 담당 관리자 이름 | admin_name | VARCHAR(255) | NULL | 관리자 이름 스냅샷 |
+| 문의 상태 | status | VARCHAR(20) | NOT NULL | WAITING, IN_PROGRESS, COMPLETED |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
+
+### chat_messages
+
+채팅방에 저장된 일반 메시지를 저장합니다.
+
+| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
+| --- | --- | --- | --- | --- |
+| 채팅 메시지 ID | id | BIGINT | NOT NULL | PK |
+| 발신자 ID | sender_id | BIGINT | NOT NULL | users.id 값 스냅샷 |
+| 발신자 이름 | sender_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
+| 채팅방 ID | chat_room_id | BIGINT | NOT NULL | FK: chat_rooms.id |
+| 메시지 내용 | content | VARCHAR(1000) | NOT NULL | 1000자 이하 |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
+
+### chat_members
+
+채팅방에 참여한 고객과 담당 관리자를 저장합니다.
+
+| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
+| --- | --- | --- | --- | --- |
+| 참여자 ID | id | BIGINT | NOT NULL | PK |
+| 채팅방 ID | room_id | BIGINT | NOT NULL | FK: chat_rooms.id |
+| 회원 ID | user_id | BIGINT | NOT NULL | users.id 값 스냅샷 |
+| 회원 이름 | user_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
+| 참여자 권한 | role | VARCHAR(20) | NOT NULL | USER, ADMIN |
+| 참여일시 | joined_at | DATETIME | NOT NULL |  |
+| 퇴장일시 | left_at | DATETIME | NULL |  |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
+
+- 같은 채팅방에 같은 회원은 한 번만 참여자로 저장되도록 `(room_id, user_id)`에 UNIQUE 제약을 둡니다.
 
 ### cart_items
 
@@ -381,18 +465,20 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 
 ## 관계 요약
 
-| 관계 | 설명 |
-| --- | --- |
-| users - carts | 회원은 하나의 기본 장바구니를 가집니다. |
-| users - orders | 회원은 여러 주문을 생성할 수 있습니다. |
-| users - user_coupons | 회원은 여러 쿠폰을 보유할 수 있습니다. |
-| categories - products | 카테고리는 여러 상품을 분류할 수 있습니다. |
-| carts - cart_items | 장바구니는 여러 장바구니 상품을 담습니다. |
-| products - cart_items | 상품은 여러 장바구니에 담길 수 있습니다. |
-| orders - order_items | 주문은 여러 주문 상품을 가집니다. |
-| products - order_items | 상품은 주문 상품 스냅샷으로 기록됩니다. |
-| orders - payments | 주문은 하나의 결제와 연결됩니다. |
-| payments - refunds | 결제 완료 이후 환불 요청이 생성될 수 있습니다. |
-| payments - webhook_events | 결제는 여러 웹훅 이벤트와 연결될 수 있습니다. |
+| 관계                           | 설명 |
+|------------------------------| --- |
+| users - carts                | 회원은 하나의 기본 장바구니를 가집니다. |
+| users - orders               | 회원은 여러 주문을 생성할 수 있습니다. |
+| users - user_coupons         | 회원은 여러 쿠폰을 보유할 수 있습니다. |
+| chat_rooms - chat_messages   | 채팅방은 여러 메시지를 가집니다. |
+| chat_rooms - chat_members    | 채팅방은 고객과 담당 관리자 참여자를 가집니다. |
+| categories - products        | 카테고리는 여러 상품을 분류할 수 있습니다. |
+| carts - cart_items           | 장바구니는 여러 장바구니 상품을 담습니다. |
+| products - cart_items        | 상품은 여러 장바구니에 담길 수 있습니다. |
+| orders - order_items         | 주문은 여러 주문 상품을 가집니다. |
+| products - order_items       | 상품은 주문 상품 스냅샷으로 기록됩니다. |
+| orders - payments            | 주문은 하나의 결제와 연결됩니다. |
+| payments - refunds           | 결제 완료 이후 환불 요청이 생성될 수 있습니다. |
+| payments - webhook_events    | 결제는 여러 웹훅 이벤트와 연결될 수 있습니다. |
 | coupon_events - user_coupons | 쿠폰 이벤트는 여러 회원 쿠폰을 발급합니다. |
-| orders - user_coupons | 쿠폰을 사용한 경우 회원 쿠폰이 주문과 연결됩니다. |
+| orders - user_coupons        | 쿠폰을 사용한 경우 회원 쿠폰이 주문과 연결됩니다. |
