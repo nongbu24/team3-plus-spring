@@ -34,7 +34,7 @@ public class AuthService {
                 request.getPhone()
         );
         User savedUser = userRepository.save(user);
-        cartRepository.save(Cart.create(savedUser));
+        cartRepository.save(Cart.create(savedUser.getId()));
 
         return SignupResponse.from(savedUser);
     }

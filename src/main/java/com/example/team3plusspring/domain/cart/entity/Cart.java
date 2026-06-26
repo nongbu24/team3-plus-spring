@@ -1,6 +1,5 @@
 package com.example.team3plusspring.domain.cart.entity;
 
-import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -17,15 +16,14 @@ public class Cart extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Long userId;
 
-    private Cart(User user) {
-        this.user = user;
+    private Cart(Long userId) {
+        this.userId = userId;
     }
 
-    public static Cart create(User user) {
-        return new Cart(user);
+    public static Cart create(Long userId) {
+        return new Cart(userId);
     }
 }
