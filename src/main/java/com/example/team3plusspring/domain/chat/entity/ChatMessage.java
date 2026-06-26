@@ -29,10 +29,14 @@ public class ChatMessage extends BaseEntity {
     @Column(nullable = false, length = 1000)
     private String content;
 
-    public ChatMessage(Long senderId, String senderName, ChatRoom chatRoom, String content) {
+    private ChatMessage(Long senderId, String senderName, ChatRoom chatRoom, String content) {
         this.senderId = senderId;
         this.senderName = senderName;
         this.chatRoom = chatRoom;
         this.content = content;
+    }
+
+    public static ChatMessage create(Long senderId, String senderName, ChatRoom chatRoom, String content) {
+        return new ChatMessage(senderId, senderName, chatRoom, content);
     }
 }
