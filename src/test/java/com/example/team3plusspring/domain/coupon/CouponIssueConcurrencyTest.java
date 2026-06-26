@@ -21,10 +21,10 @@ import com.example.team3plusspring.domain.coupon.entity.DiscountType;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository;
 import com.example.team3plusspring.domain.coupon.service.CouponEventService;
-import com.example.team3plusspring.support.RedisTestContainerSupport;
+import com.example.team3plusspring.support.RedisTestSupport;
 
 @SpringBootTest
-class CouponIssueConcurrencyTest extends RedisTestContainerSupport {
+class CouponIssueConcurrencyTest extends RedisTestSupport {
 
 	@Autowired
 	CouponEventService couponEventService;

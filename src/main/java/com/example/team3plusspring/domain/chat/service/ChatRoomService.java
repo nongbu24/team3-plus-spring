@@ -46,7 +46,11 @@ public class ChatRoomService {
                     .toList();
         }
 
-        return chatRoomRepository.findAllByCustomerId(user.getId())
+        List<ChatRoom> rooms = status == null
+                ? chatRoomRepository.findAllByCustomerId(user.getId())
+                : chatRoomRepository.findAllByCustomerIdAndStatus(user.getId(), status);
+
+        return rooms
                 .stream()
                 .map(ChatRoomResponse::new)
                 .toList();
