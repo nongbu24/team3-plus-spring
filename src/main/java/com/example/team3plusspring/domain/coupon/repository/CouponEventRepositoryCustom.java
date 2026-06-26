@@ -1,5 +1,12 @@
 package com.example.team3plusspring.domain.coupon.repository;
 
+import java.time.LocalDateTime;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import com.example.team3plusspring.domain.coupon.entity.CouponEvent;
+
 public interface CouponEventRepositoryCustom {
 
 	/**
@@ -11,4 +18,6 @@ public interface CouponEventRepositoryCustom {
 	 * @return 업데이트된 row 수 (0이면 재고 소진으로 증가하지 못한 것)
 	 */
 	long increaseIssuedQuantity(Long id);
+
+	Page<CouponEvent> findOpenCouponEvents(LocalDateTime now, Pageable pageable);
 }

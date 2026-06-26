@@ -52,7 +52,8 @@ class CouponIssueConcurrencyTest extends RedisTestSupport {
 				1000,
 				totalQuantity,
 				LocalDateTime.now().minusDays(1),
-				LocalDateTime.now().plusDays(1)
+				LocalDateTime.now().plusDays(1),
+				30
 			)
 		);
 
@@ -106,7 +107,8 @@ class CouponIssueConcurrencyTest extends RedisTestSupport {
 				1000,
 				totalQuantity,
 				LocalDateTime.now().minusDays(1),
-				LocalDateTime.now().plusDays(1)
+				LocalDateTime.now().plusDays(1),
+				30
 			)
 		);
 

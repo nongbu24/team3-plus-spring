@@ -125,9 +125,10 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
                 3_000,
                 100,
                 LocalDateTime.now().minusDays(1),
-                LocalDateTime.now().plusDays(1)
+                LocalDateTime.now().plusDays(1),
+                30
         ));
-        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 30));
 
         // when
         orderFacade.createDirectOrder(user.getId(), directOrderRequest(product.getId(), 2, userCoupon.getId()));
@@ -183,9 +184,10 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
                 1_000,
                 100,
                 LocalDateTime.now().minusDays(1),
-                LocalDateTime.now().plusDays(1)
+                LocalDateTime.now().plusDays(1),
+                30
         ));
-        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 30));
 
         // when
         List<Throwable> results = runConcurrently(
@@ -216,9 +218,10 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
                 3_000,
                 100,
                 LocalDateTime.now().minusDays(10),
-                LocalDateTime.now().plusDays(10)
+                LocalDateTime.now().plusDays(10),
+                30
         ));
-        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 30));
         ReflectionTestUtils.setField(userCoupon, "expiredAt", LocalDateTime.now().minusDays(1));
         userCouponRepository.saveAndFlush(userCoupon);
 
