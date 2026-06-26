@@ -28,10 +28,10 @@ public class ChatRoomService {
     public ChatRoomResponse createMyRoom(User user) {
         validateCustomer(user);
 
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         chatMemberRepository.save(ChatMember.join(room, user));
 
-        return new ChatRoomResponse(room);
+        return ChatRoomResponse.from(room);
     }
 
     public List<ChatRoomResponse> getRooms(User user, ChatStatus status) {
@@ -42,7 +42,7 @@ public class ChatRoomService {
 
             return rooms
                     .stream()
-                    .map(ChatRoomResponse::new)
+                    .map(ChatRoomResponse::from)
                     .toList();
         }
 
@@ -52,7 +52,7 @@ public class ChatRoomService {
 
         return rooms
                 .stream()
-                .map(ChatRoomResponse::new)
+                .map(ChatRoomResponse::from)
                 .toList();
     }
 
@@ -74,7 +74,7 @@ public class ChatRoomService {
         assignAdminWhenStartProgress(room, user, request.getStatus());
         room.changeStatus(request.getStatus());
 
-        return new ChatRoomResponse(room);
+        return ChatRoomResponse.from(room);
     }
 
     private void validateCustomer(User user) {

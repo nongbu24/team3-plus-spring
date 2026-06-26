@@ -46,7 +46,7 @@ public class ChatQueryService {
     private List<ChatMessageResponse> toResponses(List<ChatMessage> messages) {
         return messages
                 .stream()
-                .map(ChatMessageResponse::new)
+                .map(ChatMessageResponse::from)
                 .toList();
     }
 }

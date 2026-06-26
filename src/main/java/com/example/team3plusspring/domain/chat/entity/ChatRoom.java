@@ -35,11 +35,15 @@ public class ChatRoom extends BaseEntity {
     @Column(nullable = false, length = 20)
     private ChatStatus status;
 
-    public ChatRoom(User customer) {
+    private ChatRoom(User customer) {
         this.name = customer.getName() + "님의 1:1 문의";
         this.customerId = customer.getId();
         this.customerName = customer.getName();
         this.status = ChatStatus.WAITING;
+    }
+
+    public static ChatRoom create(User customer) {
+        return new ChatRoom(customer);
     }
 
     public void validateAccess(User user) {

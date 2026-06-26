@@ -50,15 +50,10 @@ public class AuthService {
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getId());
 
-        return new LoginResponse(
-                "Bearer",
+        return LoginResponse.of(
                 accessToken,
                 jwtTokenProvider.getAccessTokenExpiresInSeconds(),
-                new LoginResponse.UserSummary(
-                        user.getId(),
-                        user.getEmail(),
-                        user.getName()
-                )
+                user
         );
     }
 
