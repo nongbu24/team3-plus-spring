@@ -276,6 +276,29 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
     }
 
     @Test
+    void 장바구니상품아이디가중복되면_주문을생성하지않는다() {
+        // given
+        User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
+        Cart cart = cartRepository.save(Cart.create(user.getId()));
+        Product product = productRepository.save(Product.create("keyboard", "mechanical keyboard", 10_000, 5, 1L));
+        CartItem cartItem = cartItemRepository.save(CartItem.create(cart, product.getId(), 2));
+
+        // when & then
+        assertThatThrownBy(() -> orderFacade.createOrderFromCart(
+                user.getId(),
+                cartOrderRequest(List.of(cartItem.getId(), cartItem.getId()), null)
+        ))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CART_ITEM_SELECTION_INVALID));
+
+        assertThat(orderRepository.count()).isZero();
+        assertThat(orderItemRepository.count()).isZero();
+        assertThat(paymentRepository.count()).isZero();
+        assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(5);
+        assertThat(cartItemRepository.count()).isEqualTo(1);
+    }
+
+    @Test
     void 장바구니상품을쿠폰으로주문하면_할인금액을적용하고쿠폰을사용처리한다() {
         // given
         User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));

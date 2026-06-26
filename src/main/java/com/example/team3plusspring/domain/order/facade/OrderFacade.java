@@ -102,7 +102,7 @@ public class OrderFacade {
                 .collect(Collectors.toSet())
                 .size();
 
-        if (cartItems.size() != requestItemCount) {
+        if (request.getCartItemIds().size() != requestItemCount || cartItems.size() != requestItemCount) {
             throw new BusinessException(ErrorCode.CART_ITEM_SELECTION_INVALID);
         }
 
