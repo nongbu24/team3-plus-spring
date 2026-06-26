@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.chat.entity;
 
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.entity.UserRole;
+import com.example.team3plusspring.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -29,7 +30,7 @@ import java.time.LocalDateTime;
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChatMember {
+public class ChatMember extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

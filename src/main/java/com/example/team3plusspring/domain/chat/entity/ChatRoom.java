@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.chat.entity;
 
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.entity.UserRole;
+import com.example.team3plusspring.global.entity.BaseEntity;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import jakarta.persistence.*;
@@ -9,13 +10,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Getter
 @Table(name = "chat_rooms")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChatRoom {
+public class ChatRoom extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,14 +35,11 @@ public class ChatRoom {
     @Column(nullable = false, length = 20)
     private ChatStatus status;
 
-    private LocalDateTime createdAt;
-
     public ChatRoom(User customer) {
         this.name = customer.getName() + "님의 1:1 문의";
         this.customerId = customer.getId();
         this.customerName = customer.getName();
         this.status = ChatStatus.WAITING;
-        this.createdAt = LocalDateTime.now();
     }
 
     public void validateAccess(User user) {

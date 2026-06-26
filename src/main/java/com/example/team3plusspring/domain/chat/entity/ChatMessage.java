@@ -1,19 +1,16 @@
 package com.example.team3plusspring.domain.chat.entity;
 
+import com.example.team3plusspring.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Table(name = "chat_messages")
-@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChatMessage {
+public class ChatMessage extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,13 +28,11 @@ public class ChatMessage {
 
     @Column(nullable = false, length = 1000)
     private String content;
-    private LocalDateTime createdAt;
 
     public ChatMessage(Long senderId, String senderName, ChatRoom chatRoom, String content) {
         this.senderId = senderId;
         this.senderName = senderName;
         this.chatRoom = chatRoom;
         this.content = content;
-        this.createdAt = LocalDateTime.now();
     }
 }

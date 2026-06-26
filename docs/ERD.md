@@ -55,6 +55,7 @@ erDiagram
         VARCHAR admin_name "담당 관리자 이름"
         VARCHAR status "문의 상태"
         DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
     }
 
     chat_messages {
@@ -64,6 +65,7 @@ erDiagram
         BIGINT chat_room_id FK "채팅방 ID"
         VARCHAR content "메시지 내용"
         DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
     }
 
     chat_members {
@@ -74,6 +76,8 @@ erDiagram
         VARCHAR role "참여자 권한"
         DATETIME joined_at "참여일시"
         DATETIME left_at "퇴장일시"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
     }
 
     cart_items {
@@ -248,7 +252,8 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 담당 관리자 ID | admin_id | BIGINT | NULL | 담당 관리자 배정 시 저장 |
 | 담당 관리자 이름 | admin_name | VARCHAR(255) | NULL | 관리자 이름 스냅샷 |
 | 문의 상태 | status | VARCHAR(20) | NOT NULL | WAITING, IN_PROGRESS, COMPLETED |
-| 생성일시 | created_at | DATETIME | NULL |  |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
 
 ### chat_messages
 
@@ -261,7 +266,8 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 발신자 이름 | sender_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
 | 채팅방 ID | chat_room_id | BIGINT | NOT NULL | FK: chat_rooms.id |
 | 메시지 내용 | content | VARCHAR(1000) | NOT NULL | 1000자 이하 |
-| 생성일시 | created_at | DATETIME | NULL |  |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
 
 ### chat_members
 
@@ -276,6 +282,8 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 참여자 권한 | role | VARCHAR(20) | NOT NULL | USER, ADMIN |
 | 참여일시 | joined_at | DATETIME | NOT NULL |  |
 | 퇴장일시 | left_at | DATETIME | NULL |  |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
 
 - 같은 채팅방에 같은 회원은 한 번만 참여자로 저장되도록 `(room_id, user_id)`에 UNIQUE 제약을 둡니다.
 
