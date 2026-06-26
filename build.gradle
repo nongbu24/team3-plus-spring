@@ -47,7 +47,6 @@ dependencies {
 
     // redis
     implementation 'org.redisson:redisson:4.6.1'
-
 }
 
 tasks.named('test') {

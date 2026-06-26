@@ -22,6 +22,7 @@ public class CouponEventResponse {
 	private final CouponEventStatus status;
 	private final LocalDateTime startsAt;
 	private final LocalDateTime endsAt;
+	private final int validDays;
 
 	public static CouponEventResponse from(CouponEvent couponEvent) {
 		return new CouponEventResponse(
@@ -33,7 +34,8 @@ public class CouponEventResponse {
 			couponEvent.getIssuedQuantity(),
 			couponEvent.getStatus(),
 			couponEvent.getStartsAt(),
-			couponEvent.getEndsAt()
+			couponEvent.getEndsAt(),
+			couponEvent.getValidDays()
 		);
 	}
 }

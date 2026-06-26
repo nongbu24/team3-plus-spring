@@ -54,7 +54,10 @@ public class CouponEvent extends BaseEntity {
 	@Column(name = "ends_at", nullable = false)
 	private LocalDateTime endsAt;
 
-	private CouponEvent(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+	@Column(name = "valid_days", nullable = false)
+	private int validDays;
+
+	private CouponEvent(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt, int validDays) {
 		if (discountType == DiscountType.PERCENT && discountAmount > 100) {
 			throw new BusinessException(ErrorCode.INVALID_DISCOUNT_AMOUNT);
 		}
@@ -70,10 +73,11 @@ public class CouponEvent extends BaseEntity {
 		this.status = CouponEventStatus.OPEN;
 		this.startsAt = startsAt;
 		this.endsAt = endsAt;
+		this.validDays = validDays;
 	}
 
-	public static CouponEvent create(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
-		return new CouponEvent(name, discountType, discountAmount, totalQuantity, startsAt, endsAt);
+	public static CouponEvent create(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt, int validDays) {
+		return new CouponEvent(name, discountType, discountAmount, totalQuantity, startsAt, endsAt, validDays);
 	}
 
 	// 쿠폰 발급 가능 여부 확인 메서드
