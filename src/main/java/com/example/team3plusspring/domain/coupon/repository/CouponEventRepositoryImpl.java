@@ -36,6 +36,7 @@ public class CouponEventRepositoryImpl implements CouponEventRepositoryCustom {
 	@Override
 	public Page<CouponEvent> findOpenCouponEvents(LocalDateTime now, Pageable pageable) {
 		Predicate openAndActive = couponEvent.status.eq(CouponEventStatus.OPEN)
+			.and(couponEvent.startsAt.loe(now))
 			.and(couponEvent.endsAt.goe(now));
 
 		List<CouponEvent> content = queryFactory
