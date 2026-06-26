@@ -314,9 +314,10 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
                 3_000,
                 100,
                 LocalDateTime.now().minusDays(1),
-                LocalDateTime.now().plusDays(1)
+                LocalDateTime.now().plusDays(1),
+                30
         ));
-        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 30));
 
         // when
         orderFacade.createOrderFromCart(
