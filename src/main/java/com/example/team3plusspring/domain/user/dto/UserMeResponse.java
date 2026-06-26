@@ -5,7 +5,6 @@ import lombok.Getter;
 
 @Getter
 public class UserMeResponse {
-
     private final Long userId;
     private final String email;
     private final String name;
