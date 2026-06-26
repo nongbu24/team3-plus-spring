@@ -93,7 +93,7 @@ public class ChatRoomService {
     }
 
     private void joinIfNeeded(ChatRoom room, User user) {
-        if (!chatMemberRepository.existsByChatRoomIdAndUserId(room.getId(), user.getId())) {
+        if (!chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), user.getId())) {
             chatMemberRepository.save(ChatMember.join(room, user));
         }
     }
