@@ -87,8 +87,13 @@ public class ChatController {
     }
 
     private User getAuthenticatedUser(Principal principal) {
-        Authentication authentication = (Authentication) principal;
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        if (!(principal instanceof Authentication authentication)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (!(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
 
         return userDetails.getUser();
     }

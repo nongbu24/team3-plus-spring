@@ -354,6 +354,130 @@
 | `FORBIDDEN` | 403 | 관리자가 아닌 사용자가 조회 시도 |
 | `VALIDATION_FAILED` | 400 | `size`가 1 미만 또는 100 초과 |
 
+## 실시간 채팅 STOMP
+
+채팅 메시지 송수신은 WebSocket STOMP를 사용합니다.
+HTTP 인증 필터는 `/ws/**`를 허용하고, STOMP `CONNECT` 프레임에서 JWT 인증을 처리합니다.
+
+### WebSocket Endpoint
+
+| 항목 | 값 |
+| --- | --- |
+| WebSocket endpoint | `/ws` |
+| SockJS endpoint | `/ws` |
+| Application destination prefix | `/pub` |
+| Subscribe destination prefix | `/sub` |
+
+### CONNECT Headers
+
+STOMP 연결 시 `Authorization` 헤더에 액세스 토큰을 전달합니다.
+
+```text
+Authorization: Bearer {accessToken}
+```
+
+인증에 실패하면 STOMP 연결 또는 이후 메시지 처리가 거부됩니다.
+
+### SUBSCRIBE `/sub/chat/{roomId}`
+
+채팅방 메시지를 실시간으로 수신합니다.
+
+```text
+/sub/chat/1
+```
+
+#### 처리 규칙
+
+- 채팅방 고객 또는 담당 관리자만 구독할 수 있습니다.
+- 담당 관리자가 없는 채팅방은 관리자도 구독할 수 있습니다.
+- 이미 담당 관리자가 배정된 채팅방은 해당 관리자만 구독할 수 있습니다.
+- `roomId`가 숫자가 아니거나 채팅방이 없으면 구독이 거부됩니다.
+
+### SEND `/pub/chat.enter`
+
+채팅방 입장 이벤트를 전송합니다.
+
+#### Request Payload
+
+```json
+{
+  "roomId": 1
+}
+```
+
+#### Published Payload
+
+```json
+{
+  "messageId": 101,
+  "content": "홍길동님이 입장했습니다",
+  "senderId": 10,
+  "senderName": "홍길동",
+  "createdAt": "2026-06-25T10:36:00"
+}
+```
+
+### SEND `/pub/chat.send`
+
+채팅 메시지를 전송합니다.
+
+#### Request Payload
+
+```json
+{
+  "roomId": 1,
+  "content": "상품 배송은 언제 시작되나요?"
+}
+```
+
+#### Published Payload
+
+```json
+{
+  "messageId": 102,
+  "content": "상품 배송은 언제 시작되나요?",
+  "senderId": 10,
+  "senderName": "홍길동",
+  "createdAt": "2026-06-25T10:37:00"
+}
+```
+
+#### 처리 규칙
+
+- 채팅방 고객 또는 담당 관리자만 메시지를 보낼 수 있습니다.
+- 담당 관리자가 없는 `WAITING` 상태 채팅방에 관리자가 처음 메시지를 보내면 해당 관리자가 담당자로 배정되고 상태가 `IN_PROGRESS`로 변경됩니다.
+- `COMPLETED` 상태 채팅방에는 메시지를 보낼 수 없습니다.
+- 메시지 내용은 필수이며 1000자 이하여야 합니다.
+
+### SEND `/pub/chat.leave`
+
+채팅방 퇴장 이벤트를 전송합니다.
+
+#### Request Payload
+
+```json
+{
+  "roomId": 1
+}
+```
+
+#### Published Payload
+
+```json
+{
+  "messageId": 103,
+  "content": "홍길동님이 퇴장했습니다",
+  "senderId": 10,
+  "senderName": "홍길동",
+  "createdAt": "2026-06-25T10:38:00"
+}
+```
+
+### Redis Pub/Sub
+
+`redis-chat` 프로필을 활성화하면 서버 간 채팅 메시지를 Redis Pub/Sub으로 공유합니다.
+프로필을 활성화하지 않으면 현재 서버 인스턴스의 WebSocket 구독자에게만 메시지를 발행합니다.
+
 ## 설계 메모
 
 - 채팅 REST API는 `/api/chat` 하위에서 채팅방과 메시지 조회를 담당합니다.
