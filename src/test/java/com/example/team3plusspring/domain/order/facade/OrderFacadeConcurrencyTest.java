@@ -25,6 +25,7 @@ import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.repository.UserRepository;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
+import com.example.team3plusspring.support.RedisTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-class OrderFacadeConcurrencyTest {
+class OrderFacadeConcurrencyTest extends RedisTestSupport {
 
     @Autowired
     OrderFacade orderFacade;

@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
 public class UserDeleteResponse {
-
     private final String message;
 
     private UserDeleteResponse(String message) {
