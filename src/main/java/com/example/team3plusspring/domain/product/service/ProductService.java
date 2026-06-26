@@ -95,4 +95,15 @@ public class ProductService {
 
         return product;
     }
+
+    @Transactional
+    public List<Product> getOrderableProductsForUpdate(List<Long> productIds) {
+        List<Product> products = productRepository.findAllByIdInForUpdate(productIds);
+
+        if (products.size() != productIds.size()) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return products;
+    }
 }

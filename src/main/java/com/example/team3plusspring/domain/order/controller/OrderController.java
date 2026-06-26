@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.order.controller;
 
 import com.example.team3plusspring.domain.order.dto.CreateDirectOrderRequest;
+import com.example.team3plusspring.domain.order.dto.CreateOrderFromCartRequest;
 import com.example.team3plusspring.domain.order.dto.CreateOrderResponse;
 import com.example.team3plusspring.domain.order.facade.OrderFacade;
 import com.example.team3plusspring.global.response.ApiResponse;
@@ -31,6 +32,16 @@ public class OrderController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED, response));
 
+    }
+
+    @PostMapping("/carts")
+    public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrderFromCart(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid CreateOrderFromCartRequest request
+    ) {
+        CreateOrderResponse response = orderFacade.createOrderFromCart(userDetails.getUserId(), request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED, response));
     }
 
 }
