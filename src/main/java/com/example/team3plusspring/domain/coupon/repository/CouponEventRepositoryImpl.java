@@ -42,6 +42,7 @@ public class CouponEventRepositoryImpl implements CouponEventRepositoryCustom {
 		List<CouponEvent> content = queryFactory
 			.selectFrom(couponEvent)
 			.where(openAndActive)
+			.orderBy(couponEvent.id.desc())
 			.offset(pageable.getOffset())
 			.limit(pageable.getPageSize())
 			.fetch();

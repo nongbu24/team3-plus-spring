@@ -30,6 +30,7 @@ public class UserCouponRepositoryImpl implements UserCouponRepositoryCustom {
 		List<UserCoupon> content = queryFactory
 			.selectFrom(userCoupon)
 			.where(usable)
+			.orderBy(userCoupon.issuedAt.desc(), userCoupon.id.desc())
 			.offset(pageable.getOffset())
 			.limit(pageable.getPageSize())
 			.fetch();
