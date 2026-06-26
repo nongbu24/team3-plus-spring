@@ -8,7 +8,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+    show-sql: false
     defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
 
 jwt:
   secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=

@@ -35,4 +35,6 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
       and uc.userId = :userId
 """)
 	Optional<UserCoupon> findByIdAndUserIdForUpdate(@Param("userCouponId") Long userCouponId, @Param("userId") Long userId);
+
+	long countByCouponEventId(Long couponEventId);
 }
