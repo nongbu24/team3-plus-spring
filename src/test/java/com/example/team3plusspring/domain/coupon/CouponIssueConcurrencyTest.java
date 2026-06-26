@@ -21,10 +21,9 @@ import com.example.team3plusspring.domain.coupon.entity.DiscountType;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository;
 import com.example.team3plusspring.domain.coupon.service.CouponEventService;
-import com.example.team3plusspring.support.RedisTestContainerSupport;
 
 @SpringBootTest
-class CouponIssueConcurrencyTest extends RedisTestContainerSupport {
+class CouponIssueConcurrencyTest {
 
 	@Autowired
 	CouponEventService couponEventService;
@@ -52,7 +51,8 @@ class CouponIssueConcurrencyTest extends RedisTestContainerSupport {
 				1000,
 				totalQuantity,
 				LocalDateTime.now().minusDays(1),
-				LocalDateTime.now().plusDays(1)
+				LocalDateTime.now().plusDays(1),
+				30
 			)
 		);
 
@@ -106,7 +106,8 @@ class CouponIssueConcurrencyTest extends RedisTestContainerSupport {
 				1000,
 				totalQuantity,
 				LocalDateTime.now().minusDays(1),
-				LocalDateTime.now().plusDays(1)
+				LocalDateTime.now().plusDays(1),
+				30
 			)
 		);
 

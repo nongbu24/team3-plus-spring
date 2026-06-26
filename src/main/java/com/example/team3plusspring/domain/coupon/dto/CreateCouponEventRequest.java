@@ -29,4 +29,7 @@ public class CreateCouponEventRequest {
 
 	@NotNull(message = "발급 종료일시 입력은 필수입니다.")
 	private LocalDateTime endsAt;
+
+	@Positive(message = "사용 유효기간은 0보다 커야 합니다.")
+	private int validDays;
 }
