@@ -29,7 +29,7 @@ public class ChatFacade {
         ChatRoom chatRoom = getAccessibleRoom(request.getRoomId(), sender, true);
         startProgressIfAdminSendsFirstMessage(chatRoom, sender);
 
-        ChatMessage message = new ChatMessage(sender.getId(), sender.getName(), chatRoom, request.getContent());
+        ChatMessage message = ChatMessage.create(sender.getId(), sender.getName(), chatRoom, request.getContent());
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
         return new ChatMessageResponse(savedMessage);
@@ -51,7 +51,7 @@ public class ChatFacade {
     }
 
     private ChatMessageResponse saveSystemMessage(ChatRoom chatRoom, User user, String content) {
-        ChatMessage message = new ChatMessage(user.getId(), user.getName(), chatRoom, content);
+        ChatMessage message = ChatMessage.create(user.getId(), user.getName(), chatRoom, content);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
         return new ChatMessageResponse(savedMessage);
