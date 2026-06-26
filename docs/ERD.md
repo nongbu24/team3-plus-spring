@@ -9,8 +9,6 @@ erDiagram
     users ||--|| carts : owns
     users ||--o{ orders : places
     users ||--o{ user_coupons : owns
-    users ||--o{ chat_members : joins
-
     categories ||--o{ products : classifies
     products ||--o{ cart_items : added_to
     products ||--o{ order_items : ordered_as
@@ -71,7 +69,7 @@ erDiagram
     chat_members {
         BIGINT id PK "참여자 ID"
         BIGINT room_id FK "채팅방 ID"
-        BIGINT user_id FK "회원 ID"
+        BIGINT user_id "회원 ID 스냅샷"
         VARCHAR user_name "회원 이름"
         VARCHAR role "참여자 권한"
         DATETIME joined_at "참여일시"
@@ -273,7 +271,7 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | --- | --- | --- | --- | --- |
 | 참여자 ID | id | BIGINT | NOT NULL | PK |
 | 채팅방 ID | room_id | BIGINT | NOT NULL | FK: chat_rooms.id |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id |
+| 회원 ID | user_id | BIGINT | NOT NULL | users.id 값 스냅샷 |
 | 회원 이름 | user_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
 | 참여자 권한 | role | VARCHAR(20) | NOT NULL | USER, ADMIN |
 | 참여일시 | joined_at | DATETIME | NOT NULL |  |
@@ -464,7 +462,6 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 | users - carts                | 회원은 하나의 기본 장바구니를 가집니다. |
 | users - orders               | 회원은 여러 주문을 생성할 수 있습니다. |
 | users - user_coupons         | 회원은 여러 쿠폰을 보유할 수 있습니다. |
-| users - chat_members         | 회원은 여러 채팅방 참여자로 기록될 수 있습니다. |
 | chat_rooms - chat_messages   | 채팅방은 여러 메시지를 가집니다. |
 | chat_rooms - chat_members    | 채팅방은 고객과 담당 관리자 참여자를 가집니다. |
 | categories - products        | 카테고리는 여러 상품을 분류할 수 있습니다. |
