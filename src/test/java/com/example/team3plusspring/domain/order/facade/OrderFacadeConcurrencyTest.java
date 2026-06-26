@@ -2,6 +2,8 @@ package com.example.team3plusspring.domain.order.facade;
 
 import com.example.team3plusspring.domain.cart.repository.CartItemRepository;
 import com.example.team3plusspring.domain.cart.repository.CartRepository;
+import com.example.team3plusspring.domain.cart.entity.Cart;
+import com.example.team3plusspring.domain.cart.entity.CartItem;
 import com.example.team3plusspring.domain.coupon.entity.CouponEvent;
 import com.example.team3plusspring.domain.coupon.entity.DiscountType;
 import com.example.team3plusspring.domain.coupon.entity.UserCoupon;
@@ -9,6 +11,7 @@ import com.example.team3plusspring.domain.coupon.entity.UserCouponStatus;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository;
 import com.example.team3plusspring.domain.order.dto.CreateDirectOrderRequest;
+import com.example.team3plusspring.domain.order.dto.CreateOrderFromCartRequest;
 import com.example.team3plusspring.domain.order.entity.Order;
 import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.repository.OrderItemRepository;
@@ -236,10 +239,119 @@ class OrderFacadeConcurrencyTest {
         assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(5);
     }
 
+    @Test
+    void 장바구니상품으로주문하면_주문상품결제대기정보를생성하고재고를차감한다() {
+        // given
+        User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
+        Cart cart = cartRepository.save(Cart.create(user.getId()));
+        Product keyboard = productRepository.save(Product.create("keyboard", "mechanical keyboard", 10_000, 5, 1L));
+        Product mouse = productRepository.save(Product.create("mouse", "wireless mouse", 5_000, 4, 1L));
+        CartItem keyboardCartItem = cartItemRepository.save(CartItem.create(cart, keyboard.getId(), 2));
+        CartItem mouseCartItem = cartItemRepository.save(CartItem.create(cart, mouse.getId(), 1));
+
+        // when
+        orderFacade.createOrderFromCart(
+                user.getId(),
+                cartOrderRequest(List.of(keyboardCartItem.getId(), mouseCartItem.getId()), null)
+        );
+
+        // then
+        Order order = orderRepository.findAll().get(0);
+        Payment payment = paymentRepository.findAll().get(0);
+
+        assertThat(orderRepository.count()).isEqualTo(1);
+        assertThat(orderItemRepository.count()).isEqualTo(2);
+        assertThat(paymentRepository.count()).isEqualTo(1);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+        assertThat(order.getTotalProductAmount()).isEqualTo(25_000);
+        assertThat(order.getUsedCouponAmount()).isZero();
+        assertThat(order.getPaymentAmount()).isEqualTo(25_000);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(payment.getOrderId()).isEqualTo(order.getId());
+        assertThat(payment.getPaymentAmount()).isEqualTo(25_000);
+        assertThat(productRepository.findById(keyboard.getId()).orElseThrow().getStock()).isEqualTo(3);
+        assertThat(productRepository.findById(mouse.getId()).orElseThrow().getStock()).isEqualTo(3);
+        assertThat(cartItemRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void 장바구니상품을쿠폰으로주문하면_할인금액을적용하고쿠폰을사용처리한다() {
+        // given
+        User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
+        Cart cart = cartRepository.save(Cart.create(user.getId()));
+        Product product = productRepository.save(Product.create("keyboard", "mechanical keyboard", 10_000, 5, 1L));
+        CartItem cartItem = cartItemRepository.save(CartItem.create(cart, product.getId(), 2));
+        CouponEvent couponEvent = couponEventRepository.save(CouponEvent.create(
+                "order discount",
+                DiscountType.FIXED,
+                3_000,
+                100,
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1)
+        ));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
+
+        // when
+        orderFacade.createOrderFromCart(
+                user.getId(),
+                cartOrderRequest(List.of(cartItem.getId()), userCoupon.getId())
+        );
+
+        // then
+        Order order = orderRepository.findAll().get(0);
+        Payment payment = paymentRepository.findAll().get(0);
+        UserCoupon usedCoupon = userCouponRepository.findById(userCoupon.getId()).orElseThrow();
+
+        assertThat(orderRepository.count()).isEqualTo(1);
+        assertThat(orderItemRepository.count()).isEqualTo(1);
+        assertThat(paymentRepository.count()).isEqualTo(1);
+        assertThat(order.getTotalProductAmount()).isEqualTo(20_000);
+        assertThat(order.getUsedCouponAmount()).isEqualTo(3_000);
+        assertThat(order.getPaymentAmount()).isEqualTo(17_000);
+        assertThat(payment.getPaymentAmount()).isEqualTo(17_000);
+        assertThat(usedCoupon.getStatus()).isEqualTo(UserCouponStatus.USED);
+        assertThat(usedCoupon.getOrderId()).isEqualTo(order.getId());
+        assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(3);
+        assertThat(cartItemRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void 장바구니상품중재고가부족하면_주문생성과재고차감을모두롤백한다() {
+        // given
+        User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
+        Cart cart = cartRepository.save(Cart.create(user.getId()));
+        Product keyboard = productRepository.save(Product.create("keyboard", "mechanical keyboard", 10_000, 5, 1L));
+        Product mouse = productRepository.save(Product.create("mouse", "wireless mouse", 5_000, 1, 1L));
+        CartItem keyboardCartItem = cartItemRepository.save(CartItem.create(cart, keyboard.getId(), 2));
+        CartItem mouseCartItem = cartItemRepository.save(CartItem.create(cart, mouse.getId(), 2));
+
+        // when & then
+        assertThatThrownBy(() -> orderFacade.createOrderFromCart(
+                user.getId(),
+                cartOrderRequest(List.of(keyboardCartItem.getId(), mouseCartItem.getId()), null)
+        ))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ORDER_STOCK_SHORTAGE));
+
+        assertThat(orderRepository.count()).isZero();
+        assertThat(orderItemRepository.count()).isZero();
+        assertThat(paymentRepository.count()).isZero();
+        assertThat(productRepository.findById(keyboard.getId()).orElseThrow().getStock()).isEqualTo(5);
+        assertThat(productRepository.findById(mouse.getId()).orElseThrow().getStock()).isEqualTo(1);
+        assertThat(cartItemRepository.count()).isEqualTo(2);
+    }
+
     private CreateDirectOrderRequest directOrderRequest(Long productId, int quantity, Long userCouponId) {
         CreateDirectOrderRequest request = new CreateDirectOrderRequest();
         ReflectionTestUtils.setField(request, "productId", productId);
         ReflectionTestUtils.setField(request, "quantity", quantity);
+        ReflectionTestUtils.setField(request, "userCouponId", userCouponId);
+        return request;
+    }
+
+    private CreateOrderFromCartRequest cartOrderRequest(List<Long> cartItemIds, Long userCouponId) {
+        CreateOrderFromCartRequest request = new CreateOrderFromCartRequest();
+        ReflectionTestUtils.setField(request, "cartItemIds", cartItemIds);
         ReflectionTestUtils.setField(request, "userCouponId", userCouponId);
         return request;
     }
