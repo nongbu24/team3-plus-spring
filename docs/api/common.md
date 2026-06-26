@@ -147,6 +147,14 @@ POST /api/payments/webhook
 | `PROCESSED` | 처리 완료 |
 | `FAILED` | 처리 실패 |
 
+### ChatStatus
+
+| 값 | 설명 |
+| --- | --- |
+| `WAITING` | 관리자 배정 대기 |
+| `IN_PROGRESS` | 문의 진행 중 |
+| `COMPLETED` | 문의 완료 |
+
 ## 공통 에러 코드
 
 | 코드 | HTTP | 설명 |
@@ -200,6 +208,11 @@ POST /api/payments/webhook
 | `REFUND_NOT_ALLOWED` | 409 | 환불 가능한 결제 상태가 아님 |
 | `REFUND_NOT_FOUND` | 404 | 환불 내역 없음 |
 | `REFUND_AMOUNT_INVALID` | 400 | 환불 금액 오류 |
+| `CHAT_ROOM_NOT_FOUND` | 404 | 채팅방 없음 |
+| `CHAT_ROOM_ACCESS_DENIED` | 403 | 접근 권한이 없는 채팅방 |
+| `CHAT_ROOM_ALREADY_COMPLETED` | 409 | 이미 완료된 채팅방 |
+| `INVALID_CHAT_STATUS_TRANSITION` | 409 | 허용되지 않는 문의 상태 변경 |
+| `ADMIN_NOT_FOUND` | 404 | 관리자 없음 |
 | `POPULAR_SEARCH_KEYWORD_NOT_FOUND` | 404 | 인기 검색어 없음 |
 | `WEBHOOK_SIGNATURE_INVALID` | 400 | 웹훅 서명 검증 실패 |
 | `WEBHOOK_PAYLOAD_INVALID` | 400 | 웹훅 본문 파싱 실패 |
