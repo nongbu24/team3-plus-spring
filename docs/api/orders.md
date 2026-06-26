@@ -163,6 +163,7 @@
 | `USER_NOT_FOUND` | 404 | 인증 사용자를 찾을 수 없음 |
 | `RESOURCE_NOT_FOUND` | 404 | 요청한 회원 쿠폰을 찾을 수 없음 |
 | `FORBIDDEN` | 403 | 타인의 회원 쿠폰으로 주문 시도 |
+| `CART_NOT_FOUND` | 404 | 회원의 장바구니가 없음 |
 | `CART_ITEM_SELECTION_INVALID` | 400 | 선택한 장바구니 항목이 유효하지 않음 |
 | `PRODUCT_NOT_FOUND` | 404 | 상품 없음 |
 | `PRODUCT_NOT_ON_SALE` | 400 | 판매중 상품이 아님 |
