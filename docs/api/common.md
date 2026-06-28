@@ -189,6 +189,7 @@ POST /api/payments/webhook
 | `CART_ITEM_NOT_FOUND` | 404 | 장바구니 상품 없음 |
 | `CART_ITEM_ACCESS_DENIED` | 403 | 타인의 장바구니 상품 접근 |
 | `CART_STOCK_EXCEEDED` | 409 | 장바구니 수량이 재고 초과 |
+| `CART_ITEM_SELECTION_INVALID` | 400 | 선택한 장바구니 항목이 유효하지 않음 |
 | `ORDER_NOT_FOUND` | 404 | 주문 없음 |
 | `ORDER_ACCESS_DENIED` | 403 | 타인의 주문 접근 |
 | `ORDER_CANCEL_NOT_ALLOWED` | 409 | 결제 전 취소가 불가능한 주문 상태 |
