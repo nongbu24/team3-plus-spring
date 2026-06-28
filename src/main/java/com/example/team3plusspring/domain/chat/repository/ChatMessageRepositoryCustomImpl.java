@@ -38,12 +38,12 @@ public class ChatMessageRepositoryCustomImpl implements ChatMessageRepositoryCus
     }
 
     @Override
-    public List<ChatMessage> findMessagesAfterByRoom(Long roomId, Long lastReceivedMessageId, Pageable pageable) {
+    public List<ChatMessage> findMessagesAfterByRoom(Long roomId, Long lastMessageId, Pageable pageable) {
         return queryFactory
                 .selectFrom(chatMessage)
                 .where(
                         chatMessage.chatRoom.id.eq(roomId),
-                        chatMessage.id.gt(lastReceivedMessageId)
+                        chatMessage.id.gt(lastMessageId)
                 )
                 .orderBy(chatMessage.id.asc())
                 .offset(pageable.getOffset())

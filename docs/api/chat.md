@@ -14,7 +14,7 @@
 | `PATCH` | `/api/chat/rooms/{roomId}/status` | 문의 상태 변경 | 필요 (관리자) |
 | `GET` | `/api/chat/rooms/{roomId}/messages` | 채팅방 최근 메시지 조회 | 필요 |
 | `GET` | `/api/chat/rooms/{roomId}/messages/before/{lastMessageId}` | 특정 메시지 이전 메시지 조회 | 필요 |
-| `GET` | `/api/chat/rooms/{roomId}/messages/after/{lastReceivedMessageId}` | 재연결 후 미수신 메시지 조회 | 필요 |
+| `GET` | `/api/chat/rooms/{roomId}/messages/after/{lastMessageId}` | 재연결 후 미수신 메시지 조회 | 필요 |
 | `GET` | `/api/chat/messages` | 전체 최근 메시지 조회 | 필요 (관리자) |
 
 ## POST `/api/chat/rooms/me`
@@ -284,7 +284,7 @@
 | `CHAT_ROOM_NOT_FOUND` | 404 | 채팅방이 없음 |
 | `CHAT_ROOM_ACCESS_DENIED` | 403 | 접근 권한이 없는 채팅방 |
 
-## GET `/api/chat/rooms/{roomId}/messages/after/{lastReceivedMessageId}`
+## GET `/api/chat/rooms/{roomId}/messages/after/{lastMessageId}`
 
 클라이언트가 마지막으로 받은 메시지 이후의 미수신 메시지를 조회합니다.
 
@@ -296,7 +296,7 @@
 | 이름 | 타입 | 설명 |
 | --- | --- | --- |
 | `roomId` | `Long` | 메시지를 조회할 채팅방 ID |
-| `lastReceivedMessageId` | `Long` | 클라이언트가 마지막으로 수신한 메시지 ID. 이 값보다 큰 메시지를 조회 |
+| `lastMessageId` | `Long` | 클라이언트가 마지막으로 수신한 메시지 ID. 이 값보다 큰 메시지를 조회 |
 
 ### Query Parameters
 
@@ -311,7 +311,7 @@
 ### 처리 규칙
 
 - 채팅방 고객 또는 담당 관리자만 메시지를 조회할 수 있습니다.
-- `lastReceivedMessageId`보다 큰 메시지 ID만 조회합니다.
+- `lastMessageId`보다 큰 메시지 ID만 조회합니다.
 - 클라이언트가 화면에 순서대로 붙일 수 있도록 메시지는 `messageId` 오름차순으로 반환합니다.
 - 미수신 메시지가 없으면 빈 배열을 반환합니다.
 

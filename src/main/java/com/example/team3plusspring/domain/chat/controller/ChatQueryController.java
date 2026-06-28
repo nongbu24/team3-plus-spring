@@ -49,16 +49,16 @@ public class ChatQueryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @GetMapping("/rooms/{roomId}/messages/after/{lastReceivedMessageId}")
+    @GetMapping("/rooms/{roomId}/messages/after/{lastMessageId}")
     public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesAfterByRoom(
             @PathVariable Long roomId,
-            @PathVariable Long lastReceivedMessageId,
+            @PathVariable Long lastMessageId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "100") @Min(1) @Max(500) int size
     ) {
         List<ChatMessageResponse> response = chatQueryService.getMessagesAfterByRoom(
                 roomId,
-                lastReceivedMessageId,
+                lastMessageId,
                 userDetails.getUser(),
                 size
         );

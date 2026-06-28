@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -72,7 +73,7 @@ class ChatControllerTest {
 
         // then
         verify(chatFacade).enterRoom(1L, user);
-        verify(chatSessionRegistry).enter("session-1", 1L);
+        verify(chatSessionRegistry).enter("session-1", user.getId(), 1L);
         verify(chatMessagePublisher).publish(1L, response);
     }
 
@@ -115,6 +116,7 @@ class ChatControllerTest {
 
     private Authentication authentication() {
         User user = User.create("user@example.com", "password", "홍길동", "010-1234-5678");
+        ReflectionTestUtils.setField(user, "id", 1L);
         CustomUserDetails userDetails = new CustomUserDetails(user);
 
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

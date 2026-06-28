@@ -18,9 +18,10 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration
 @Profile("redis-chat")
 public class RedisConfig {
+
     @Bean
     public RedisSerializer<ChatMessageResponse> chatMessageRedisSerializer(ObjectMapper objectMapper) {
-        // Redis Pub/Sub 메시지를 JSON으로 전달해 사람이 읽기 쉽고 서버 버전 변경에도 더 안전하게 처리한다.
+        // Redis Pub/Sub 메시지를 Java 기본 직렬화 대신 JSON으로 전달해 사람이 읽기 쉽고 서버 버전 변경에도 비교적 유연하게 처리한다.
         return new JacksonJsonRedisSerializer<>(objectMapper, ChatMessageResponse.class);
     }
 

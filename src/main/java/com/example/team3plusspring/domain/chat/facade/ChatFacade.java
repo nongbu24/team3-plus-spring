@@ -63,6 +63,7 @@ public class ChatFacade {
 
         chatRoom.validateAccess(sender);
         chatRoom.validateNotCompleted();
+
         if (join) {
             joinIfNeeded(chatRoom, sender);
         }

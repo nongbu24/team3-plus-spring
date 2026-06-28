@@ -20,6 +20,7 @@ public class ChatRedisSubscriber implements MessageListener {
     private final RedisSerializer<ChatMessageResponse> chatMessageRedisSerializer;
     private final SimpMessagingTemplate messagingTemplate;
 
+    // Redis에서 받은 채팅 메시지를 현재 서버에 연결된 /sub/chat/{roomId} 구독자에게 다시 전달한다.
     @Override
     public void onMessage(Message message, byte[] pattern) {
         String topic = new String(message.getChannel(), StandardCharsets.UTF_8);

@@ -27,10 +27,10 @@ public class ChatQueryService {
         return toResponses(messageRepository.findMessagesBeforeByRoom(roomId, lastMessageId, pageable(size)));
     }
 
-    public List<ChatMessageResponse> getMessagesAfterByRoom(Long roomId, Long lastReceivedMessageId, User user, int size) {
+    public List<ChatMessageResponse> getMessagesAfterByRoom(Long roomId, Long lastMessageId, User user, int size) {
         chatRoomService.validateRoomAccess(roomId, user);
 
-        return toResponses(messageRepository.findMessagesAfterByRoom(roomId, lastReceivedMessageId, pageable(size)));
+        return toResponses(messageRepository.findMessagesAfterByRoom(roomId, lastMessageId, pageable(size)));
     }
 
     public List<ChatMessageResponse> getRecentMessagesByRoom(Long roomId, User user, int size) {
