@@ -60,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/search/popular").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/coupon-events").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/error").permitAll()
 
                         // 인증 필요한 api 요청

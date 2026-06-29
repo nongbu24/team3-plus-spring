@@ -2,14 +2,14 @@ package com.example.team3plusspring.domain.chat.repository;
 
 import com.example.team3plusspring.domain.chat.entity.ChatRoom;
 import com.example.team3plusspring.domain.chat.entity.ChatStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
-
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long>, ChatRoomRepositoryCustom {
-    List<ChatRoom> findAllByCustomerId(Long customerId);
+    Page<ChatRoom> findAllByCustomerId(Long customerId, Pageable pageable);
 
-    List<ChatRoom> findAllByCustomerIdAndStatus(Long customerId, ChatStatus status);
+    Page<ChatRoom> findAllByCustomerIdAndStatus(Long customerId, ChatStatus status, Pageable pageable);
 
-    List<ChatRoom> findAllByStatus(ChatStatus status);
+    Page<ChatRoom> findAllByStatus(ChatStatus status, Pageable pageable);
 }

@@ -1,0 +1,98 @@
+@baseUrl = http://localhost:8080
+@adminEmail = admin@example.com
+@adminPassword = password1234!
+@customerEmail = user01@example.com
+@customerPassword = password1234!
+@roomId = 1
+@wsUrl = ws://localhost:8080/ws/000/chat-http/websocket
+
+### 1. 관리자 로그인 - 전체 최근 메시지 조회용 토큰 저장
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+> {%
+    client.global.set("adminAccessToken", response.body.data.accessToken);
+%}
+
+### 2. 고객 로그인 - 채팅방 생성용 토큰 저장
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{customerEmail}}",
+  "password": "{{customerPassword}}"
+}
+
+> {%
+    client.global.set("customerAccessToken", response.body.data.accessToken);
+%}
+
+### 3. 내 1:1 문의 채팅방 생성
+POST {{baseUrl}}/api/chat/rooms/me
+Authorization: Bearer {{customerAccessToken}}
+
+> {%
+    client.global.set("chatRoomId", response.body.data.roomId);
+%}
+
+### 4. 고객 채팅 메시지 남기기 - WebSocket STOMP
+# 실행 순서:
+# 1) 아래 WebSocket 요청을 연결합니다.
+# 2) 서버에서 o 응답이 오면 아래 SockJS 메시지 프레임들을 순서대로 보냅니다.
+# 3) SEND /pub/chat.send 프레임까지 보내면 DB에 메시지가 저장됩니다.
+WEBSOCKET {{wsUrl}}
+
+===
+["CONNECT\nAuthorization:Bearer {{customerAccessToken}}\naccept-version:1.2\nheart-beat:0,0\n\n\u0000"]
+
+===
+["SUBSCRIBE\nid:sub-chat-room\ndestination:/sub/chat/{{chatRoomId}}\n\n\u0000"]
+
+===
+["SEND\ndestination:/pub/chat.enter\ncontent-type:application/json\n\n{\"roomId\":{{chatRoomId}}}\u0000"]
+
+===
+["SEND\ndestination:/pub/chat.send\ncontent-type:application/json\n\n{\"roomId\":{{chatRoomId}},\"content\":\"전체 최근 메시지 조회 테스트용 고객 메시지입니다.\"}\u0000"]
+
+### 5. 관리자 전체 최근 메시지 조회 - 채팅방별 그룹 응답
+GET {{baseUrl}}/api/chat/messages?size=50
+Authorization: Bearer {{adminAccessToken}}
+
+### 6. 관리자 전체 최근 메시지 조회 - 생성한 방 ID 확인용
+GET {{baseUrl}}/api/chat/messages?size=50
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    const roomId = client.global.get("chatRoomId");
+    const rooms = response.body.data;
+    client.test("응답은 채팅방별 배열이다", function () {
+        client.assert(Array.isArray(rooms), "data가 배열이어야 합니다.");
+    });
+    client.test("각 묶음은 roomId와 messages를 가진다", function () {
+        if (rooms.length === 0) {
+            return;
+        }
+
+        client.assert(rooms[0].roomId !== undefined, "roomId가 있어야 합니다.");
+        client.assert(Array.isArray(rooms[0].messages), "messages가 배열이어야 합니다.");
+    });
+    client.test("생성한 방이 메시지를 가지고 있으면 roomId로 찾을 수 있다", function () {
+        const room = rooms.find(item => String(item.roomId) === String(roomId));
+        if (room !== undefined) {
+            client.assert(Array.isArray(room.messages), "해당 방의 messages가 배열이어야 합니다.");
+        }
+    });
+%}
+
+### 7. 일반 사용자 전체 최근 메시지 조회 실패 - 관리자 권한 필요
+GET {{baseUrl}}/api/chat/messages?size=50
+Authorization: Bearer {{customerAccessToken}}
+
+### 8. size 검증 실패 - 최대 100 초과
+GET {{baseUrl}}/api/chat/messages?size=101
+Authorization: Bearer {{adminAccessToken}}
