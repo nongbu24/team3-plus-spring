@@ -98,6 +98,41 @@ class PaymentFacadeTest {
     }
 
     @Test
+    void 결제확정_이미취소요청중인결제이면_PG취소를다시요청하지않는다() {
+        // given
+        Payment payment = payment();
+        payment.markAsCancelRequested();
+        Order order = order(USER_ID);
+        ConfirmPaymentRequest request = request(payment.getPortonePaymentId());
+
+        givenPaymentAndOrder(payment, order);
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_CANCEL_PENDING));
+        verifyNoInteractions(paymentGateway, paymentCommandService);
+    }
+
+    @Test
+    void 결제확정_수동확인이필요한결제이면_PG취소를다시요청하지않는다() {
+        // given
+        Payment payment = payment();
+        payment.markAsCancelRequested();
+        payment.markAsReviewRequired();
+        Order order = order(USER_ID);
+        ConfirmPaymentRequest request = request(payment.getPortonePaymentId());
+
+        givenPaymentAndOrder(payment, order);
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_REVIEW_REQUIRED));
+        verifyNoInteractions(paymentGateway, paymentCommandService);
+    }
+
+    @Test
     void 결제확정_주문소유자가아니면_실패한다() {
         // given
         Payment payment = payment();
@@ -213,6 +248,7 @@ class PaymentFacadeTest {
         givenPaymentAndOrder(payment, order);
         when(paymentGateway.getPayment(payment.getPortonePaymentId()))
                 .thenReturn(pgPayment(payment, "PAID", PAYMENT_AMOUNT + 1_000));
+        when(paymentCommandService.requestCancellation(PAYMENT_ID)).thenReturn(true);
         when(paymentGateway.cancelPayment(payment.getPortonePaymentId(), "결제 금액 불일치 자동 취소"))
                 .thenReturn(PaymentCancellationResult.from("SUCCEEDED"));
 
@@ -220,13 +256,14 @@ class PaymentFacadeTest {
         assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_AMOUNT_MISMATCH));
+        verify(paymentCommandService).requestCancellation(PAYMENT_ID);
         verify(paymentCommandService).cancelPayment(PAYMENT_ID);
         verify(paymentCommandService, never()).failPayment(PAYMENT_ID);
         verify(paymentCommandService, never()).completePayment(PAYMENT_ID);
     }
 
     @Test
-    void 결제확정_금액불일치결제취소가요청중이면_내부상태를변경하지않는다() {
+    void 결제확정_금액불일치결제취소가요청중이면_취소요청상태로변경한다() {
         // given
         Payment payment = payment();
         Order order = order(USER_ID);
@@ -235,6 +272,7 @@ class PaymentFacadeTest {
         givenPaymentAndOrder(payment, order);
         when(paymentGateway.getPayment(payment.getPortonePaymentId()))
                 .thenReturn(pgPayment(payment, "PAID", PAYMENT_AMOUNT + 1_000));
+        when(paymentCommandService.requestCancellation(PAYMENT_ID)).thenReturn(true);
         when(paymentGateway.cancelPayment(payment.getPortonePaymentId(), "결제 금액 불일치 자동 취소"))
                 .thenReturn(PaymentCancellationResult.from("REQUESTED"));
 
@@ -242,12 +280,13 @@ class PaymentFacadeTest {
         assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_CANCEL_PENDING));
-        verifyNoInteractions(paymentCommandService);
+        verify(paymentCommandService).requestCancellation(PAYMENT_ID);
+        verify(paymentCommandService, never()).cancelPayment(PAYMENT_ID);
+        verify(paymentCommandService, never()).completePayment(PAYMENT_ID);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"FAILED", "UNSUPPORTED_STATUS"})
-    void 결제확정_금액불일치결제취소가실패하면_내부상태를변경하지않는다(String cancellationStatus) {
+    @Test
+    void 결제확정_다른요청이취소를선점했으면_PortOne취소를중복호출하지않는다() {
         // given
         Payment payment = payment();
         Order order = order(USER_ID);
@@ -256,14 +295,61 @@ class PaymentFacadeTest {
         givenPaymentAndOrder(payment, order);
         when(paymentGateway.getPayment(payment.getPortonePaymentId()))
                 .thenReturn(pgPayment(payment, "PAID", PAYMENT_AMOUNT + 1_000));
+        when(paymentCommandService.requestCancellation(PAYMENT_ID)).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_CANCEL_PENDING));
+        verify(paymentGateway, never()).cancelPayment(payment.getPortonePaymentId(), "결제 금액 불일치 자동 취소");
+        verify(paymentCommandService, never()).cancelPayment(PAYMENT_ID);
+        verify(paymentCommandService, never()).markPaymentForReview(PAYMENT_ID);
+    }
+
+    @Test
+    void 결제확정_PortOne취소호출결과를확인할수없으면_수동확인상태로변경한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+        ConfirmPaymentRequest request = request(payment.getPortonePaymentId());
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "PAID", PAYMENT_AMOUNT + 1_000));
+        when(paymentCommandService.requestCancellation(PAYMENT_ID)).thenReturn(true);
+        when(paymentGateway.cancelPayment(payment.getPortonePaymentId(), "결제 금액 불일치 자동 취소"))
+                .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILED));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_REVIEW_REQUIRED));
+        verify(paymentCommandService).markPaymentForReview(PAYMENT_ID);
+        verify(paymentCommandService, never()).cancelPayment(PAYMENT_ID);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"FAILED", "UNSUPPORTED_STATUS"})
+    void 결제확정_금액불일치결제취소결과를확정할수없으면_수동확인상태로변경한다(String cancellationStatus) {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+        ConfirmPaymentRequest request = request(payment.getPortonePaymentId());
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "PAID", PAYMENT_AMOUNT + 1_000));
+        when(paymentCommandService.requestCancellation(PAYMENT_ID)).thenReturn(true);
         when(paymentGateway.cancelPayment(payment.getPortonePaymentId(), "결제 금액 불일치 자동 취소"))
                 .thenReturn(PaymentCancellationResult.from(cancellationStatus));
 
         // when & then
         assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
                 .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.EXTERNAL_API_FAILED));
-        verifyNoInteractions(paymentCommandService);
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_REVIEW_REQUIRED));
+        verify(paymentCommandService).markPaymentForReview(PAYMENT_ID);
+        verify(paymentCommandService, never()).cancelPayment(PAYMENT_ID);
+        verify(paymentCommandService, never()).completePayment(PAYMENT_ID);
     }
 
     @Test
