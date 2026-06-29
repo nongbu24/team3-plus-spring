@@ -11,11 +11,11 @@ import static org.mockito.Mockito.when;
 class ChatAdminSessionServiceTest {
 
     private final ChatSessionRegistry chatSessionRegistry = mock(ChatSessionRegistry.class);
-    private final ChatWebSocketSessionManager chatWebSocketSessionManager = mock(ChatWebSocketSessionManager.class);
+    private final ChatStompSubscriptionManager chatStompSubscriptionManager = mock(ChatStompSubscriptionManager.class);
     private final ChatAdminAssignmentEventPublisher eventPublisher = mock(ChatAdminAssignmentEventPublisher.class);
     private final ChatAdminSessionService chatAdminSessionService = new ChatAdminSessionService(
             chatSessionRegistry,
-            chatWebSocketSessionManager,
+            chatStompSubscriptionManager,
             eventPublisher
     );
 
@@ -30,7 +30,9 @@ class ChatAdminSessionServiceTest {
 
         // then
         verify(chatSessionRegistry).removeAdminSessionsExcept(1L, 10L);
-        verify(chatWebSocketSessionManager).closeSessions(Set.of("session-1"));
+        verify(chatStompSubscriptionManager).unsubscribeAll(
+                Set.of(new ChatSessionRegistry.RemovedAdminSubscription("session-1", "sub-1"))
+        );
         verify(eventPublisher).publish(1L, 10L);
     }
 
@@ -45,6 +47,8 @@ class ChatAdminSessionServiceTest {
 
         // then
         verify(chatSessionRegistry).removeAdminSessionsExcept(1L, 10L);
-        verify(chatWebSocketSessionManager).closeSessions(Set.of("session-1"));
+        verify(chatStompSubscriptionManager).unsubscribeAll(
+                Set.of(new ChatSessionRegistry.RemovedAdminSubscription("session-1", "sub-1"))
+        );
     }
 }

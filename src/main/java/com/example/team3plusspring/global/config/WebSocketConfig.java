@@ -1,19 +1,14 @@
 package com.example.team3plusspring.global.config;
 
-import com.example.team3plusspring.domain.chat.service.ChatWebSocketSessionManager;
 import com.example.team3plusspring.global.security.jwt.StompSubscriptionOutboundInterceptor;
 import com.example.team3plusspring.global.security.jwt.StompAuthInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.config.ChannelRegistration;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.handler.WebSocketHandlerDecorator;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -21,7 +16,6 @@ import org.springframework.web.socket.handler.WebSocketHandlerDecorator;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final StompAuthInterceptor stompAuthInterceptor;
     private final StompSubscriptionOutboundInterceptor stompSubscriptionOutboundInterceptor;
-    private final ChatWebSocketSessionManager chatWebSocketSessionManager;
 
     // 클라이언트는 /pub으로 메시지를 보내고, 서버는 /sub으로 구독자에게 메시지를 전달한다.
     @Override
@@ -36,23 +30,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
-    }
-
-    @Override
-    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
-        registration.addDecoratorFactory(handler -> new WebSocketHandlerDecorator(handler) {
-            @Override
-            public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-                chatWebSocketSessionManager.register(session);
-                super.afterConnectionEstablished(session);
-            }
-
-            @Override
-            public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-                chatWebSocketSessionManager.unregister(session.getId());
-                super.afterConnectionClosed(session, closeStatus);
-            }
-        });
     }
 
     // CONNECT, SUBSCRIBE 같은 클라이언트 입력 프레임이 컨트롤러에 도착하기 전에 인증/권한을 검사한다.

@@ -4,13 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ChatAdminSessionService {
     private final ChatSessionRegistry chatSessionRegistry;
-    private final ChatWebSocketSessionManager chatWebSocketSessionManager;
+    private final ChatStompSubscriptionManager chatStompSubscriptionManager;
     private final ChatAdminAssignmentEventPublisher chatAdminAssignmentEventPublisher;
 
     /**
@@ -30,10 +29,6 @@ public class ChatAdminSessionService {
         Set<ChatSessionRegistry.RemovedAdminSubscription> removedSubscriptions =
                 chatSessionRegistry.removeAdminSessionsExcept(roomId, assignedAdminId);
 
-        Set<String> removedSessionIds = removedSubscriptions.stream()
-                .map(ChatSessionRegistry.RemovedAdminSubscription::sessionId)
-                .collect(Collectors.toSet());
-
-        chatWebSocketSessionManager.closeSessions(removedSessionIds);
+        chatStompSubscriptionManager.unsubscribeAll(removedSubscriptions);
     }
 }
