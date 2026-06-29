@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.coupon;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -9,7 +10,12 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 
+import com.example.team3plusspring.domain.coupon.dto.GetCouponEventListResponse;
+import com.example.team3plusspring.domain.coupon.entity.CouponEvent;
+import com.example.team3plusspring.domain.coupon.entity.DiscountType;
+import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.service.CouponEventService;
 import com.example.team3plusspring.support.RedisTestSupport;
 
@@ -23,6 +29,9 @@ public class CouponEventCachingTest extends RedisTestSupport {
 
 	@Autowired
 	private EntityManagerFactory entityManagerFactory;
+
+	@Autowired
+	private CouponEventRepository couponEventRepository;
 
 	@Test
 	void 캐시가_없으면_동시조회_횟수만큼_쿼리가_반복_실행된다() throws InterruptedException {
@@ -45,5 +54,39 @@ public class CouponEventCachingTest extends RedisTestSupport {
 		System.out.println("요청 수: " + requestCount);
 		System.out.println("총 소요시간: " + elapsed + "ms");
 		System.out.println("실행된 쿼리 수: " + statistics.getQueryExecutionCount());
+	}
+
+	@Test
+	void 캐시_적용후_발급해도_목록_조회결과의_발급수량은_그대로다() {
+
+		CouponEvent couponEvent = couponEventRepository.save(
+			CouponEvent.create(
+				"캐싱테스트쿠폰",
+				DiscountType.FIXED,
+				1000,
+				10,
+				LocalDateTime.now().minusDays(1),
+				LocalDateTime.now().plusDays(1),
+				7
+				)
+		);
+
+		Page<GetCouponEventListResponse> before = couponEventService.getCouponEvents(0, 10);
+		int issuedQuantityBeforeIssue = before.getContent().stream()
+			.filter(r -> r.getId().equals(couponEvent.getId()))
+			.findFirst().orElseThrow().getIssuedQuantity();
+
+		couponEventService.issueCoupon(1L, couponEvent.getId());
+
+		CouponEvent actual = couponEventRepository.findById(couponEvent.getId()).orElseThrow();
+		System.out.println("실제 DB의 issuedQuantity: " + actual.getIssuedQuantity());
+
+		Page<GetCouponEventListResponse> after = couponEventService.getCouponEvents(0, 10);
+		int issuedQuantityAfterIssue = after.getContent().stream()
+			.filter(r -> r.getId().equals(couponEvent.getId()))
+			.findFirst().orElseThrow().getIssuedQuantity();
+
+		System.out.println("발급 전: " + issuedQuantityBeforeIssue);
+		System.out.println("발급 후: " + issuedQuantityAfterIssue);
 	}
 }
