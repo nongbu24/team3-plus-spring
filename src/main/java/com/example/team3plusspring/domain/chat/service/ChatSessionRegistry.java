@@ -111,6 +111,7 @@ public class ChatSessionRegistry {
                 .removeIf(entry -> entry.getValue().isEmpty());
 
         activeSessionCounts.remove(sessionRoom);
+        removeRoomActivityIfNoActiveSession(roomId);
     }
 
     public synchronized void removeAdminSessionsExcept(Long roomId, Long assignedAdminId) {
@@ -139,11 +140,7 @@ public class ChatSessionRegistry {
         }
 
         for (SessionRoom room : rooms) {
-            int remainingCount = activeSessionCounts.merge(room, -1, Integer::sum);
-
-            if (remainingCount <= 0) {
-                activeSessionCounts.remove(room);
-            }
+            decreaseActiveSessionCount(room);
         }
     }
 
@@ -172,7 +169,22 @@ public class ChatSessionRegistry {
 
         if (remainingCount <= 0) {
             activeSessionCounts.remove(room);
+            removeRoomActivityIfNoActiveSession(room.roomId());
         }
+    }
+
+    private void removeRoomActivityIfNoActiveSession(Long roomId) {
+        if (hasActiveSession(roomId)) {
+            return;
+        }
+
+        chatActivityStore.removeRoomActivity(roomId);
+    }
+
+    private boolean hasActiveSession(Long roomId) {
+        return activeSessionCounts.keySet()
+                .stream()
+                .anyMatch(room -> room.roomId().equals(roomId));
     }
 
     private InactiveChatSession expire(SessionRoom sessionRoom) {

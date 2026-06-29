@@ -29,6 +29,12 @@ public class RedisChatActivityStore implements ChatActivityStore {
     }
 
     @Override
+    public void removeRoomActivity(Long roomId) {
+        redisTemplate.delete(lastActivityKey(roomId));
+        redisTemplate.delete(warningKey(roomId));
+    }
+
+    @Override
     public Set<Long> findAndMarkWarningRoomIds(Set<Long> roomIds, Duration warningAfter) {
         long warningThreshold = Instant.now().minus(warningAfter).toEpochMilli();
 

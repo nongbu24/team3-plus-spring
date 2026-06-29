@@ -378,6 +378,18 @@ Authorization: Bearer {accessToken}
 
 인증에 실패하면 STOMP 연결 또는 이후 메시지 처리가 거부됩니다.
 
+### 권장 메시지 흐름
+
+클라이언트는 같은 STOMP 세션에서 아래 순서로 채팅방에 진입한 뒤 메시지를 전송합니다.
+
+1. `CONNECT`
+2. `SUBSCRIBE /sub/chat/{roomId}`
+3. `SEND /pub/chat.enter`
+4. `SEND /pub/chat.send`
+
+`/pub/chat.send`는 현재 세션이 해당 채팅방을 구독하고 입장한 상태일 때만 처리됩니다.
+`/pub/chat.leave`도 현재 세션이 해당 채팅방에 입장한 상태일 때만 처리됩니다.
+
 ### SUBSCRIBE `/sub/chat/{roomId}`
 
 채팅방 메시지를 실시간으로 수신합니다.

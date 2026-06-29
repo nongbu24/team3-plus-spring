@@ -158,15 +158,33 @@ class ChatControllerTest {
         ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
         ChatMessageResponse response = response(12L, "홍길동님이 퇴장했습니다");
 
+        when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(true);
         when(chatFacade.leaveRoom(1L, user)).thenReturn(response);
 
         // when
         chatController.leave(request, "session-1", authentication);
 
         // then
+        verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verify(chatFacade).leaveRoom(1L, user);
         verify(chatSessionRegistry).leaveAll(user.getId(), 1L);
         verify(chatMessagePublisher).publish(1L, response);
+    }
+
+    @Test
+    void 명시적퇴장_현재세션이방에입장한상태가아니면_실패한다() {
+        // given
+        Authentication authentication = authentication();
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+
+        when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> chatController.leave(request, "session-1", authentication))
+                .isInstanceOf(BusinessException.class);
+        verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
+        verifyNoInteractions(chatFacade, chatMessagePublisher);
     }
 
     @Test

@@ -4,6 +4,9 @@ import com.example.team3plusspring.domain.user.entity.UserRole;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class ChatSessionRegistryTest {
 
@@ -109,5 +112,34 @@ class ChatSessionRegistryTest {
 
         // then
         assertThat(chatSessionRegistry.canSend("session-1", 1L, 10L)).isTrue();
+    }
+
+    @Test
+    void 마지막활성세션이제거되면_방활동정보를삭제한다() {
+        // given
+        ChatActivityStore chatActivityStore = mock(ChatActivityStore.class);
+        ChatSessionRegistry registry = new ChatSessionRegistry(chatActivityStore);
+        registry.enter("session-1", 1L, 10L);
+
+        // when
+        registry.removeSession("session-1");
+
+        // then
+        verify(chatActivityStore).removeRoomActivity(10L);
+    }
+
+    @Test
+    void 같은방에다른활성세션이남아있으면_방활동정보를삭제하지않는다() {
+        // given
+        ChatActivityStore chatActivityStore = mock(ChatActivityStore.class);
+        ChatSessionRegistry registry = new ChatSessionRegistry(chatActivityStore);
+        registry.enter("session-1", 1L, 10L);
+        registry.enter("session-2", 2L, 10L);
+
+        // when
+        registry.removeSession("session-1");
+
+        // then
+        verify(chatActivityStore, never()).removeRoomActivity(10L);
     }
 }

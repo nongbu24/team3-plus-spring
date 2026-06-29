@@ -77,6 +77,11 @@ public class ChatController {
             Principal principal
     ) {
         User sender = getAuthenticatedUser(principal);
+
+        if (!chatSessionRegistry.isEntered(sessionId, sender.getId(), request.getRoomId())) {
+            throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
         ChatMessageResponse response = chatFacade.leaveRoom(request.getRoomId(), sender);
         chatSessionRegistry.leaveAll(sender.getId(), request.getRoomId());
 

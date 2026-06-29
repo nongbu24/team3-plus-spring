@@ -22,6 +22,11 @@ public class InMemoryChatActivityStore implements ChatActivityStore {
     }
 
     @Override
+    public void removeRoomActivity(Long roomId) {
+        roomActivities.remove(roomId);
+    }
+
+    @Override
     public Set<Long> findAndMarkWarningRoomIds(Set<Long> roomIds, Duration warningAfter) {
         LocalDateTime warningThreshold = LocalDateTime.now().minus(warningAfter);
 
