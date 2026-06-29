@@ -5,7 +5,7 @@ public enum ChatStatus {
     IN_PROGRESS,
     COMPLETED;
 
-    public boolean canChangeTo(ChatStatus nextStatus) {
+    public boolean canChange(ChatStatus nextStatus) {
         return switch (this) {
             case WAITING -> nextStatus == IN_PROGRESS;
             case IN_PROGRESS -> nextStatus == COMPLETED;

@@ -127,7 +127,67 @@ class ChatControllerTest {
                 .andExpect(jsonPath("$.status").value(BODY_STATUS))
                 .andExpect(jsonPath("$.data.content.length()").value(1))
                 .andExpect(jsonPath("$.data.content[0].roomId").value(ownerRoom.getId()))
-                .andExpect(jsonPath("$.data.content[0].customerId").value(owner.getId()));
+                .andExpect(jsonPath("$.data.content[0].customerId").value(owner.getId()))
+                .andExpect(jsonPath("$.data.pageable").doesNotExist())
+                .andExpect(jsonPath("$.data.sort").doesNotExist());
+    }
+
+    @Test
+    void 채팅방단건조회_본인채팅방이면_성공한다() throws Exception {
+        // given
+        User customer = saveUser("홍길동");
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(customer));
+        String accessToken = accessToken(customer);
+
+        // when & then
+        mockMvc.perform(get("/api/chat/rooms/{roomId}", room.getId())
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(BODY_STATUS))
+                .andExpect(jsonPath("$.data.roomId").value(room.getId()))
+                .andExpect(jsonPath("$.data.name").value("홍길동님의 1:1 문의"))
+                .andExpect(jsonPath("$.data.customerId").value(customer.getId()))
+                .andExpect(jsonPath("$.data.customerName").value("홍길동"));
+    }
+
+    @Test
+    void 채팅방목록조회_관리자면_상태로전체채팅방을필터링한다() throws Exception {
+        // given
+        User waitingCustomer = saveUser("대기고객");
+        User completedCustomer = saveUser("완료고객");
+        User admin = saveAdmin("관리자");
+        ChatRoom waitingRoom = chatRoomRepository.save(ChatRoom.create(waitingCustomer));
+        ChatRoom completedRoom = chatRoomRepository.save(ChatRoom.create(completedCustomer));
+        completedRoom.assignAdmin(admin);
+        completedRoom.changeTo(ChatStatus.IN_PROGRESS);
+        completedRoom.changeTo(ChatStatus.COMPLETED);
+        chatRoomRepository.save(completedRoom);
+        String accessToken = accessToken(admin);
+
+        // when & then
+        mockMvc.perform(get("/api/chat/rooms")
+                        .param("status", "WAITING")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(BODY_STATUS))
+                .andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].roomId").value(waitingRoom.getId()))
+                .andExpect(jsonPath("$.data.content[0].status").value(ChatStatus.WAITING.name()));
+    }
+
+    @Test
+    void 채팅방목록조회_잘못된상태값이면_INVALID_ENUM_VALUE를반환한다() throws Exception {
+        // given
+        User user = saveUser("홍길동");
+        String accessToken = accessToken(user);
+
+        // when & then
+        mockMvc.perform(get("/api/chat/rooms")
+                        .param("status", "UNKNOWN")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(ErrorCode.INVALID_ENUM_VALUE.getHttpStatus().value()))
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_ENUM_VALUE.name()));
     }
 
     @Test
@@ -297,7 +357,7 @@ class ChatControllerTest {
         User firstAdmin = saveAdmin("첫번째관리자");
         User secondAdmin = saveAdmin("두번째관리자");
         ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
-        chatFacade.sendMessage(new ChatMessageRequest(room.getId(), "문의 확인했습니다."), firstAdmin);
+        chatFacade.sendMessage(ChatMessageRequest.of(room.getId(), "문의 확인했습니다."), firstAdmin);
 
         // when & then
         assertThatThrownBy(() -> chatRoomService.validateRoomAccess(room.getId(), secondAdmin))
@@ -413,11 +473,11 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
-        room.changeStatus(ChatStatus.IN_PROGRESS);
-        room.changeStatus(ChatStatus.COMPLETED);
+        room.changeTo(ChatStatus.IN_PROGRESS);
+        room.changeTo(ChatStatus.COMPLETED);
         chatRoomRepository.save(room);
 
-        ChatMessageRequest request = new ChatMessageRequest(room.getId(), "끝난 문의에 보내는 메시지");
+        ChatMessageRequest request = ChatMessageRequest.of(room.getId(), "끝난 문의에 보내는 메시지");
 
         // when & then
         assertThatThrownBy(() -> chatFacade.sendMessage(request, user))
@@ -444,7 +504,7 @@ class ChatControllerTest {
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
         ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
-        ChatMessageRequest request = new ChatMessageRequest(room.getId(), "문의 확인했습니다.");
+        ChatMessageRequest request = ChatMessageRequest.of(room.getId(), "문의 확인했습니다.");
 
         // when
         chatFacade.sendMessage(request, admin);

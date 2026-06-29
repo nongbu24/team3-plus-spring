@@ -1,5 +1,7 @@
-package com.example.team3plusspring.domain.chat.service;
+package com.example.team3plusspring.domain.chat.local;
 
+import com.example.team3plusspring.domain.chat.port.ActiveChatSession;
+import com.example.team3plusspring.domain.chat.port.ChatActivityStore;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -45,7 +47,7 @@ public class InMemoryChatActivityStore implements ChatActivityStore {
 
         return activeSessions.stream()
                 .filter(activeSession -> {
-                    RoomActivity activity = roomActivities.get(activeSession.roomId());
+                    RoomActivity activity = roomActivities.get(activeSession.getRoomId());
                     return activity == null || activity.isExpired(expiredThreshold);
                 })
                 .collect(Collectors.toSet());

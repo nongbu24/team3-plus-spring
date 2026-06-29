@@ -2,6 +2,9 @@ package com.example.team3plusspring.domain.chat.service;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
+import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
+import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
+import com.example.team3plusspring.domain.chat.port.InactiveChatSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -36,9 +39,9 @@ public class ChatInactivityService {
                 .forEach(this::leaveExpiredSession);
     }
 
-    private void leaveExpiredSession(ChatSessionRegistry.InactiveChatSession session) {
-        chatFacade.leaveInactiveRoom(session.roomId(), session.userId())
-                .ifPresent(response -> chatMessagePublisher.publish(session.roomId(), response));
-        chatSessionExpiredEventPublisher.publish(session.roomId(), session.userId());
+    private void leaveExpiredSession(InactiveChatSession session) {
+        chatFacade.leaveInactiveRoom(session.getRoomId(), session.getUserId())
+                .ifPresent(response -> chatMessagePublisher.publish(session.getRoomId(), response));
+        chatSessionExpiredEventPublisher.publish(session.getRoomId(), session.getUserId());
     }
 }

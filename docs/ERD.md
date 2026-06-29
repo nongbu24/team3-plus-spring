@@ -48,6 +48,15 @@ erDiagram
         DATETIME updated_at "수정일시"
     }
 
+    cart_items {
+        BIGINT id PK "장바구니 상품 ID"
+        BIGINT cart_id FK "장바구니 ID"
+        BIGINT product_id FK "상품 ID"
+        INT quantity "수량"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
+    }
+
     chat_rooms {
         BIGINT id PK "채팅방 ID"
         VARCHAR name "채팅방 이름"
@@ -66,6 +75,7 @@ erDiagram
         VARCHAR sender_name "발신자 이름"
         BIGINT chat_room_id FK "채팅방 ID"
         VARCHAR content "메시지 내용"
+        VARCHAR message_type "메시지 유형"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -78,15 +88,6 @@ erDiagram
         VARCHAR role "참여자 권한"
         DATETIME joined_at "참여일시"
         DATETIME left_at "퇴장일시"
-        DATETIME created_at "생성일시"
-        DATETIME updated_at "수정일시"
-    }
-
-    cart_items {
-        BIGINT id PK "장바구니 상품 ID"
-        BIGINT cart_id FK "장바구니 ID"
-        BIGINT product_id FK "상품 ID"
-        INT quantity "수량"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -146,19 +147,6 @@ erDiagram
         INT used_coupon_amount "쿠폰 할인 금액"
         INT payment_amount "최종 결제 금액"
         DATETIME approved_at "결제 승인일시"
-        DATETIME created_at "생성일시"
-        DATETIME updated_at "수정일시"
-    }
-
-    refunds {
-        BIGINT id PK "환불 ID"
-        BIGINT payment_id FK "결제 ID"
-        BIGINT order_id FK "주문 ID"
-        VARCHAR status "환불 상태"
-        INT refund_amount "환불 금액"
-        VARCHAR reason "환불 사유"
-        DATETIME requested_at "환불 요청일시"
-        DATETIME completed_at "환불 완료일시"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -258,6 +246,21 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
 
+### cart_items
+
+장바구니에 담긴 상품과 수량을 저장합니다.
+
+| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
+| --- | --- | --- | --- | --- |
+| 장바구니 상품 ID | id | BIGINT | NOT NULL | PK |
+| 장바구니 ID | cart_id | BIGINT | NOT NULL | FK: carts.id |
+| 상품 ID | product_id | BIGINT | NOT NULL | FK: products.id |
+| 수량 | quantity | INT | NOT NULL | 1 이상 |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
+
+- 같은 장바구니에 같은 상품은 한 번만 담기도록 `(cart_id, product_id)`에 UNIQUE 제약을 둡니다.
+
 ### chat_messages
 
 채팅방에 저장된 일반 메시지와 입장/퇴장 시스템 메시지를 저장합니다.
@@ -269,6 +272,7 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 발신자 이름 | sender_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
 | 채팅방 ID | chat_room_id | BIGINT | NOT NULL | FK: chat_rooms.id |
 | 메시지 내용 | content | VARCHAR(1000) | NOT NULL | 1000자 이하 |
+| 메시지 유형 | message_type | VARCHAR(20) | NOT NULL | CHAT, SYSTEM |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
 
@@ -289,21 +293,6 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 수정일시 | updated_at | DATETIME | NULL |  |
 
 - 같은 채팅방에 같은 회원은 한 번만 참여자로 저장되도록 `(room_id, user_id)`에 UNIQUE 제약을 둡니다.
-
-### cart_items
-
-장바구니에 담긴 상품과 수량을 저장합니다.
-
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 장바구니 상품 ID | id | BIGINT | NOT NULL | PK |
-| 장바구니 ID | cart_id | BIGINT | NOT NULL | FK: carts.id |
-| 상품 ID | product_id | BIGINT | NOT NULL | FK: products.id |
-| 수량 | quantity | INT | NOT NULL | 1 이상 |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL |  |
-
-- 같은 장바구니에 같은 상품은 한 번만 담기도록 `(cart_id, product_id)`에 UNIQUE 제약을 둡니다.
 
 ### categories
 
@@ -382,23 +371,6 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 결제 승인일시 | approved_at | DATETIME | NULL     |                                           |
 | 생성일시 | created_at | DATETIME | NOT NULL |                                           |
 | 수정일시 | updated_at | DATETIME | NULL     |                                           |
-
-### refunds
-
-결제 완료 이후 환불 요청을 저장합니다.
-
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 환불 ID | id | BIGINT | NOT NULL | PK |
-| 결제 ID | payment_id | BIGINT | NOT NULL | FK: payments.id, 중복 환불 방지를 위해 UNIQUE 권장 |
-| 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id |
-| 환불 상태 | status | VARCHAR(30) | NOT NULL | REQUESTED, APPROVED, REJECTED, COMPLETED, FAILED |
-| 환불 금액 | refund_amount | INT | NOT NULL | 서버 계산 값 |
-| 환불 사유 | reason | VARCHAR(255) | NOT NULL |  |
-| 환불 요청일시 | requested_at | DATETIME | NOT NULL |  |
-| 환불 완료일시 | completed_at | DATETIME | NULL |  |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL |  |
 
 ### coupon_events
 
@@ -483,7 +455,6 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 | orders - order_items         | 주문은 여러 주문 상품을 가집니다. |
 | products - order_items       | 상품은 주문 상품 스냅샷으로 기록됩니다. |
 | orders - payments            | 주문은 하나의 결제와 연결됩니다. |
-| payments - refunds           | 결제 완료 이후 환불 요청이 생성될 수 있습니다. |
 | payments - webhook_events    | 결제는 여러 웹훅 이벤트와 연결될 수 있습니다. |
 | coupon_events - user_coupons | 쿠폰 이벤트는 여러 회원 쿠폰을 발급합니다. |
 | orders - user_coupons        | 쿠폰을 사용한 경우 회원 쿠폰이 주문과 연결됩니다. |

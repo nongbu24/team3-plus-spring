@@ -1,4 +1,4 @@
-package com.example.team3plusspring.domain.chat.service;
+package com.example.team3plusspring.domain.chat.port;
 
 /**
  * 담당 관리자 배정 사실을 다른 서버 인스턴스에 알리는 통로다.

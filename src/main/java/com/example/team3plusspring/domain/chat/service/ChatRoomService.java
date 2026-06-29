@@ -1,10 +1,11 @@
 package com.example.team3plusspring.domain.chat.service;
 
 import com.example.team3plusspring.domain.chat.dto.ChatRoomResponse;
-import com.example.team3plusspring.domain.chat.dto.UpdateChatRoomStatusRequest;
+import com.example.team3plusspring.domain.chat.dto.ChatRoomStatusRequest;
 import com.example.team3plusspring.domain.chat.entity.ChatMember;
 import com.example.team3plusspring.domain.chat.entity.ChatRoom;
 import com.example.team3plusspring.domain.chat.entity.ChatStatus;
+import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.repository.ChatMemberRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
 import com.example.team3plusspring.domain.user.entity.User;
@@ -59,15 +60,27 @@ public class ChatRoomService {
         return rooms.map(ChatRoomResponse::from);
     }
 
+    public ChatRoomResponse getRoom(Long roomId, User user) {
+        ChatRoom room = findAccessibleRoom(roomId, user);
+
+        return ChatRoomResponse.from(room);
+    }
+
     public void validateRoomAccess(Long roomId, User user) {
+        findAccessibleRoom(roomId, user);
+    }
+
+    private ChatRoom findAccessibleRoom(Long roomId, User user) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         room.validateAccess(user);
+
+        return room;
     }
 
     @Transactional
-    public ChatRoomResponse updateStatus(Long roomId, User user, UpdateChatRoomStatusRequest request) {
+    public ChatRoomResponse updateStatus(Long roomId, User user, ChatRoomStatusRequest request) {
         validateAdmin(user);
 
         ChatRoom room = chatRoomRepository.findByIdWithLock(roomId)
@@ -76,7 +89,7 @@ public class ChatRoomService {
         room.validateAccess(user);
         Long assignedAdminId = assignAdminWhenStartProgress(room, user, request.getStatus());
         boolean completingRoom = request.getStatus() == ChatStatus.COMPLETED;
-        room.changeStatus(request.getStatus());
+        room.changeTo(request.getStatus());
 
         if (assignedAdminId != null) {
             handleAdminAssignedAfterCommit(room.getId(), assignedAdminId);
@@ -146,5 +159,4 @@ public class ChatRoomService {
         chatSessionRegistry.removeLocalSessions(userId, roomId);
         chatSessionExpiredEventPublisher.publish(roomId, userId);
     }
-
 }

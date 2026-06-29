@@ -3,6 +3,9 @@ package com.example.team3plusspring.domain.chat.service;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.entity.ChatMessageType;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
+import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
+import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
+import com.example.team3plusspring.domain.chat.port.InactiveChatSession;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -57,7 +60,7 @@ class ChatInactivityServiceTest {
     @Test
     void 무활동만료대상이있으면_퇴장처리하고_퇴장메시지를발행한다() {
         // given
-        ChatMessageResponse response = new ChatMessageResponse(
+        ChatMessageResponse response = ChatMessageResponse.of(
                 10L,
                 "홍길동님이 퇴장했습니다",
                 1L,
@@ -66,7 +69,7 @@ class ChatInactivityServiceTest {
         );
 
         when(chatSessionRegistry.expireInactiveSessions(Duration.ofMinutes(5)))
-                .thenReturn(Set.of(new ChatSessionRegistry.InactiveChatSession(1L, 10L)));
+                .thenReturn(Set.of(new InactiveChatSession(1L, 10L)));
         when(chatFacade.leaveInactiveRoom(10L, 1L)).thenReturn(Optional.of(response));
 
         // when

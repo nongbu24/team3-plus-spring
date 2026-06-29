@@ -12,6 +12,7 @@
 | --- | --- | --- | --- |
 | `POST` | `/api/chat/rooms/me` | 내 1:1 문의 채팅방 생성 | 필요 |
 | `GET` | `/api/chat/rooms` | 채팅방 목록 조회 | 필요 |
+| `GET` | `/api/chat/rooms/{roomId}` | 채팅방 단건 조회 | 필요 |
 | `PATCH` | `/api/chat/rooms/{roomId}/status` | 문의 상태 변경 | 필요 (관리자) |
 | `GET` | `/api/chat/rooms/{roomId}/messages` | 채팅방 최근 메시지 조회 | 필요 |
 | `GET` | `/api/chat/rooms/{roomId}/messages/before/{lastMessageId}` | 특정 메시지 이전 메시지 조회 | 필요 |
@@ -144,6 +145,52 @@
 | `UNAUTHORIZED` | 401 | 토큰 누락 또는 인증 실패 |
 | `INVALID_ENUM_VALUE` | 400 | 잘못된 `status` 값 |
 | `VALIDATION_FAILED` | 400 | `page`가 0 미만이거나 `size`가 1 미만 또는 100 초과 |
+
+## GET `/api/chat/rooms/{roomId}`
+
+roomId로 채팅방 단건을 조회합니다.
+
+- 인증: 필요
+- HTTP Status: `200 OK`
+
+### Path Variables
+
+| 이름 | 타입 | 설명 |
+| --- | --- | --- |
+| `roomId` | `Long` | 조회할 채팅방 ID |
+
+### Response Body
+
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "roomId": 1,
+    "name": "홍길동님의 1:1 문의",
+    "customerId": 10,
+    "customerName": "홍길동",
+    "adminId": 1,
+    "adminName": "관리자",
+    "status": "IN_PROGRESS",
+    "createdAt": "2026-06-25T10:30:00"
+  }
+}
+```
+
+### 처리 규칙
+
+- 일반 고객은 본인이 생성한 채팅방만 조회할 수 있습니다.
+- 관리자는 담당자가 아직 없거나 본인이 담당 중인 채팅방만 조회할 수 있습니다.
+- 다른 고객의 채팅방이나 다른 관리자가 담당 중인 채팅방은 조회할 수 없습니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | 토큰 누락 또는 인증 실패 |
+| `CHAT_ROOM_NOT_FOUND` | 404 | 채팅방이 없음 |
+| `CHAT_ROOM_ACCESS_DENIED` | 403 | 접근할 수 없는 채팅방 조회 시도 |
 
 ## PATCH `/api/chat/rooms/{roomId}/status`
 
@@ -486,6 +533,14 @@ Authorization: Bearer {accessToken}
 - 이미 담당 관리자가 배정된 채팅방은 해당 관리자만 구독할 수 있습니다.
 - `roomId`가 숫자가 아니거나 채팅방이 없으면 구독이 거부됩니다.
 
+#### Errors
+
+| 코드 | 발생 조건 |
+| --- | --- |
+| `UNAUTHORIZED` | STOMP 인증 정보가 없거나 유효하지 않음 |
+| `CHAT_ROOM_NOT_FOUND` | `roomId`가 숫자가 아니거나 채팅방이 없음 |
+| `CHAT_ROOM_ACCESS_DENIED` | 접근 권한이 없는 채팅방 구독 시도 |
+
 ### SEND `/pub/chat.enter`
 
 채팅방 입장 이벤트를 전송합니다.
@@ -510,6 +565,16 @@ Authorization: Bearer {accessToken}
   "createdAt": "2026-06-25T10:36:00"
 }
 ```
+
+#### Errors
+
+| 코드 | 발생 조건 |
+| --- | --- |
+| `UNAUTHORIZED` | STOMP 인증 정보가 없거나 유효하지 않음 |
+| `VALIDATION_FAILED` | 요청 payload 형식 오류 또는 필수 값 누락 |
+| `CHAT_ROOM_NOT_FOUND` | 채팅방이 없음 |
+| `CHAT_ROOM_ACCESS_DENIED` | 구독하지 않은 채팅방에 입장 시도 |
+| `CHAT_ROOM_ALREADY_COMPLETED` | 이미 완료된 채팅방에 입장 시도 |
 
 ### SEND `/pub/chat.send`
 
@@ -544,6 +609,16 @@ Authorization: Bearer {accessToken}
 - `COMPLETED` 상태 채팅방에는 메시지를 보낼 수 없습니다.
 - 메시지 내용은 필수이며 1000자 이하여야 합니다.
 
+#### Errors
+
+| 코드 | 발생 조건 |
+| --- | --- |
+| `UNAUTHORIZED` | STOMP 인증 정보가 없거나 유효하지 않음 |
+| `VALIDATION_FAILED` | 요청 payload 형식 오류 또는 필수 값 누락 |
+| `CHAT_ROOM_NOT_FOUND` | 채팅방이 없음 |
+| `CHAT_ROOM_ACCESS_DENIED` | 구독하지 않았거나 입장하지 않은 채팅방에 메시지 전송 시도 |
+| `CHAT_ROOM_ALREADY_COMPLETED` | 이미 완료된 채팅방에 메시지 전송 시도 |
+
 ### SEND `/pub/chat.leave`
 
 채팅방 퇴장 이벤트를 전송합니다.
@@ -569,6 +644,16 @@ Authorization: Bearer {accessToken}
 }
 ```
 
+#### Errors
+
+| 코드 | 발생 조건 |
+| --- | --- |
+| `UNAUTHORIZED` | STOMP 인증 정보가 없거나 유효하지 않음 |
+| `VALIDATION_FAILED` | 요청 payload 형식 오류 또는 필수 값 누락 |
+| `CHAT_ROOM_NOT_FOUND` | 채팅방이 없음 |
+| `CHAT_ROOM_ACCESS_DENIED` | 입장하지 않은 채팅방에서 퇴장 시도 |
+| `CHAT_ROOM_ALREADY_COMPLETED` | 이미 완료된 채팅방에서 퇴장 시도. 서버는 세션 정리만 수행하고 퇴장 메시지는 발행하지 않음 |
+
 ### 실시간 시스템 메시지
 
 비활성 경고처럼 DB에 저장하지 않는 실시간 안내 메시지는 같은 채팅 topic으로 발행하되 `messageType`을 `SYSTEM`으로 반환합니다.
@@ -584,6 +669,12 @@ Authorization: Bearer {accessToken}
   "createdAt": "2026-06-25T10:38:00"
 }
 ```
+
+### 비활성 자동 퇴장
+
+- 마지막 채팅 활동 이후 4분 30초 동안 입력이 없으면 비활성 경고 메시지를 발행합니다.
+- 마지막 채팅 활동 이후 5분 동안 입력이 없으면 해당 사용자를 채팅방에서 자동 퇴장 처리합니다.
+- 자동 퇴장 시 퇴장 시스템 메시지가 저장 및 발행되고, 서버는 해당 사용자의 WebSocket 세션을 정리합니다.
 
 ### Redis Pub/Sub
 

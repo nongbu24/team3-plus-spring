@@ -52,9 +52,6 @@ dependencies {
     // WebSocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
-    // testcontainers
-    testImplementation 'org.testcontainers:testcontainers:1.20.4'
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
 }
 
 tasks.named('test') {
