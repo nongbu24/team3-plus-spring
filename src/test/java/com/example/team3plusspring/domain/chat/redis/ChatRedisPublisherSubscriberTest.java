@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.chat.redis;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.service.ChatAdminSessionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -24,10 +25,19 @@ class ChatRedisPublisherSubscriberTest {
     RedisTemplate<String, ChatMessageResponse> chatRedisTemplate;
 
     @Mock
+    RedisTemplate<String, ChatAdminAssignedEvent> chatAdminAssignedRedisTemplate;
+
+    @Mock
     RedisSerializer<ChatMessageResponse> chatMessageRedisSerializer;
 
     @Mock
+    RedisSerializer<ChatAdminAssignedEvent> chatAdminAssignedRedisSerializer;
+
+    @Mock
     SimpMessagingTemplate messagingTemplate;
+
+    @Mock
+    ChatAdminSessionService chatAdminSessionService;
 
     @Mock
     Message message;
@@ -43,6 +53,21 @@ class ChatRedisPublisherSubscriberTest {
 
         // then
         verify(chatRedisTemplate).convertAndSend("chat-room:1", response);
+    }
+
+    @Test
+    void 담당자배정_레디스로배정이벤트를발행한다() {
+        // given
+        ChatAdminAssignedRedisPublisher publisher = new ChatAdminAssignedRedisPublisher(chatAdminAssignedRedisTemplate);
+
+        // when
+        publisher.publish(1L, 10L);
+
+        // then
+        verify(chatAdminAssignedRedisTemplate).convertAndSend(
+                "chat-admin-assigned:1",
+                new ChatAdminAssignedEvent(1L, 10L)
+        );
     }
 
     @Test
@@ -78,6 +103,26 @@ class ChatRedisPublisherSubscriberTest {
 
         // then
         verifyNoInteractions(messagingTemplate);
+    }
+
+    @Test
+    void 담당자배정구독_현재서버의다른관리자세션을정리한다() {
+        // given
+        ChatAdminAssignedRedisSubscriber subscriber = new ChatAdminAssignedRedisSubscriber(
+                chatAdminAssignedRedisSerializer,
+                chatAdminSessionService
+        );
+        ChatAdminAssignedEvent event = new ChatAdminAssignedEvent(1L, 10L);
+        byte[] body = "body".getBytes(StandardCharsets.UTF_8);
+
+        when(message.getBody()).thenReturn(body);
+        when(chatAdminAssignedRedisSerializer.deserialize(body)).thenReturn(event);
+
+        // when
+        subscriber.onMessage(message, null);
+
+        // then
+        verify(chatAdminSessionService).closeOtherAdminSessions(1L, 10L);
     }
 
     private ChatMessageResponse response() {

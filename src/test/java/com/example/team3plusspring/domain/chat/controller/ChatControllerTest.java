@@ -64,7 +64,7 @@ class ChatControllerTest {
     }
 
     @Test
-    void 메시지전송_관리자가처음응답해서담당자가되면_다른관리자세션을닫고발행한다() {
+    void 메시지전송_관리자가처음응답해서담당자가되어도_컨트롤러는메시지만발행한다() {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
@@ -72,14 +72,11 @@ class ChatControllerTest {
         ChatMessageResponse response = response(10L, "확인해보겠습니다");
 
         when(chatFacade.sendMessage(request, user)).thenReturn(new ChatSendResult(response, user.getId()));
-        when(chatSessionRegistry.removeAdminSessionsExcept(1L, user.getId())).thenReturn(Set.of("session-2"));
 
         // when
         chatController.send(request, authentication);
 
         // then
-        verify(chatSessionRegistry).removeAdminSessionsExcept(1L, user.getId());
-        verify(webSocketSessionStore).close("session-2");
         verify(chatMessagePublisher).publish(1L, response);
     }
 

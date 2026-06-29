@@ -23,6 +23,7 @@ import java.util.List;
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMemberRepository chatMemberRepository;
+    private final ChatAdminSessionService chatAdminSessionService;
 
     @Transactional
     public ChatRoomResponse createMyRoom(User user) {
@@ -71,8 +72,12 @@ public class ChatRoomService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         room.validateAccess(user);
-        assignAdminWhenStartProgress(room, user, request.getStatus());
+        Long assignedAdminId = assignAdminWhenStartProgress(room, user, request.getStatus());
         room.changeStatus(request.getStatus());
+
+        if (assignedAdminId != null) {
+            chatAdminSessionService.handleAdminAssigned(room.getId(), assignedAdminId);
+        }
 
         return ChatRoomResponse.from(room);
     }
@@ -89,11 +94,15 @@ public class ChatRoomService {
         }
     }
 
-    private void assignAdminWhenStartProgress(ChatRoom room, User user, ChatStatus nextStatus) {
+    private Long assignAdminWhenStartProgress(ChatRoom room, User user, ChatStatus nextStatus) {
         if (room.getStatus() == ChatStatus.WAITING && nextStatus == ChatStatus.IN_PROGRESS) {
             room.assignAdmin(user);
             joinIfNeeded(room, user);
+
+            return user.getId();
         }
+
+        return null;
     }
 
     private void joinIfNeeded(ChatRoom room, User user) {

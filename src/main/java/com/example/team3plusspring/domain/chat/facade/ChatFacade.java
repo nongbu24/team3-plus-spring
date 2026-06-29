@@ -9,6 +9,7 @@ import com.example.team3plusspring.domain.chat.entity.ChatStatus;
 import com.example.team3plusspring.domain.chat.repository.ChatMemberRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatMessageRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
+import com.example.team3plusspring.domain.chat.service.ChatAdminSessionService;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -23,6 +24,7 @@ public class ChatFacade {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMemberRepository chatMemberRepository;
+    private final ChatAdminSessionService chatAdminSessionService;
 
     @Transactional
     public ChatSendResult sendMessage(ChatMessageRequest request, User sender) {
@@ -31,6 +33,10 @@ public class ChatFacade {
 
         ChatMessage message = ChatMessage.create(sender.getId(), sender.getName(), chatRoom, request.getContent());
         ChatMessage savedMessage = chatMessageRepository.save(message);
+
+        if (assignedAdminId != null) {
+            chatAdminSessionService.handleAdminAssigned(chatRoom.getId(), assignedAdminId);
+        }
 
         return new ChatSendResult(ChatMessageResponse.from(savedMessage), assignedAdminId);
     }

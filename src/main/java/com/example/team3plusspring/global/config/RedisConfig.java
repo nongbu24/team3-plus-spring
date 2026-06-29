@@ -1,8 +1,11 @@
 package com.example.team3plusspring.global.config;
 
+import com.example.team3plusspring.domain.chat.redis.ChatAdminAssignedEvent;
+import com.example.team3plusspring.domain.chat.redis.ChatAdminAssignedRedisSubscriber;
 import com.example.team3plusspring.domain.chat.redis.ChatRedisChannel;
 import com.example.team3plusspring.domain.chat.redis.ChatRedisSubscriber;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -26,9 +29,15 @@ public class RedisConfig {
     }
 
     @Bean
+    public RedisSerializer<ChatAdminAssignedEvent> chatAdminAssignedRedisSerializer(ObjectMapper objectMapper) {
+        // 담당자 배정 이벤트도 Redis를 통해 다른 서버로 전달되므로 JSON 형태로 직렬화한다.
+        return new JacksonJsonRedisSerializer<>(objectMapper, ChatAdminAssignedEvent.class);
+    }
+
+    @Bean
     public RedisTemplate<String, ChatMessageResponse> chatRedisTemplate(
             RedisConnectionFactory connectionFactory,
-            RedisSerializer<ChatMessageResponse> chatMessageRedisSerializer
+            @Qualifier("chatMessageRedisSerializer") RedisSerializer<ChatMessageResponse> chatMessageRedisSerializer
     ) {
         RedisTemplate<String, ChatMessageResponse> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(connectionFactory);
@@ -41,13 +50,33 @@ public class RedisConfig {
     }
 
     @Bean
+    public RedisTemplate<String, ChatAdminAssignedEvent> chatAdminAssignedRedisTemplate(
+            RedisConnectionFactory connectionFactory,
+            @Qualifier("chatAdminAssignedRedisSerializer") RedisSerializer<ChatAdminAssignedEvent> chatAdminAssignedRedisSerializer
+    ) {
+        RedisTemplate<String, ChatAdminAssignedEvent> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(connectionFactory);
+        redisTemplate.setKeySerializer(StringRedisSerializer.UTF_8);
+        redisTemplate.setValueSerializer(chatAdminAssignedRedisSerializer);
+        redisTemplate.setHashKeySerializer(StringRedisSerializer.UTF_8);
+        redisTemplate.setHashValueSerializer(chatAdminAssignedRedisSerializer);
+
+        return redisTemplate;
+    }
+
+    @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory connectionFactory,
-            ChatRedisSubscriber chatRedisSubscriber
+            ChatRedisSubscriber chatRedisSubscriber,
+            ChatAdminAssignedRedisSubscriber chatAdminAssignedRedisSubscriber
     ) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.addMessageListener(chatRedisSubscriber, new PatternTopic(ChatRedisChannel.TOPIC_PATTERN));
+        container.addMessageListener(
+                chatAdminAssignedRedisSubscriber,
+                new PatternTopic(ChatRedisChannel.ADMIN_ASSIGNED_TOPIC_PATTERN)
+        );
 
         return container;
     }

@@ -53,10 +53,6 @@ public class ChatController {
         User sender = getAuthenticatedUser(principal);
         ChatSendResult result = chatFacade.sendMessage(request, sender);
 
-        if (result.hasNewAssignedAdmin()) {
-            closeSessions(chatSessionRegistry.removeAdminSessionsExcept(request.getRoomId(), result.assignedAdminId()));
-        }
-
         chatMessagePublisher.publish(request.getRoomId(), result.message());
     }
 
