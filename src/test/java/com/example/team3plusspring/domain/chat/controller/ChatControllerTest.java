@@ -25,6 +25,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,6 +61,7 @@ class ChatControllerTest {
 
         // then
         verify(chatFacade).sendMessage(request, user);
+        verify(chatSessionRegistry).refreshRoomActivity(1L);
         verify(chatMessagePublisher).publish(1L, response);
     }
 
@@ -88,6 +90,7 @@ class ChatControllerTest {
         ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
         ChatMessageResponse response = response(11L, "홍길동님이 입장했습니다");
 
+        when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(true);
         when(chatFacade.enterRoom(1L, user)).thenReturn(response);
 
         // when
@@ -97,6 +100,23 @@ class ChatControllerTest {
         verify(chatFacade).enterRoom(1L, user);
         verify(chatSessionRegistry).enter("session-1", user.getId(), 1L);
         verify(chatMessagePublisher).publish(1L, response);
+    }
+
+    @Test
+    void 입장_이미등록된세션이면_입장메시지를저장하거나발행하지않는다() {
+        // given
+        Authentication authentication = authentication();
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+
+        when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(false);
+
+        // when
+        chatController.enter(request, "session-1", authentication);
+
+        // then
+        verify(chatSessionRegistry).enter("session-1", user.getId(), 1L);
+        verifyNoInteractions(chatFacade, chatMessagePublisher);
     }
 
     @Test
@@ -122,11 +142,9 @@ class ChatControllerTest {
     }
 
     @Test
-    void 연결종료_입장한방이있으면_퇴장메시지를발행한다() {
+    void 연결종료_입장한방이있어도_세션만정리하고_퇴장처리는하지않는다() {
         // given
         Authentication authentication = authentication();
-        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatMessageResponse response = response(12L, "홍길동님이 퇴장했습니다");
         org.springframework.web.socket.messaging.SessionDisconnectEvent event =
                 new org.springframework.web.socket.messaging.SessionDisconnectEvent(
                         this,
@@ -136,16 +154,12 @@ class ChatControllerTest {
                         authentication
                 );
 
-        when(chatSessionRegistry.removeSession("session-1")).thenReturn(Set.of(1L));
-        when(chatFacade.leaveRoom(1L, user)).thenReturn(response);
-
         // when
         chatController.handleDisconnect(event);
 
         // then
         verify(chatSessionRegistry).removeSession("session-1");
-        verify(chatFacade).leaveRoom(1L, user);
-        verify(chatMessagePublisher).publish(1L, response);
+        verifyNoInteractions(chatFacade, chatMessagePublisher);
     }
 
     @Test
