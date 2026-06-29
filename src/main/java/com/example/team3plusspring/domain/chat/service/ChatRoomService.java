@@ -28,6 +28,8 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMemberRepository chatMemberRepository;
     private final ChatAdminSessionService chatAdminSessionService;
+    private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     @Transactional
     public ChatRoomResponse createMyRoom(User user) {
@@ -73,10 +75,15 @@ public class ChatRoomService {
 
         room.validateAccess(user);
         Long assignedAdminId = assignAdminWhenStartProgress(room, user, request.getStatus());
+        boolean completingRoom = request.getStatus() == ChatStatus.COMPLETED;
         room.changeStatus(request.getStatus());
 
         if (assignedAdminId != null) {
             handleAdminAssignedAfterCommit(room.getId(), assignedAdminId);
+        }
+
+        if (completingRoom) {
+            handleRoomCompletedAfterCommit(room.getId(), room.getCustomerId(), room.getAdminId());
         }
 
         return ChatRoomResponse.from(room);
@@ -120,6 +127,24 @@ public class ChatRoomService {
                 chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
             }
         });
+    }
+
+    private void handleRoomCompletedAfterCommit(Long roomId, Long customerId, Long adminId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                cleanupUserSessions(roomId, customerId);
+
+                if (adminId != null && !adminId.equals(customerId)) {
+                    cleanupUserSessions(roomId, adminId);
+                }
+            }
+        });
+    }
+
+    private void cleanupUserSessions(Long roomId, Long userId) {
+        chatSessionRegistry.removeLocalSessions(userId, roomId);
+        chatSessionExpiredEventPublisher.publish(roomId, userId);
     }
 
 }
