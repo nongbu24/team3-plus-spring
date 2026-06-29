@@ -202,6 +202,26 @@ class ChatControllerTest {
     }
 
     @Test
+    void 명시적퇴장_이미완료된방이면_메시지는발행하지않고_세션만정리한다() {
+        // given
+        Authentication authentication = authentication();
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+
+        when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(true);
+        when(chatFacade.leaveRoom(1L, user)).thenThrow(new BusinessException(ErrorCode.CHAT_ROOM_ALREADY_COMPLETED));
+
+        // when
+        chatController.leave(request, "session-1", authentication);
+
+        // then
+        verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
+        verify(chatFacade).leaveRoom(1L, user);
+        verify(chatSessionRegistry).leaveAll(user.getId(), 1L);
+        verifyNoInteractions(chatMessagePublisher);
+    }
+
+    @Test
     void 명시적퇴장_현재세션이방에입장한상태가아니면_실패한다() {
         // given
         Authentication authentication = authentication();

@@ -91,8 +91,19 @@ public class ChatController {
             throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
 
-        ChatMessageResponse response = chatFacade.leaveRoom(request.getRoomId(), sender);
-        chatSessionRegistry.leaveAll(sender.getId(), request.getRoomId());
+        ChatMessageResponse response;
+
+        try {
+            response = chatFacade.leaveRoom(request.getRoomId(), sender);
+        } catch (BusinessException exception) {
+            if (exception.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
+                throw exception;
+            }
+
+            return;
+        } finally {
+            chatSessionRegistry.leaveAll(sender.getId(), request.getRoomId());
+        }
 
         chatMessagePublisher.publish(request.getRoomId(), response);
     }
