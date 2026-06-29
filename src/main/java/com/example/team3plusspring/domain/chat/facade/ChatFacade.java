@@ -12,6 +12,7 @@ import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
 import com.example.team3plusspring.domain.chat.service.ChatAdminSessionService;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.entity.UserRole;
+import com.example.team3plusspring.domain.user.repository.UserRepository;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class ChatFacade {
@@ -27,6 +30,7 @@ public class ChatFacade {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMemberRepository chatMemberRepository;
     private final ChatAdminSessionService chatAdminSessionService;
+    private final UserRepository userRepository;
 
     @Transactional
     public ChatSendResult sendMessage(ChatMessageRequest request, User sender) {
@@ -56,6 +60,24 @@ public class ChatFacade {
         leaveIfJoined(chatRoom, user);
 
         return saveSystemMessage(chatRoom, user, user.getName() + "님이 퇴장했습니다");
+    }
+
+    @Transactional
+    public Optional<ChatMessageResponse> leaveInactiveRoom(Long roomId, Long userId) {
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
+                .flatMap(user -> leaveInactiveRoom(roomId, user));
+    }
+
+    private Optional<ChatMessageResponse> leaveInactiveRoom(Long roomId, User user) {
+        try {
+            return Optional.of(leaveRoom(roomId, user));
+        } catch (BusinessException exception) {
+            if (exception.getErrorCode() == ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
+                return Optional.empty();
+            }
+
+            throw exception;
+        }
     }
 
     private ChatMessageResponse saveSystemMessage(ChatRoom chatRoom, User user, String content) {

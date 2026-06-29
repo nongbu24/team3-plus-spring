@@ -3,16 +3,20 @@ package com.example.team3plusspring.domain.chat.service;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 public class ChatSessionRegistry {
-    // sessionId는 브라우저 탭마다 생기는 WebSocket 연결 식별자다.
-    // 한 세션이 어떤 사용자/방 조합에 들어갔는지 기억해 disconnect 때 정리한다.
+    /**
+     * sessionId는 브라우저 탭마다 생기는 WebSocket 연결 식별자다.
+     * 한 세션이 어떤 사용자/방 조합에 들어갔는지 기억해 disconnect 때 정리한다.
+     */
     private final Map<String, Set<SessionRoom>> sessionRooms = new ConcurrentHashMap<>();
 
     // 실제 STOMP 구독 세션을 기억해 강제 퇴장이나 담당자 배정 시 기존 구독을 끊는다.
@@ -21,6 +25,9 @@ public class ChatSessionRegistry {
     // 같은 사용자가 같은 방을 여러 탭으로 열 수 있으므로 userId + roomId 기준 활성 세션 수를 센다.
     private final Map<SessionRoom, Integer> activeSessionCounts = new ConcurrentHashMap<>();
 
+    // userId + roomId 기준 마지막 채팅 활동 시각을 기억해 무활동 자동 종료를 판단한다.
+    private final Map<SessionRoom, SessionActivity> sessionActivities = new ConcurrentHashMap<>();
+
     public synchronized void subscribe(String sessionId, Long userId, UserRole role, Long roomId) {
         SessionSubscription subscription = new SessionSubscription(userId, role, roomId);
         sessionSubscriptions.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet())
@@ -28,7 +35,7 @@ public class ChatSessionRegistry {
     }
 
     // 같은 세션에서 같은 방에 enter가 반복되어도 활성 세션 수는 한 번만 증가한다.
-    public synchronized void enter(String sessionId, Long userId, Long roomId) {
+    public synchronized boolean enter(String sessionId, Long userId, Long roomId) {
         SessionRoom sessionRoom = new SessionRoom(userId, roomId);
         boolean added = sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet())
                 .add(sessionRoom);
@@ -36,6 +43,42 @@ public class ChatSessionRegistry {
         if (added) {
             activeSessionCounts.merge(sessionRoom, 1, Integer::sum);
         }
+
+        refreshActivity(sessionRoom);
+
+        return added;
+    }
+
+    public synchronized void refreshRoomActivity(Long roomId) {
+        sessionActivities.entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().roomId().equals(roomId))
+                .map(Map.Entry::getValue)
+                .forEach(SessionActivity::refresh);
+    }
+
+    public synchronized Set<Long> findAndMarkWarningRoomIds(Duration warningAfter) {
+        LocalDateTime warningThreshold = LocalDateTime.now().minus(warningAfter);
+
+        return sessionActivities.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().needsWarning(warningThreshold))
+                .peek(entry -> entry.getValue().markWarningSent())
+                .map(entry -> entry.getKey().roomId())
+                .collect(Collectors.toSet());
+    }
+
+    public synchronized Set<InactiveChatSession> expireInactiveSessions(Duration timeout) {
+        LocalDateTime expiredThreshold = LocalDateTime.now().minus(timeout);
+        Set<SessionRoom> expiredRooms = sessionActivities.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().isExpired(expiredThreshold))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        return expiredRooms.stream()
+                .map(this::expire)
+                .collect(Collectors.toSet());
     }
 
     // 사용자가 직접 퇴장한 경우에는 같은 사용자/방 조합의 모든 세션을 정리한다.
@@ -56,10 +99,12 @@ public class ChatSessionRegistry {
                 sessionIds.add(sessionId);
             }
         });
+
         sessionSubscriptions.entrySet()
                 .removeIf(entry -> entry.getValue().isEmpty());
 
         activeSessionCounts.remove(sessionRoom);
+        sessionActivities.remove(sessionRoom);
 
         return sessionIds;
     }
@@ -82,32 +127,26 @@ public class ChatSessionRegistry {
         return sessionIds;
     }
 
-    // 끊긴 세션을 제거하고, 그 결과 마지막 연결까지 사라진 방 id만 반환한다.
-    public synchronized Set<Long> removeSession(String sessionId) {
+    public synchronized void removeSession(String sessionId) {
         sessionSubscriptions.remove(sessionId);
-
-        return removeSessionRooms(sessionId);
+        removeSessionRooms(sessionId);
     }
 
-    private Set<Long> removeSessionRooms(String sessionId) {
+    private void removeSessionRooms(String sessionId) {
         Set<SessionRoom> rooms = sessionRooms.remove(sessionId);
 
         if (rooms == null) {
-            return Collections.emptySet();
+            return;
         }
-
-        Set<Long> roomsToLeave = new HashSet<>();
 
         for (SessionRoom room : rooms) {
             int remainingCount = activeSessionCounts.merge(room, -1, Integer::sum);
 
             if (remainingCount <= 0) {
                 activeSessionCounts.remove(room);
-                roomsToLeave.add(room.roomId());
+                sessionActivities.remove(room);
             }
         }
-
-        return roomsToLeave;
     }
 
     private void removeEnteredRoom(String sessionId, Long roomId) {
@@ -135,6 +174,47 @@ public class ChatSessionRegistry {
 
         if (remainingCount <= 0) {
             activeSessionCounts.remove(room);
+            sessionActivities.remove(room);
+        }
+    }
+
+    private void refreshActivity(SessionRoom sessionRoom) {
+        sessionActivities.computeIfAbsent(sessionRoom, key -> new SessionActivity())
+                .refresh();
+    }
+
+    private InactiveChatSession expire(SessionRoom sessionRoom) {
+        Set<String> sessionIds = leaveAll(sessionRoom.userId(), sessionRoom.roomId());
+
+        return new InactiveChatSession(sessionRoom.userId(), sessionRoom.roomId(), sessionIds);
+    }
+
+    public record InactiveChatSession(Long userId, Long roomId, Set<String> sessionIds) {
+    }
+
+    private static class SessionActivity {
+        private LocalDateTime lastActivityAt;
+        private boolean warningSent;
+
+        private SessionActivity() {
+            refresh();
+        }
+
+        private void refresh() {
+            this.lastActivityAt = LocalDateTime.now();
+            this.warningSent = false;
+        }
+
+        private boolean needsWarning(LocalDateTime threshold) {
+            return !warningSent && !lastActivityAt.isAfter(threshold);
+        }
+
+        private boolean isExpired(LocalDateTime threshold) {
+            return !lastActivityAt.isAfter(threshold);
+        }
+
+        private void markWarningSent() {
+            this.warningSent = true;
         }
     }
 

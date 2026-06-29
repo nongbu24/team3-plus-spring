@@ -33,4 +33,8 @@ public class ChatMessageResponse implements Serializable {
     public static ChatMessageResponse from(ChatMessage message) {
         return new ChatMessageResponse(message);
     }
+
+    public static ChatMessageResponse system(String content) {
+        return new ChatMessageResponse(null, content, null, "SYSTEM", LocalDateTime.now());
+    }
 }

@@ -41,9 +41,13 @@ public class ChatController {
             Principal principal
     ) {
         User sender = getAuthenticatedUser(principal);
-        ChatMessageResponse response = chatFacade.enterRoom(request.getRoomId(), sender);
+        boolean entered = chatSessionRegistry.enter(sessionId, sender.getId(), request.getRoomId());
 
-        chatSessionRegistry.enter(sessionId, sender.getId(), request.getRoomId());
+        if (!entered) {
+            return;
+        }
+
+        ChatMessageResponse response = chatFacade.enterRoom(request.getRoomId(), sender);
         chatMessagePublisher.publish(request.getRoomId(), response);
     }
 
@@ -53,7 +57,8 @@ public class ChatController {
         User sender = getAuthenticatedUser(principal);
         ChatSendResult result = chatFacade.sendMessage(request, sender);
 
-        chatMessagePublisher.publish(request.getRoomId(), result.message());
+        chatSessionRegistry.refreshRoomActivity(request.getRoomId());
+        chatMessagePublisher.publish(request.getRoomId(), result.getMessage());
     }
 
     // 사용자가 직접 퇴장 버튼을 누른 경우다. 자동 연결 종료와 달리 명시적 퇴장으로 보고 바로 퇴장 메시지를 발행한다.
@@ -71,8 +76,7 @@ public class ChatController {
         closeSessions(sessionIds);
     }
 
-    // 탭 닫기, 새로고침, 네트워크 끊김처럼 WebSocket 연결이 종료될 때 자동 퇴장을 처리한다.
-    // 같은 사용자가 같은 방에 다른 탭으로 남아 있으면 ChatSessionRegistry가 해당 roomId를 반환하지 않는다.
+    // 탭 닫기, 새로고침, 네트워크 끊김은 실제 퇴장으로 단정하지 않고 서버 세션 정보만 정리한다.
     @EventListener
     public void handleDisconnect(SessionDisconnectEvent event) {
         Principal principal = event.getUser();
@@ -81,19 +85,7 @@ public class ChatController {
             return;
         }
 
-        User sender = getAuthenticatedUser(principal);
-        Set<Long> roomIds = chatSessionRegistry.removeSession(event.getSessionId());
-
-        for (Long roomId : roomIds) {
-            try {
-                ChatMessageResponse response = chatFacade.leaveRoom(roomId, sender);
-                chatMessagePublisher.publish(roomId, response);
-            } catch (BusinessException exception) {
-                if (exception.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
-                    throw exception;
-                }
-            }
-        }
+        chatSessionRegistry.removeSession(event.getSessionId());
     }
 
     private User getAuthenticatedUser(Principal principal) {
