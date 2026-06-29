@@ -62,4 +62,10 @@ public class UserCouponService {
     public void useCoupon(UserCoupon userCoupon, Long orderId) {
         userCoupon.markAsUsed(orderId);
     }
+
+    @Transactional
+    public void restoreCouponByOrderId(Long orderId) {
+        userCouponRepository.findByOrderIdForUpdate(orderId)
+                .ifPresent(UserCoupon::restore);
+    }
 }
