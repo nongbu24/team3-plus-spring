@@ -12,12 +12,14 @@ import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -37,26 +39,22 @@ public class ChatRoomService {
         return ChatRoomResponse.from(room);
     }
 
-    public List<ChatRoomResponse> getRooms(User user, ChatStatus status) {
-        if (user.getRole() == UserRole.ADMIN) {
-            List<ChatRoom> rooms = status == null
-                    ? chatRoomRepository.findAll()
-                    : chatRoomRepository.findAllByStatus(status);
+    public Page<ChatRoomResponse> getRooms(User user, ChatStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-            return rooms
-                    .stream()
-                    .map(ChatRoomResponse::from)
-                    .toList();
+        if (user.getRole() == UserRole.ADMIN) {
+            Page<ChatRoom> rooms = status == null
+                    ? chatRoomRepository.findAll(pageable)
+                    : chatRoomRepository.findAllByStatus(status, pageable);
+
+            return rooms.map(ChatRoomResponse::from);
         }
 
-        List<ChatRoom> rooms = status == null
-                ? chatRoomRepository.findAllByCustomerId(user.getId())
-                : chatRoomRepository.findAllByCustomerIdAndStatus(user.getId(), status);
+        Page<ChatRoom> rooms = status == null
+                ? chatRoomRepository.findAllByCustomerId(user.getId(), pageable)
+                : chatRoomRepository.findAllByCustomerIdAndStatus(user.getId(), status, pageable);
 
-        return rooms
-                .stream()
-                .map(ChatRoomResponse::from)
-                .toList();
+        return rooms.map(ChatRoomResponse::from);
     }
 
     public void validateRoomAccess(Long roomId, User user) {

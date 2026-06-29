@@ -83,6 +83,8 @@
 | 이름 | 타입 | 필수 | 기본값 | 설명 |
 | --- | --- | --- | --- | --- |
 | `status` | `String` | N | 없음 | 문의 상태 필터. `WAITING`, `IN_PROGRESS`, `COMPLETED` |
+| `page` | `Integer` | N | `0` | 페이지 번호. 0 이상 |
+| `size` | `Integer` | N | `10` | 페이지당 조회할 채팅방 수. 1 이상 100 이하 |
 
 ### Response Body
 
@@ -90,18 +92,28 @@
 {
   "status": 200,
   "message": "요청이 성공했습니다.",
-  "data": [
-    {
-      "roomId": 1,
-      "name": "홍길동님의 1:1 문의",
-      "customerId": 10,
-      "customerName": "홍길동",
-      "adminId": 1,
-      "adminName": "관리자",
-      "status": "IN_PROGRESS",
-      "createdAt": "2026-06-25T10:30:00"
-    }
-  ]
+  "data": {
+    "content": [
+      {
+        "roomId": 1,
+        "name": "홍길동님의 1:1 문의",
+        "customerId": 10,
+        "customerName": "홍길동",
+        "adminId": 1,
+        "adminName": "관리자",
+        "status": "IN_PROGRESS",
+        "createdAt": "2026-06-25T10:30:00"
+      }
+    ],
+    "totalElements": 1,
+    "totalPages": 1,
+    "size": 10,
+    "number": 0,
+    "first": true,
+    "last": true,
+    "numberOfElements": 1,
+    "empty": false
+  }
 }
 ```
 
@@ -111,6 +123,8 @@
 - 관리자가 `status`를 전달하면 해당 상태의 채팅방만 조회합니다.
 - 일반 고객은 본인이 생성한 채팅방만 조회합니다.
 - 일반 고객이 `status`를 전달하면 본인이 생성한 채팅방 중 해당 상태의 채팅방만 조회합니다.
+- 채팅방은 생성일시 기준 최신순으로 조회합니다.
+- 조회 결과는 `page`, `size` 기준으로 페이지네이션됩니다.
 
 ### Errors
 
@@ -118,6 +132,7 @@
 | --- | --- | --- |
 | `UNAUTHORIZED` | 401 | 토큰 누락 또는 인증 실패 |
 | `INVALID_ENUM_VALUE` | 400 | 잘못된 `status` 값 |
+| `VALIDATION_FAILED` | 400 | `page`가 0 미만이거나 `size`가 1 미만 또는 100 초과 |
 
 ## PATCH `/api/chat/rooms/{roomId}/status`
 
