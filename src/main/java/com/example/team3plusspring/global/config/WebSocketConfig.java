@@ -1,17 +1,13 @@
 package com.example.team3plusspring.global.config;
 
-import com.example.team3plusspring.domain.chat.service.WebSocketSessionStore;
+import com.example.team3plusspring.global.security.jwt.StompSubscriptionOutboundInterceptor;
 import com.example.team3plusspring.global.security.jwt.StompAuthInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.config.ChannelRegistration;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.handler.WebSocketHandlerDecorator;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
@@ -19,7 +15,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final StompAuthInterceptor stompAuthInterceptor;
-    private final WebSocketSessionStore webSocketSessionStore;
+    private final StompSubscriptionOutboundInterceptor stompSubscriptionOutboundInterceptor;
 
     // 클라이언트는 /pub으로 메시지를 보내고, 서버는 /sub으로 구독자에게 메시지를 전달한다.
     @Override
@@ -42,21 +38,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registration.interceptors(stompAuthInterceptor);
     }
 
-    // 서버가 특정 채팅방의 기존 구독 세션을 실제로 끊을 수 있도록 WebSocketSession을 보관한다.
+    // 구독이 무효화된 세션에는 해당 채팅방 메시지만 내려보내지 않는다.
     @Override
-    public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
-        registry.addDecoratorFactory(handler -> new WebSocketHandlerDecorator(handler) {
-            @Override
-            public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-                webSocketSessionStore.add(session.getId(), session);
-                super.afterConnectionEstablished(session);
-            }
-
-            @Override
-            public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-                webSocketSessionStore.remove(session.getId());
-                super.afterConnectionClosed(session, closeStatus);
-            }
-        });
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        registration.interceptors(stompSubscriptionOutboundInterceptor);
     }
 }

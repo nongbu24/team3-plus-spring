@@ -97,6 +97,8 @@ class ChatStompIntegrationTest extends RedisTestSupport {
         CompletableFuture<String> receivedMessage = new CompletableFuture<>();
 
         otherSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(receivedMessage));
+        sendEnter(ownerSession, room.getId());
+        ownerSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(new CompletableFuture<>()));
         waitBrieflyForSubscription();
 
         // when
@@ -115,7 +117,8 @@ class ChatStompIntegrationTest extends RedisTestSupport {
         StompSession userSession = connect(jwtTokenProvider.createAccessToken(user.getId())).getConnectedSession();
 
         CompletableFuture<String> receivedMessage = new CompletableFuture<>();
-        userSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(receivedMessage));
+        sendEnter(userSession, room.getId());
+        userSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(receivedMessage, "안녕하세요"));
         waitBrieflyForSubscription();
 
         // when
@@ -139,6 +142,18 @@ class ChatStompIntegrationTest extends RedisTestSupport {
                   "content": "%s"
                 }
                 """.formatted(roomId, content);
+        session.send(sendHeaders, payload.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void sendEnter(StompSession session, Long roomId) {
+        StompHeaders sendHeaders = new StompHeaders();
+        sendHeaders.setDestination("/pub/chat.enter");
+        sendHeaders.setContentType(MimeTypeUtils.APPLICATION_JSON);
+        String payload = """
+                {
+                  "roomId": %d
+                }
+                """.formatted(roomId);
         session.send(sendHeaders, payload.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -196,9 +211,15 @@ class ChatStompIntegrationTest extends RedisTestSupport {
 
     private static class ChatMessageFrameHandler implements StompFrameHandler {
         private final CompletableFuture<String> receivedMessage;
+        private final String expectedContent;
 
         private ChatMessageFrameHandler(CompletableFuture<String> receivedMessage) {
+            this(receivedMessage, null);
+        }
+
+        private ChatMessageFrameHandler(CompletableFuture<String> receivedMessage, String expectedContent) {
             this.receivedMessage = receivedMessage;
+            this.expectedContent = expectedContent;
         }
 
         @Override
@@ -208,7 +229,11 @@ class ChatStompIntegrationTest extends RedisTestSupport {
 
         @Override
         public void handleFrame(StompHeaders headers, Object payload) {
-            receivedMessage.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
+            String message = new String((byte[]) payload, StandardCharsets.UTF_8);
+
+            if (expectedContent == null || expectedContent.equals(JsonPath.<String>read(message, "$.content"))) {
+                receivedMessage.complete(message);
+            }
         }
     }
 

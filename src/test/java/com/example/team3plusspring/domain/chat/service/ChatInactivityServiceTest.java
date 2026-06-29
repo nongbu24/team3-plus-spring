@@ -30,9 +30,6 @@ class ChatInactivityServiceTest {
     @Mock
     ChatMessagePublisher chatMessagePublisher;
 
-    @Mock
-    WebSocketSessionStore webSocketSessionStore;
-
     @InjectMocks
     ChatInactivityService chatInactivityService;
 
@@ -53,7 +50,7 @@ class ChatInactivityServiceTest {
     }
 
     @Test
-    void 무활동만료대상이있으면_퇴장처리하고_세션을닫는다() {
+    void 무활동만료대상이있으면_퇴장처리하고_퇴장메시지를발행한다() {
         // given
         ChatMessageResponse response = new ChatMessageResponse(
                 10L,
@@ -64,7 +61,7 @@ class ChatInactivityServiceTest {
         );
 
         when(chatSessionRegistry.expireInactiveSessions(Duration.ofMinutes(5)))
-                .thenReturn(Set.of(new ChatSessionRegistry.InactiveChatSession(1L, 10L, Set.of("session-1"))));
+                .thenReturn(Set.of(new ChatSessionRegistry.InactiveChatSession(1L, 10L)));
         when(chatFacade.leaveInactiveRoom(10L, 1L)).thenReturn(Optional.of(response));
 
         // when
@@ -73,6 +70,5 @@ class ChatInactivityServiceTest {
         // then
         verify(chatFacade).leaveInactiveRoom(10L, 1L);
         verify(chatMessagePublisher).publish(10L, response);
-        verify(webSocketSessionStore).close("session-1");
     }
 }

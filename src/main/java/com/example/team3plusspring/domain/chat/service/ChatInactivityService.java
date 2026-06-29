@@ -18,7 +18,6 @@ public class ChatInactivityService {
     private final ChatSessionRegistry chatSessionRegistry;
     private final ChatFacade chatFacade;
     private final ChatMessagePublisher chatMessagePublisher;
-    private final WebSocketSessionStore webSocketSessionStore;
 
     @Scheduled(fixedDelay = 10_000, initialDelay = 10_000)
     public void closeInactiveSessions() {
@@ -39,10 +38,5 @@ public class ChatInactivityService {
     private void leaveExpiredSession(ChatSessionRegistry.InactiveChatSession session) {
         chatFacade.leaveInactiveRoom(session.roomId(), session.userId())
                 .ifPresent(response -> chatMessagePublisher.publish(session.roomId(), response));
-        closeSessions(session);
-    }
-
-    private void closeSessions(ChatSessionRegistry.InactiveChatSession session) {
-        session.sessionIds().forEach(webSocketSessionStore::close);
     }
 }
