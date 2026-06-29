@@ -15,7 +15,7 @@
 | `GET` | `/api/chat/rooms/{roomId}/messages` | 채팅방 최근 메시지 조회 | 필요 |
 | `GET` | `/api/chat/rooms/{roomId}/messages/before/{lastMessageId}` | 특정 메시지 이전 메시지 조회 | 필요 |
 | `GET` | `/api/chat/rooms/{roomId}/messages/after/{lastMessageId}` | 재연결 후 미수신 메시지 조회 | 필요 |
-| `GET` | `/api/chat/messages` | 전체 최근 메시지 조회 | 필요 (관리자) |
+| `GET` | `/api/chat/messages` | 전체 최근 메시지를 채팅방별로 조회 | 필요 (관리자) |
 
 ## POST `/api/chat/rooms/me`
 
@@ -213,6 +213,7 @@
       "content": "상품 배송은 언제 시작되나요?",
       "senderId": 10,
       "senderName": "홍길동",
+      "messageType": "CHAT",
       "createdAt": "2026-06-25T10:35:00"
     }
   ]
@@ -227,6 +228,7 @@
 | `content` | `String` | 메시지 내용 |
 | `senderId` | `Long` | 보낸 회원 ID |
 | `senderName` | `String` | 보낸 회원 이름 |
+| `messageType` | `String` | 메시지 유형. `CHAT`, `SYSTEM` |
 | `createdAt` | `String` | 메시지 생성 일시 |
 
 ### 처리 규칙
@@ -326,7 +328,7 @@
 
 ## GET `/api/chat/messages`
 
-전체 채팅방의 최근 메시지를 조회합니다.
+전체 채팅방의 최근 메시지를 조회한 뒤, 가장 최근에 대화한 채팅방 순서로 묶어서 반환합니다.
 
 - 인증: 필요 (관리자)
 - HTTP Status: `200 OK`
@@ -339,12 +341,56 @@
 
 ### Response Body
 
-`/api/chat/rooms/{roomId}/messages` 응답과 동일합니다.
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": [
+    {
+      "roomId": 1,
+      "messages": [
+        {
+          "messageId": 102,
+          "content": "확인해보겠습니다.",
+          "senderId": 1,
+          "senderName": "관리자",
+          "messageType": "CHAT",
+          "createdAt": "2026-06-25T10:37:00"
+        },
+        {
+          "messageId": 100,
+          "content": "상품 배송은 언제 시작되나요?",
+          "senderId": 10,
+          "senderName": "홍길동",
+          "messageType": "CHAT",
+          "createdAt": "2026-06-25T10:35:00"
+        }
+      ]
+    },
+    {
+      "roomId": 2,
+      "messages": [
+        {
+          "messageId": 101,
+          "content": "쿠폰 사용이 안 됩니다.",
+          "senderId": 11,
+          "senderName": "김철수",
+          "messageType": "CHAT",
+          "createdAt": "2026-06-25T10:36:00"
+        }
+      ]
+    }
+  ]
+}
+```
 
 ### 처리 규칙
 
 - 관리자만 전체 최근 메시지를 조회할 수 있습니다.
-- 메시지는 최신 메시지부터 `messageId` 내림차순으로 반환합니다.
+- 전체 최근 메시지를 최신 메시지부터 `messageId` 내림차순으로 조회합니다.
+- 조회된 메시지는 `roomId` 기준으로 묶어서 반환합니다.
+- 채팅방 묶음은 각 방의 가장 최신 메시지가 최근인 순서로 반환합니다.
+- 각 채팅방 안의 메시지는 최신 메시지부터 `messageId` 내림차순으로 반환합니다.
 
 ### Errors
 
@@ -425,6 +471,7 @@ Authorization: Bearer {accessToken}
   "content": "홍길동님이 입장했습니다",
   "senderId": 10,
   "senderName": "홍길동",
+  "messageType": "CHAT",
   "createdAt": "2026-06-25T10:36:00"
 }
 ```
@@ -450,6 +497,7 @@ Authorization: Bearer {accessToken}
   "content": "상품 배송은 언제 시작되나요?",
   "senderId": 10,
   "senderName": "홍길동",
+  "messageType": "CHAT",
   "createdAt": "2026-06-25T10:37:00"
 }
 ```
@@ -481,6 +529,23 @@ Authorization: Bearer {accessToken}
   "content": "홍길동님이 퇴장했습니다",
   "senderId": 10,
   "senderName": "홍길동",
+  "messageType": "CHAT",
+  "createdAt": "2026-06-25T10:38:00"
+}
+```
+
+### 실시간 시스템 메시지
+
+비활성 경고처럼 DB에 저장하지 않는 실시간 안내 메시지는 같은 채팅 topic으로 발행하되 `messageType`을 `SYSTEM`으로 반환합니다.
+이 경우 `messageId`와 `senderId`는 `null`일 수 있습니다.
+
+```json
+{
+  "messageId": null,
+  "content": "일정 시간 동안 채팅 입력이 없다면 자동으로 채팅이 종료됩니다.",
+  "senderId": null,
+  "senderName": "SYSTEM",
+  "messageType": "SYSTEM",
   "createdAt": "2026-06-25T10:38:00"
 }
 ```
