@@ -29,14 +29,23 @@ public class ChatMessage extends BaseEntity {
     @Column(nullable = false, length = 1000)
     private String content;
 
-    private ChatMessage(Long senderId, String senderName, ChatRoom chatRoom, String content) {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) default 'CHAT'")
+    private ChatMessageType messageType;
+
+    private ChatMessage(Long senderId, String senderName, ChatRoom chatRoom, String content, ChatMessageType messageType) {
         this.senderId = senderId;
         this.senderName = senderName;
         this.chatRoom = chatRoom;
         this.content = content;
+        this.messageType = messageType;
     }
 
     public static ChatMessage create(Long senderId, String senderName, ChatRoom chatRoom, String content) {
-        return new ChatMessage(senderId, senderName, chatRoom, content);
+        return new ChatMessage(senderId, senderName, chatRoom, content, ChatMessageType.CHAT);
+    }
+
+    public static ChatMessage createSystem(Long senderId, String senderName, ChatRoom chatRoom, String content) {
+        return new ChatMessage(senderId, senderName, chatRoom, content, ChatMessageType.SYSTEM);
     }
 }

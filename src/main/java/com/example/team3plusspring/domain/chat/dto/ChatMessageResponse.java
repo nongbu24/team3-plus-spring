@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.chat.dto;
 
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
+import com.example.team3plusspring.domain.chat.entity.ChatMessageType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -46,7 +47,7 @@ public class ChatMessageResponse implements Serializable {
         this.content = message.getContent();
         this.senderId = message.getSenderId();
         this.senderName = message.getSenderName();
-        this.messageType = ChatMessageType.CHAT;
+        this.messageType = message.getMessageType();
         this.createdAt = message.getCreatedAt();
     }
 

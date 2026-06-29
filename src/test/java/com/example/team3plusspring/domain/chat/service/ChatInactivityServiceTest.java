@@ -1,7 +1,7 @@
 package com.example.team3plusspring.domain.chat.service;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
-import com.example.team3plusspring.domain.chat.dto.ChatMessageType;
+import com.example.team3plusspring.domain.chat.entity.ChatMessageType;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
