@@ -117,14 +117,11 @@
         "createdAt": "2026-06-25T10:30:00"
       }
     ],
+    "page": 0,
+    "size": 10,
     "totalElements": 1,
     "totalPages": 1,
-    "size": 10,
-    "number": 0,
-    "first": true,
-    "last": true,
-    "numberOfElements": 1,
-    "empty": false
+    "hasNext": false
   }
 }
 ```

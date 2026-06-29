@@ -54,6 +54,7 @@
 | 환불 | 내 환불 목록 조회 | GET | `/api/refunds` | 필요 |
 | 채팅 | 내 1:1 문의 채팅방 생성 | POST | `/api/chat/rooms/me` | 필요 |
 | 채팅 | 채팅방 목록 조회 | GET | `/api/chat/rooms` | 필요 |
+| 채팅 | 채팅방 단건 조회 | GET | `/api/chat/rooms/{roomId}` | 필요 |
 | 채팅 | 문의 상태 변경 | PATCH | `/api/chat/rooms/{roomId}/status` | 필요 (관리자) |
 | 채팅 | 채팅방 최근 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages` | 필요 |
 | 채팅 | 특정 메시지 이전 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages/before/{lastMessageId}` | 필요 |
