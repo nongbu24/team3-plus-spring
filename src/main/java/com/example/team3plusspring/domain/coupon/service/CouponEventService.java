@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.coupon.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -76,6 +77,7 @@ public class CouponEventService {
 	 * @return 쿠폰 이벤트 목록 응답 DTO를 담은 페이지
 	 */
 
+	@Cacheable(value = "couponEvents", key = "#page + '-' + #size")
 	@Transactional(readOnly = true)
 	public Page<GetCouponEventListResponse> getCouponEvents(int page, int size) {
 
