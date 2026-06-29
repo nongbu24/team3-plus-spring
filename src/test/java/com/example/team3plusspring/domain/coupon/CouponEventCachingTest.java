@@ -57,7 +57,7 @@ public class CouponEventCachingTest extends RedisTestSupport {
 	}
 
 	@Test
-	void 캐시_적용후_발급해도_목록_조회결과의_발급수량은_그대로다() {
+	void 캐시_적용후_발급해면_목록_조회결과의_발급수량이_즉시_반영된다() {
 
 		CouponEvent couponEvent = couponEventRepository.save(
 			CouponEvent.create(
