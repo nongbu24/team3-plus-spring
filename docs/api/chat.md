@@ -168,6 +168,7 @@
 - 관리자만 문의 상태를 변경할 수 있습니다.
 - 상태는 `WAITING -> IN_PROGRESS -> COMPLETED` 순서로만 변경할 수 있습니다.
 - `WAITING -> IN_PROGRESS` 상태 변경 시 해당 관리자가 담당자로 배정됩니다.
+- 담당자가 없는 `WAITING` 상태 채팅방에 관리자가 실시간 입장 이벤트를 보내도 상담 참여로 보고 해당 관리자가 담당자로 배정되며 상태가 `IN_PROGRESS`로 변경됩니다.
 - 이미 담당 관리자가 배정된 채팅방은 해당 관리자만 접근할 수 있습니다.
 
 ### Errors
@@ -471,7 +472,7 @@ Authorization: Bearer {accessToken}
   "content": "홍길동님이 입장했습니다",
   "senderId": 10,
   "senderName": "홍길동",
-  "messageType": "CHAT",
+  "messageType": "SYSTEM",
   "createdAt": "2026-06-25T10:36:00"
 }
 ```
@@ -505,7 +506,7 @@ Authorization: Bearer {accessToken}
 #### 처리 규칙
 
 - 채팅방 고객 또는 담당 관리자만 메시지를 보낼 수 있습니다.
-- 담당 관리자가 없는 `WAITING` 상태 채팅방에 관리자가 처음 메시지를 보내면 해당 관리자가 담당자로 배정되고 상태가 `IN_PROGRESS`로 변경됩니다.
+- 담당 관리자가 없는 `WAITING` 상태 채팅방에 관리자가 입장하거나 처음 메시지를 보내면 해당 관리자가 담당자로 배정되고 상태가 `IN_PROGRESS`로 변경됩니다.
 - `COMPLETED` 상태 채팅방에는 메시지를 보낼 수 없습니다.
 - 메시지 내용은 필수이며 1000자 이하여야 합니다.
 
@@ -529,7 +530,7 @@ Authorization: Bearer {accessToken}
   "content": "홍길동님이 퇴장했습니다",
   "senderId": 10,
   "senderName": "홍길동",
-  "messageType": "CHAT",
+  "messageType": "SYSTEM",
   "createdAt": "2026-06-25T10:38:00"
 }
 ```

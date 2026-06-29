@@ -3,7 +3,9 @@ package com.example.team3plusspring.domain.chat.facade;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.entity.ChatMember;
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
+import com.example.team3plusspring.domain.chat.entity.ChatMessageType;
 import com.example.team3plusspring.domain.chat.entity.ChatRoom;
+import com.example.team3plusspring.domain.chat.entity.ChatStatus;
 import com.example.team3plusspring.domain.chat.repository.ChatMemberRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatMessageRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
@@ -49,7 +51,7 @@ class ChatFacadeTest {
     ChatFacade chatFacade;
 
     @Test
-    void 입장_배정전관리자이면_채팅참여자로저장하지않는다() {
+    void 입장_배정전관리자이면_담당자로배정하고_채팅참여자로저장한다() {
         // given
         User customer = user(1L);
         User admin = admin(2L);
@@ -68,8 +70,11 @@ class ChatFacadeTest {
 
         // then
         assertThat(response.getContent()).isEqualTo("관리자님이 입장했습니다");
-        verify(chatMemberRepository, never()).findByChatRoomIdAndUserId(room.getId(), admin.getId());
-        verify(chatMemberRepository, never()).save(any(ChatMember.class));
+        assertThat(response.getMessageType()).isEqualTo(ChatMessageType.SYSTEM);
+        assertThat(room.getAdminId()).isEqualTo(admin.getId());
+        assertThat(room.getStatus()).isEqualTo(ChatStatus.IN_PROGRESS);
+        verify(chatMemberRepository).findByChatRoomIdAndUserId(room.getId(), admin.getId());
+        verify(chatMemberRepository).save(any(ChatMember.class));
     }
 
     @Test
@@ -121,6 +126,7 @@ class ChatFacadeTest {
         ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
         verify(chatMessageRepository).save(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getContent()).isEqualTo("홍길동님이 퇴장했습니다");
+        assertThat(messageCaptor.getValue().getMessageType()).isEqualTo(ChatMessageType.SYSTEM);
     }
 
     private User user(Long id) {

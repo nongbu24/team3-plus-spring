@@ -35,7 +35,7 @@ public class ChatFacade {
     @Transactional
     public ChatSendResult sendMessage(ChatMessageRequest request, User sender) {
         ChatRoom chatRoom = getAccessibleRoom(request.getRoomId(), sender, true);
-        Long assignedAdminId = startProgressIfAdminSendsFirstMessage(chatRoom, sender);
+        Long assignedAdminId = startProgressIfAdminParticipates(chatRoom, sender);
 
         ChatMessage message = ChatMessage.create(sender.getId(), sender.getName(), chatRoom, request.getContent());
         ChatMessage savedMessage = chatMessageRepository.save(message);
@@ -50,8 +50,14 @@ public class ChatFacade {
     @Transactional
     public ChatMessageResponse enterRoom(Long roomId, User user) {
         ChatRoom chatRoom = getAccessibleRoom(roomId, user, true);
+        Long assignedAdminId = startProgressIfAdminParticipates(chatRoom, user);
+        ChatMessageResponse response = saveSystemMessage(chatRoom, user, user.getName() + "님이 입장했습니다");
 
-        return saveSystemMessage(chatRoom, user, user.getName() + "님이 입장했습니다");
+        if (assignedAdminId != null) {
+            handleAdminAssignedAfterCommit(chatRoom.getId(), assignedAdminId);
+        }
+
+        return response;
     }
 
     @Transactional
@@ -87,7 +93,7 @@ public class ChatFacade {
     }
 
     private ChatMessageResponse saveSystemMessage(ChatRoom chatRoom, User user, String content) {
-        ChatMessage message = ChatMessage.create(user.getId(), user.getName(), chatRoom, content);
+        ChatMessage message = ChatMessage.createSystem(user.getId(), user.getName(), chatRoom, content);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
         return ChatMessageResponse.from(savedMessage);
@@ -126,7 +132,7 @@ public class ChatFacade {
                 .orElse(false);
     }
 
-    private Long startProgressIfAdminSendsFirstMessage(ChatRoom room, User sender) {
+    private Long startProgressIfAdminParticipates(ChatRoom room, User sender) {
         if (sender.getRole() == UserRole.ADMIN && room.getStatus() == ChatStatus.WAITING) {
             room.assignAdmin(sender);
             room.changeStatus(ChatStatus.IN_PROGRESS);
@@ -139,6 +145,11 @@ public class ChatFacade {
     }
 
     private void handleAdminAssignedAfterCommit(Long roomId, Long assignedAdminId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+            return;
+        }
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
