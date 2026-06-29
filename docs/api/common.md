@@ -126,7 +126,9 @@ POST /api/payments/webhook
 | `PENDING` | 결제 대기 |
 | `PAID` | 결제 완료 |
 | `FAILED` | 결제 실패 |
+| `CANCEL_REQUESTED` | PG 결제 취소 처리 중 |
 | `CANCELED` | 결제 취소 |
+| `REVIEW_REQUIRED` | PG 결제 취소 결과 확인 필요 |
 | `REFUNDED` | 환불 완료 |
 
 ### RefundStatus
@@ -205,6 +207,10 @@ POST /api/payments/webhook
 | `PAYMENT_ALREADY_PROCESSED` | 409 | 이미 처리된 결제 |
 | `PAYMENT_AMOUNT_MISMATCH` | 400 | 결제 승인 금액 불일치 |
 | `PAYMENT_STATUS_NOT_PAID` | 400 | 외부 결제 상태가 성공 상태가 아님 |
+| `PAYMENT_NOT_COMPLETED` | 409 | 외부 결제가 아직 완료되지 않음 |
+| `PAYMENT_CANCEL_PENDING` | 409 | PG 결제 취소 처리 중 |
+| `PAYMENT_REVIEW_REQUIRED` | 409 | PG 결제 취소 결과 확인 필요 |
+| `PAYMENT_STATUS_INVALID` | 409 | 허용되지 않는 결제 상태 변경 |
 | `PAYMENT_WEBHOOK_INVALID` | 400 | 결제 웹훅 요청이 올바르지 않음 |
 | `REFUND_NOT_ALLOWED` | 409 | 환불 가능한 결제 상태가 아님 |
 | `REFUND_NOT_FOUND` | 404 | 환불 내역 없음 |

@@ -63,8 +63,16 @@ public class Payment extends BaseEntity {
         changeStatus(PaymentStatus.FAILED);
     }
 
+    public void markAsCancelRequested() {
+        changeStatus(PaymentStatus.CANCEL_REQUESTED);
+    }
+
     public void markAsCanceled() {
         changeStatus(PaymentStatus.CANCELED);
+    }
+
+    public void markAsReviewRequired() {
+        changeStatus(PaymentStatus.REVIEW_REQUIRED);
     }
 
     public void markAsRefund() {
@@ -72,7 +80,7 @@ public class Payment extends BaseEntity {
     }
 
     private String generatePortOnePaymentId() {
-        return "payment_" + UUID.randomUUID();
+        return "pay_" + UUID.randomUUID();
     }
 
     // 결제 상태 변경 로직
