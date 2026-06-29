@@ -16,6 +16,10 @@ spring:
     show-sql: ${JPA_SHOW_SQL:false}
     defer-datasource-initialization: true
 
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+
 jwt:
   secret: ${JWT_SECRET}
   access-token-expiration-millis: ${JWT_ACCESS_TOKEN_EXPIRATION_MILLIS}
