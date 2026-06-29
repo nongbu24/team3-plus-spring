@@ -70,7 +70,13 @@ public class ChatFacade {
 
     private Optional<ChatMessageResponse> leaveInactiveRoom(Long roomId, User user) {
         try {
-            return Optional.of(leaveRoom(roomId, user));
+            ChatRoom chatRoom = getAccessibleRoom(roomId, user, false);
+
+            if (!leaveIfJoined(chatRoom, user)) {
+                return Optional.empty();
+            }
+
+            return Optional.of(saveSystemMessage(chatRoom, user, user.getName() + "님이 퇴장했습니다"));
         } catch (BusinessException exception) {
             if (exception.getErrorCode() == ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
                 return Optional.empty();
@@ -109,9 +115,10 @@ public class ChatFacade {
                 );
     }
 
-    private void leaveIfJoined(ChatRoom room, User user) {
-        chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId())
-                .ifPresent(ChatMember::leave);
+    private boolean leaveIfJoined(ChatRoom room, User user) {
+        return chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId())
+                .map(ChatMember::leave)
+                .orElse(false);
     }
 
     private Long startProgressIfAdminSendsFirstMessage(ChatRoom room, User sender) {
