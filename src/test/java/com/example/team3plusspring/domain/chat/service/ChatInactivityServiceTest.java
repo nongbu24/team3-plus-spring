@@ -30,6 +30,9 @@ class ChatInactivityServiceTest {
     @Mock
     ChatMessagePublisher chatMessagePublisher;
 
+    @Mock
+    ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
+
     @InjectMocks
     ChatInactivityService chatInactivityService;
 
@@ -70,5 +73,6 @@ class ChatInactivityServiceTest {
         // then
         verify(chatFacade).leaveInactiveRoom(10L, 1L);
         verify(chatMessagePublisher).publish(10L, response);
+        verify(chatSessionExpiredEventPublisher).publish(10L, 1L);
     }
 }

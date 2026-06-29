@@ -125,20 +125,18 @@ public class ChatSessionRegistry {
     }
 
     public synchronized Set<InactiveChatSession> expireInactiveSessions(Duration timeout) {
-        Set<Long> expiredRoomIds = chatActivityStore.findAndClaimExpiredRoomIds(activeRoomIds(), timeout);
-
-        Set<SessionRoom> expiredRooms = activeSessionCounts.keySet()
+        return chatActivityStore.findAndClaimExpiredSessions(activeSessions(), timeout)
                 .stream()
-                .filter(sessionRoom -> expiredRoomIds.contains(sessionRoom.roomId()))
-                .collect(Collectors.toSet());
-
-        return expiredRooms.stream()
-                .map(this::expire)
+                .map(activeSession -> expire(new SessionRoom(activeSession.userId(), activeSession.roomId())))
                 .collect(Collectors.toSet());
     }
 
     // 사용자가 직접 퇴장한 경우에는 같은 사용자/방 조합의 모든 세션을 정리한다.
     public synchronized void leaveAll(Long userId, Long roomId) {
+        removeLocalSessions(userId, roomId);
+    }
+
+    public synchronized void removeLocalSessions(Long userId, Long roomId) {
         SessionRoom sessionRoom = new SessionRoom(userId, roomId);
 
         sessionRooms.forEach((sessionId, rooms) -> rooms.remove(sessionRoom));
@@ -230,6 +228,10 @@ public class ChatSessionRegistry {
             return;
         }
 
+        if (chatActivityStore.preservesSharedRoomActivity()) {
+            return;
+        }
+
         chatActivityStore.removeRoomActivity(roomId);
     }
 
@@ -249,6 +251,13 @@ public class ChatSessionRegistry {
         return activeSessionCounts.keySet()
                 .stream()
                 .map(SessionRoom::roomId)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<ChatActivityStore.ActiveChatSession> activeSessions() {
+        return activeSessionCounts.keySet()
+                .stream()
+                .map(sessionRoom -> new ChatActivityStore.ActiveChatSession(sessionRoom.userId(), sessionRoom.roomId()))
                 .collect(Collectors.toSet());
     }
 

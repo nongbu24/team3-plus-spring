@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.chat.redis;
 
+import com.example.team3plusspring.domain.chat.service.ChatActivityStore.ActiveChatSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +33,7 @@ class RedisChatActivityStoreTest {
 
     @BeforeEach
     void setUp() {
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         redisChatActivityStore = new RedisChatActivityStore(redisTemplate);
     }
 
@@ -43,7 +45,13 @@ class RedisChatActivityStoreTest {
         // then
         verify(valueOperations).set(eq("chat:activity:room:1"), anyString());
         verify(redisTemplate).delete("chat:activity:warning:room:1");
-        verify(redisTemplate).delete("chat:activity:expired:room:1");
+        verify(redisTemplate).keys("chat:activity:expired:room:1:user:*");
+    }
+
+    @Test
+    void Redis저장소는_서버간공유활동정보를보존한다() {
+        // when & then
+        assertThat(redisChatActivityStore.preservesSharedRoomActivity()).isTrue();
     }
 
     @Test
@@ -88,17 +96,17 @@ class RedisChatActivityStoreTest {
         long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
 
         when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
-        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1"), eq("1"), any(Duration.class)))
+        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1:user:10"), eq("1"), any(Duration.class)))
                 .thenReturn(true);
 
         // when
-        Set<Long> roomIds = redisChatActivityStore.findAndClaimExpiredRoomIds(
-                Set.of(1L),
+        Set<ActiveChatSession> sessions = redisChatActivityStore.findAndClaimExpiredSessions(
+                Set.of(new ActiveChatSession(10L, 1L)),
                 Duration.ofMinutes(5)
         );
 
         // then
-        assertThat(roomIds).containsExactly(1L);
+        assertThat(sessions).containsExactly(new ActiveChatSession(10L, 1L));
     }
 
     @Test
@@ -107,16 +115,16 @@ class RedisChatActivityStoreTest {
         long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
 
         when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
-        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1"), eq("1"), any(Duration.class)))
+        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1:user:10"), eq("1"), any(Duration.class)))
                 .thenReturn(false);
 
         // when
-        Set<Long> roomIds = redisChatActivityStore.findAndClaimExpiredRoomIds(
-                Set.of(1L),
+        Set<ActiveChatSession> sessions = redisChatActivityStore.findAndClaimExpiredSessions(
+                Set.of(new ActiveChatSession(10L, 1L)),
                 Duration.ofMinutes(5)
         );
 
         // then
-        assertThat(roomIds).isEmpty();
+        assertThat(sessions).isEmpty();
     }
 }

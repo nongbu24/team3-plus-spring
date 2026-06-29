@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.chat.redis;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.service.ChatAdminSessionService;
+import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,16 +29,25 @@ class ChatRedisPublisherSubscriberTest {
     RedisTemplate<String, ChatAdminAssignedEvent> chatAdminAssignedRedisTemplate;
 
     @Mock
+    RedisTemplate<String, ChatSessionExpiredEvent> chatSessionExpiredRedisTemplate;
+
+    @Mock
     RedisSerializer<ChatMessageResponse> chatMessageRedisSerializer;
 
     @Mock
     RedisSerializer<ChatAdminAssignedEvent> chatAdminAssignedRedisSerializer;
 
     @Mock
+    RedisSerializer<ChatSessionExpiredEvent> chatSessionExpiredRedisSerializer;
+
+    @Mock
     SimpMessagingTemplate messagingTemplate;
 
     @Mock
     ChatAdminSessionService chatAdminSessionService;
+
+    @Mock
+    ChatSessionRegistry chatSessionRegistry;
 
     @Mock
     Message message;
@@ -67,6 +77,21 @@ class ChatRedisPublisherSubscriberTest {
         verify(chatAdminAssignedRedisTemplate).convertAndSend(
                 "chat-admin-assigned:1",
                 new ChatAdminAssignedEvent(1L, 10L)
+        );
+    }
+
+    @Test
+    void 만료세션_레디스로만료이벤트를발행한다() {
+        // given
+        ChatSessionExpiredRedisPublisher publisher = new ChatSessionExpiredRedisPublisher(chatSessionExpiredRedisTemplate);
+
+        // when
+        publisher.publish(1L, 10L);
+
+        // then
+        verify(chatSessionExpiredRedisTemplate).convertAndSend(
+                "chat-session-expired:1",
+                new ChatSessionExpiredEvent(1L, 10L)
         );
     }
 
@@ -123,6 +148,26 @@ class ChatRedisPublisherSubscriberTest {
 
         // then
         verify(chatAdminSessionService).closeOtherAdminSessions(1L, 10L);
+    }
+
+    @Test
+    void 만료세션구독_현재서버의로컬세션만정리한다() {
+        // given
+        ChatSessionExpiredRedisSubscriber subscriber = new ChatSessionExpiredRedisSubscriber(
+                chatSessionExpiredRedisSerializer,
+                chatSessionRegistry
+        );
+        ChatSessionExpiredEvent event = new ChatSessionExpiredEvent(1L, 10L);
+        byte[] body = "body".getBytes(StandardCharsets.UTF_8);
+
+        when(message.getBody()).thenReturn(body);
+        when(chatSessionExpiredRedisSerializer.deserialize(body)).thenReturn(event);
+
+        // when
+        subscriber.onMessage(message, null);
+
+        // then
+        verify(chatSessionRegistry).removeLocalSessions(10L, 1L);
     }
 
     private ChatMessageResponse response() {

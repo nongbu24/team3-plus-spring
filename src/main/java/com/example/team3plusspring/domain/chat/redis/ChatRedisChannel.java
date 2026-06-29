@@ -5,7 +5,9 @@ public final class ChatRedisChannel {
     public static final String TOPIC_PATTERN = "chat-room:*";
     public static final String TOPIC_PREFIX = "chat-room:";
     public static final String ADMIN_ASSIGNED_TOPIC_PATTERN = "chat-admin-assigned:*";
+    public static final String SESSION_EXPIRED_TOPIC_PATTERN = "chat-session-expired:*";
     private static final String ADMIN_ASSIGNED_TOPIC_PREFIX = "chat-admin-assigned:";
+    private static final String SESSION_EXPIRED_TOPIC_PREFIX = "chat-session-expired:";
 
     private ChatRedisChannel() {
     }
@@ -20,5 +22,9 @@ public final class ChatRedisChannel {
 
     public static String adminAssignedTopic(Long roomId) {
         return ADMIN_ASSIGNED_TOPIC_PREFIX + roomId;
+    }
+
+    public static String sessionExpiredTopic(Long roomId) {
+        return SESSION_EXPIRED_TOPIC_PREFIX + roomId;
     }
 }

@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ChatSessionRegistryTest {
 
@@ -185,5 +186,38 @@ class ChatSessionRegistryTest {
 
         // then
         verify(chatActivityStore, never()).removeRoomActivity(10L);
+    }
+
+    @Test
+    void 공유활동정보를보존하는저장소는_로컬마지막세션이종료되어도_방활동정보를삭제하지않는다() {
+        // given
+        ChatActivityStore chatActivityStore = mock(ChatActivityStore.class);
+        ChatSessionRegistry registry = new ChatSessionRegistry(chatActivityStore);
+        when(chatActivityStore.preservesSharedRoomActivity()).thenReturn(true);
+        registry.enter("session-1", 1L, 10L);
+
+        // when
+        registry.removeSession("session-1");
+
+        // then
+        verify(chatActivityStore, never()).removeRoomActivity(10L);
+    }
+
+    @Test
+    void 로컬세션정리는_DB처리없이_해당사용자방세션만제거한다() {
+        // given
+        ChatActivityStore chatActivityStore = mock(ChatActivityStore.class);
+        ChatSessionRegistry registry = new ChatSessionRegistry(chatActivityStore);
+        registry.subscribe("session-1", 1L, UserRole.USER, 10L);
+        registry.enter("session-1", 1L, 10L);
+        registry.subscribe("session-2", 2L, UserRole.USER, 10L);
+        registry.enter("session-2", 2L, 10L);
+
+        // when
+        registry.removeLocalSessions(1L, 10L);
+
+        // then
+        assertThat(registry.canSend("session-1", 1L, 10L)).isFalse();
+        assertThat(registry.canSend("session-2", 2L, 10L)).isTrue();
     }
 }

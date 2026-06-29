@@ -40,12 +40,12 @@ public class InMemoryChatActivityStore implements ChatActivityStore {
     }
 
     @Override
-    public Set<Long> findAndClaimExpiredRoomIds(Set<Long> roomIds, Duration timeout) {
+    public Set<ActiveChatSession> findAndClaimExpiredSessions(Set<ActiveChatSession> activeSessions, Duration timeout) {
         LocalDateTime expiredThreshold = LocalDateTime.now().minus(timeout);
 
-        return roomIds.stream()
-                .filter(roomId -> {
-                    RoomActivity activity = roomActivities.get(roomId);
+        return activeSessions.stream()
+                .filter(activeSession -> {
+                    RoomActivity activity = roomActivities.get(activeSession.roomId());
                     return activity == null || activity.isExpired(expiredThreshold);
                 })
                 .collect(Collectors.toSet());

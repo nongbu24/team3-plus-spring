@@ -28,14 +28,19 @@ public class RedisChatActivityStore implements ChatActivityStore {
 
         redisTemplate.opsForValue().set(lastActivityKey(roomId), now);
         redisTemplate.delete(warningKey(roomId));
-        redisTemplate.delete(expiredKey(roomId));
+        deleteExpiredKeys(roomId);
     }
 
     @Override
     public void removeRoomActivity(Long roomId) {
         redisTemplate.delete(lastActivityKey(roomId));
         redisTemplate.delete(warningKey(roomId));
-        redisTemplate.delete(expiredKey(roomId));
+        deleteExpiredKeys(roomId);
+    }
+
+    @Override
+    public boolean preservesSharedRoomActivity() {
+        return true;
     }
 
     @Override
@@ -49,11 +54,11 @@ public class RedisChatActivityStore implements ChatActivityStore {
     }
 
     @Override
-    public Set<Long> findAndClaimExpiredRoomIds(Set<Long> roomIds, Duration timeout) {
+    public Set<ActiveChatSession> findAndClaimExpiredSessions(Set<ActiveChatSession> activeSessions, Duration timeout) {
         long expiredThreshold = Instant.now().minus(timeout).toEpochMilli();
 
-        return roomIds.stream()
-                .filter(roomId -> isExpired(roomId, expiredThreshold))
+        return activeSessions.stream()
+                .filter(activeSession -> isExpired(activeSession.roomId(), expiredThreshold))
                 .filter(this::claimExpiredIfAbsent)
                 .collect(Collectors.toSet());
     }
@@ -71,9 +76,9 @@ public class RedisChatActivityStore implements ChatActivityStore {
         return Boolean.TRUE.equals(marked);
     }
 
-    private boolean claimExpiredIfAbsent(Long roomId) {
+    private boolean claimExpiredIfAbsent(ActiveChatSession activeSession) {
         Boolean claimed = redisTemplate.opsForValue()
-                .setIfAbsent(expiredKey(roomId), "1", EXPIRED_CLAIM_TTL);
+                .setIfAbsent(expiredKey(activeSession), "1", EXPIRED_CLAIM_TTL);
 
         return Boolean.TRUE.equals(claimed);
     }
@@ -94,6 +99,16 @@ public class RedisChatActivityStore implements ChatActivityStore {
         return Long.parseLong(value);
     }
 
+    private void deleteExpiredKeys(Long roomId) {
+        Set<String> expiredKeys = redisTemplate.keys(expiredKeyPattern(roomId));
+
+        if (expiredKeys == null || expiredKeys.isEmpty()) {
+            return;
+        }
+
+        redisTemplate.delete(expiredKeys);
+    }
+
     private String lastActivityKey(Long roomId) {
         return LAST_ACTIVITY_KEY_PREFIX + roomId;
     }
@@ -102,7 +117,11 @@ public class RedisChatActivityStore implements ChatActivityStore {
         return WARNING_KEY_PREFIX + roomId;
     }
 
-    private String expiredKey(Long roomId) {
-        return EXPIRED_KEY_PREFIX + roomId;
+    private String expiredKeyPattern(Long roomId) {
+        return EXPIRED_KEY_PREFIX + roomId + ":user:*";
+    }
+
+    private String expiredKey(ActiveChatSession activeSession) {
+        return EXPIRED_KEY_PREFIX + activeSession.roomId() + ":user:" + activeSession.userId();
     }
 }

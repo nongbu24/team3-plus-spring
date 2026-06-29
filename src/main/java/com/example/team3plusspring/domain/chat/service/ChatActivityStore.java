@@ -8,7 +8,14 @@ public interface ChatActivityStore {
 
     void removeRoomActivity(Long roomId);
 
+    default boolean preservesSharedRoomActivity() {
+        return false;
+    }
+
     Set<Long> findAndMarkWarningRoomIds(Set<Long> roomIds, Duration warningAfter);
 
-    Set<Long> findAndClaimExpiredRoomIds(Set<Long> roomIds, Duration timeout);
+    Set<ActiveChatSession> findAndClaimExpiredSessions(Set<ActiveChatSession> activeSessions, Duration timeout);
+
+    record ActiveChatSession(Long userId, Long roomId) {
+    }
 }
