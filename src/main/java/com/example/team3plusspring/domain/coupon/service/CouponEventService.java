@@ -3,13 +3,14 @@ package com.example.team3plusspring.domain.coupon.service;
 import java.time.LocalDateTime;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.team3plusspring.domain.coupon.dto.CouponEventListCacheResponse;
 import com.example.team3plusspring.domain.coupon.dto.CouponEventResponse;
 import com.example.team3plusspring.domain.coupon.dto.CreateCouponEventRequest;
 import com.example.team3plusspring.domain.coupon.dto.GetCouponEventListResponse;
@@ -32,6 +33,7 @@ public class CouponEventService {
 
 	private final CouponEventRepository couponEventRepository;
 	private final UserCouponRepository userCouponRepository;
+	private final CouponEventCacheReader couponEventCacheReader;
 
 	/**
 	 * 쿠폰 이벤트를 등록하는 메서드
@@ -78,14 +80,13 @@ public class CouponEventService {
 	 * @return 쿠폰 이벤트 목록 응답 DTO를 담은 페이지
 	 */
 
-	@Cacheable(value = "couponEvents", key = "#page + '-' + #size")
 	@Transactional(readOnly = true)
 	public Page<GetCouponEventListResponse> getCouponEvents(int page, int size) {
 
+		CouponEventListCacheResponse cached = couponEventCacheReader.readOpenCouponEvents(page, size);
 		Pageable pageable = PageRequest.of(page, size);
 
-		return couponEventRepository.findOpenCouponEvents(LocalDateTime.now(), pageable)
-			.map(GetCouponEventListResponse::from);
+		return new PageImpl<>(cached.getContent(), pageable, cached.getTotalElements());
 	}
 
 	/**
