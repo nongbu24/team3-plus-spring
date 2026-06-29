@@ -20,6 +20,7 @@ public class RedisChatActivityStore implements ChatActivityStore {
     private static final String WARNING_KEY_PREFIX = "chat:activity:warning:room:";
     private static final String EXPIRED_KEY_PREFIX = "chat:activity:expired:room:";
     private static final String MISSING_LAST_ACTIVITY_VALUE = "missing";
+    private static final Duration ACTIVITY_TTL = Duration.ofMinutes(10);
     private static final Duration EXPIRED_CLAIM_TTL = Duration.ofSeconds(30);
 
     private final StringRedisTemplate redisTemplate;
@@ -28,7 +29,7 @@ public class RedisChatActivityStore implements ChatActivityStore {
     public void refreshRoomActivity(Long roomId) {
         String now = String.valueOf(Instant.now().toEpochMilli());
 
-        redisTemplate.opsForValue().set(lastActivityKey(roomId), now);
+        redisTemplate.opsForValue().set(lastActivityKey(roomId), now, ACTIVITY_TTL);
         redisTemplate.delete(warningKey(roomId));
         deleteExpiredKeys(roomId);
     }
@@ -83,7 +84,7 @@ public class RedisChatActivityStore implements ChatActivityStore {
 
     private boolean markWarningIfAbsent(Long roomId) {
         Boolean marked = redisTemplate.opsForValue()
-                .setIfAbsent(warningKey(roomId), "1");
+                .setIfAbsent(warningKey(roomId), "1", ACTIVITY_TTL);
 
         return Boolean.TRUE.equals(marked);
     }

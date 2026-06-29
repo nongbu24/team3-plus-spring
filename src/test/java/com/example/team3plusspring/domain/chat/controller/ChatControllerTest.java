@@ -6,6 +6,7 @@ import com.example.team3plusspring.domain.chat.dto.ChatRoomEventRequest;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import com.example.team3plusspring.domain.chat.facade.ChatSendResult;
 import com.example.team3plusspring.domain.chat.service.ChatMessagePublisher;
+import com.example.team3plusspring.domain.chat.service.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -40,6 +41,9 @@ class ChatControllerTest {
 
     @Mock
     ChatSessionRegistry chatSessionRegistry;
+
+    @Mock
+    ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     @InjectMocks
     ChatController chatController;
@@ -198,6 +202,7 @@ class ChatControllerTest {
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verify(chatFacade).leaveRoom(1L, user);
         verify(chatSessionRegistry).leaveAll(user.getId(), 1L);
+        verify(chatSessionExpiredEventPublisher).publish(1L, user.getId());
         verify(chatMessagePublisher).publish(1L, response);
     }
 
@@ -218,6 +223,7 @@ class ChatControllerTest {
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verify(chatFacade).leaveRoom(1L, user);
         verify(chatSessionRegistry).leaveAll(user.getId(), 1L);
+        verify(chatSessionExpiredEventPublisher).publish(1L, user.getId());
         verifyNoInteractions(chatMessagePublisher);
     }
 

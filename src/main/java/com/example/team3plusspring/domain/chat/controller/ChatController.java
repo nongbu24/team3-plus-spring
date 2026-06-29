@@ -6,6 +6,7 @@ import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import com.example.team3plusspring.domain.chat.facade.ChatSendResult;
 import com.example.team3plusspring.domain.chat.service.ChatMessagePublisher;
+import com.example.team3plusspring.domain.chat.service.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -29,6 +30,7 @@ public class ChatController {
     private final ChatFacade chatFacade;
     private final ChatMessagePublisher chatMessagePublisher;
     private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     // 클라이언트가 /pub/chat.enter 로 보낸 입장 이벤트를 처리하고, /sub/chat/{roomId} 구독자에게 알린다.
     @MessageMapping("/chat.enter")
@@ -92,17 +94,24 @@ public class ChatController {
         }
 
         ChatMessageResponse response;
+        boolean shouldPublishSessionCleanupEvent = false;
 
         try {
             response = chatFacade.leaveRoom(request.getRoomId(), sender);
+            shouldPublishSessionCleanupEvent = true;
         } catch (BusinessException exception) {
             if (exception.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
                 throw exception;
             }
 
+            shouldPublishSessionCleanupEvent = true;
             return;
         } finally {
             chatSessionRegistry.leaveAll(sender.getId(), request.getRoomId());
+
+            if (shouldPublishSessionCleanupEvent) {
+                chatSessionExpiredEventPublisher.publish(request.getRoomId(), sender.getId());
+            }
         }
 
         chatMessagePublisher.publish(request.getRoomId(), response);

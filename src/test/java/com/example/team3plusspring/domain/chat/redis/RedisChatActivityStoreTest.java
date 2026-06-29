@@ -43,7 +43,7 @@ class RedisChatActivityStoreTest {
         redisChatActivityStore.refreshRoomActivity(1L);
 
         // then
-        verify(valueOperations).set(eq("chat:activity:room:1"), anyString());
+        verify(valueOperations).set(eq("chat:activity:room:1"), anyString(), eq(Duration.ofMinutes(10)));
         verify(redisTemplate).delete("chat:activity:warning:room:1");
         verify(redisTemplate).keys("chat:activity:expired:room:1:user:*");
     }
@@ -60,7 +60,7 @@ class RedisChatActivityStoreTest {
         long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(5).toMillis();
 
         when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
-        when(valueOperations.setIfAbsent("chat:activity:warning:room:1", "1")).thenReturn(true);
+        when(valueOperations.setIfAbsent("chat:activity:warning:room:1", "1", Duration.ofMinutes(10))).thenReturn(true);
 
         // when
         Set<Long> roomIds = redisChatActivityStore.findAndMarkWarningRoomIds(
@@ -78,7 +78,7 @@ class RedisChatActivityStoreTest {
         long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(5).toMillis();
 
         when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
-        when(valueOperations.setIfAbsent("chat:activity:warning:room:1", "1")).thenReturn(false);
+        when(valueOperations.setIfAbsent("chat:activity:warning:room:1", "1", Duration.ofMinutes(10))).thenReturn(false);
 
         // when
         Set<Long> roomIds = redisChatActivityStore.findAndMarkWarningRoomIds(
