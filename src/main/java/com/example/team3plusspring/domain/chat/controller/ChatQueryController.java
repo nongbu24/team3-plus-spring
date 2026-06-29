@@ -1,16 +1,15 @@
 package com.example.team3plusspring.domain.chat.controller;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.dto.ChatRoomMessagesResponse;
 import com.example.team3plusspring.domain.chat.service.ChatQueryService;
-import com.example.team3plusspring.domain.user.entity.UserRole;
-import com.example.team3plusspring.global.exception.BusinessException;
-import com.example.team3plusspring.global.exception.ErrorCode;
 import com.example.team3plusspring.global.response.ApiResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -25,13 +24,11 @@ public class ChatQueryController {
     private final ChatQueryService chatQueryService;
 
     @GetMapping("/messages")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getRecentMessagesForAdmin(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<ChatRoomMessagesResponse>>> getRecentMessagesForAdmin(
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size
     ) {
-        validateAdmin(userDetails);
-
-        List<ChatMessageResponse> response = chatQueryService.getRecentMessages(size);
+        List<ChatRoomMessagesResponse> response = chatQueryService.getRecentMessagesGroupedByRoom(size);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -53,16 +50,16 @@ public class ChatQueryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @GetMapping("/rooms/{roomId}/messages/after/{lastReceivedMessageId}")
+    @GetMapping("/rooms/{roomId}/messages/after/{lastMessageId}")
     public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesAfterByRoom(
             @PathVariable Long roomId,
-            @PathVariable Long lastReceivedMessageId,
+            @PathVariable Long lastMessageId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "100") @Min(1) @Max(500) int size
     ) {
         List<ChatMessageResponse> response = chatQueryService.getMessagesAfterByRoom(
                 roomId,
-                lastReceivedMessageId,
+                lastMessageId,
                 userDetails.getUser(),
                 size
         );
@@ -79,11 +76,5 @@ public class ChatQueryController {
         List<ChatMessageResponse> response = chatQueryService.getRecentMessagesByRoom(roomId, userDetails.getUser(), size);
 
         return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
-    private void validateAdmin(CustomUserDetails userDetails) {
-        if (userDetails.getUser().getRole() != UserRole.ADMIN) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
-        }
     }
 }

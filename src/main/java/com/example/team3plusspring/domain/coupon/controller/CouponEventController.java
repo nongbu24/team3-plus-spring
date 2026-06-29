@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,11 +22,14 @@ import com.example.team3plusspring.global.response.ApiResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/coupon-events")
+@Validated
 public class CouponEventController {
 
 	private final CouponEventService couponEventService;
@@ -59,8 +63,8 @@ public class CouponEventController {
 
 	@GetMapping
 	public ResponseEntity<ApiResponse<Page<GetCouponEventListResponse>>> getCouponEvents(
-		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "10") int size) {
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
 
 		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(couponEventService.getCouponEvents(page, size)));
 	}

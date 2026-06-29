@@ -17,7 +17,7 @@ public class ChatRoomResponse {
     private final ChatStatus status;
     private final LocalDateTime createdAt;
 
-    public ChatRoomResponse(ChatRoom room) {
+    private ChatRoomResponse(ChatRoom room) {
         this.roomId = room.getId();
         this.name = room.getName();
         this.customerId = room.getCustomerId();
@@ -26,5 +26,9 @@ public class ChatRoomResponse {
         this.adminName = room.getAdminName();
         this.status = room.getStatus();
         this.createdAt = room.getCreatedAt();
+    }
+
+    public static ChatRoomResponse from(ChatRoom room) {
+        return new ChatRoomResponse(room);
     }
 }

@@ -9,13 +9,19 @@ import com.example.team3plusspring.domain.chat.entity.ChatStatus;
 import com.example.team3plusspring.domain.chat.repository.ChatMemberRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatMessageRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
+import com.example.team3plusspring.domain.chat.service.ChatAdminSessionService;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.entity.UserRole;
+import com.example.team3plusspring.domain.user.repository.UserRepository;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,23 +29,35 @@ public class ChatFacade {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMemberRepository chatMemberRepository;
+    private final ChatAdminSessionService chatAdminSessionService;
+    private final UserRepository userRepository;
 
     @Transactional
-    public ChatMessageResponse sendMessage(ChatMessageRequest request, User sender) {
+    public ChatSendResult sendMessage(ChatMessageRequest request, User sender) {
         ChatRoom chatRoom = getAccessibleRoom(request.getRoomId(), sender, true);
-        startProgressIfAdminSendsFirstMessage(chatRoom, sender);
+        Long assignedAdminId = startProgressIfAdminParticipates(chatRoom, sender);
 
         ChatMessage message = ChatMessage.create(sender.getId(), sender.getName(), chatRoom, request.getContent());
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        return new ChatMessageResponse(savedMessage);
+        if (assignedAdminId != null) {
+            handleAdminAssignedAfterCommit(chatRoom.getId(), assignedAdminId);
+        }
+
+        return new ChatSendResult(ChatMessageResponse.from(savedMessage), assignedAdminId);
     }
 
     @Transactional
     public ChatMessageResponse enterRoom(Long roomId, User user) {
         ChatRoom chatRoom = getAccessibleRoom(roomId, user, true);
+        Long assignedAdminId = startProgressIfAdminParticipates(chatRoom, user);
+        ChatMessageResponse response = saveSystemMessage(chatRoom, user, user.getName() + "님이 입장했습니다");
 
-        return saveSystemMessage(chatRoom, user, user.getName() + "님이 입장했습니다");
+        if (assignedAdminId != null) {
+            handleAdminAssignedAfterCommit(chatRoom.getId(), assignedAdminId);
+        }
+
+        return response;
     }
 
     @Transactional
@@ -50,11 +68,35 @@ public class ChatFacade {
         return saveSystemMessage(chatRoom, user, user.getName() + "님이 퇴장했습니다");
     }
 
+    @Transactional
+    public Optional<ChatMessageResponse> leaveInactiveRoom(Long roomId, Long userId) {
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
+                .flatMap(user -> leaveInactiveRoom(roomId, user));
+    }
+
+    private Optional<ChatMessageResponse> leaveInactiveRoom(Long roomId, User user) {
+        try {
+            ChatRoom chatRoom = getAccessibleRoom(roomId, user, false);
+
+            if (!leaveIfJoined(chatRoom, user)) {
+                return Optional.empty();
+            }
+
+            return Optional.of(saveSystemMessage(chatRoom, user, user.getName() + "님이 퇴장했습니다"));
+        } catch (BusinessException exception) {
+            if (exception.getErrorCode() == ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
+                return Optional.empty();
+            }
+
+            throw exception;
+        }
+    }
+
     private ChatMessageResponse saveSystemMessage(ChatRoom chatRoom, User user, String content) {
-        ChatMessage message = ChatMessage.create(user.getId(), user.getName(), chatRoom, content);
+        ChatMessage message = ChatMessage.createSystem(user.getId(), user.getName(), chatRoom, content);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        return new ChatMessageResponse(savedMessage);
+        return ChatMessageResponse.from(savedMessage);
     }
 
     private ChatRoom getAccessibleRoom(Long roomId, User sender, boolean join) {
@@ -63,11 +105,17 @@ public class ChatFacade {
 
         chatRoom.validateAccess(sender);
         chatRoom.validateNotCompleted();
-        if (join) {
+
+        if (join && shouldJoinAsMember(chatRoom, sender)) {
             joinIfNeeded(chatRoom, sender);
         }
 
         return chatRoom;
+    }
+
+    private boolean shouldJoinAsMember(ChatRoom room, User user) {
+        return room.getCustomerId().equals(user.getId())
+                || (room.getAdminId() != null && room.getAdminId().equals(user.getId()));
     }
 
     private void joinIfNeeded(ChatRoom room, User user) {
@@ -78,15 +126,35 @@ public class ChatFacade {
                 );
     }
 
-    private void leaveIfJoined(ChatRoom room, User user) {
-        chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId())
-                .ifPresent(ChatMember::leave);
+    private boolean leaveIfJoined(ChatRoom room, User user) {
+        return chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId())
+                .map(ChatMember::leave)
+                .orElse(false);
     }
 
-    private void startProgressIfAdminSendsFirstMessage(ChatRoom room, User sender) {
+    private Long startProgressIfAdminParticipates(ChatRoom room, User sender) {
         if (sender.getRole() == UserRole.ADMIN && room.getStatus() == ChatStatus.WAITING) {
             room.assignAdmin(sender);
             room.changeStatus(ChatStatus.IN_PROGRESS);
+            joinIfNeeded(room, sender);
+
+            return sender.getId();
         }
+
+        return null;
+    }
+
+    private void handleAdminAssignedAfterCommit(Long roomId, Long assignedAdminId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+            }
+        });
     }
 }

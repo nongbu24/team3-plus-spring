@@ -94,7 +94,7 @@ class ChatControllerTest {
         Number roomId = com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.data.roomId");
 
         assertThat(chatRoomRepository.findById(roomId.longValue())).isPresent();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(roomId.longValue(), user.getId())).isTrue();
+        assertThat(hasActiveMember(roomId.longValue(), user.getId())).isTrue();
     }
 
     @Test
@@ -116,8 +116,8 @@ class ChatControllerTest {
         // given
         User owner = saveUser("홍길동");
         User other = saveUser("김철수");
-        ChatRoom ownerRoom = chatRoomRepository.save(new ChatRoom(owner));
-        chatRoomRepository.save(new ChatRoom(other));
+        ChatRoom ownerRoom = chatRoomRepository.save(ChatRoom.create(owner));
+        chatRoomRepository.save(ChatRoom.create(other));
         String accessToken = accessToken(owner);
 
         // when & then
@@ -125,9 +125,9 @@ class ChatControllerTest {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(BODY_STATUS))
-                .andExpect(jsonPath("$.data.length()").value(1))
-                .andExpect(jsonPath("$.data[0].roomId").value(ownerRoom.getId()))
-                .andExpect(jsonPath("$.data[0].customerId").value(owner.getId()));
+                .andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].roomId").value(ownerRoom.getId()))
+                .andExpect(jsonPath("$.data.content[0].customerId").value(owner.getId()));
     }
 
     @Test
@@ -135,7 +135,7 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         String accessToken = accessToken(admin);
 
         // when & then
@@ -158,7 +158,7 @@ class ChatControllerTest {
 
         assertThat(updatedRoom.getAdminId()).isEqualTo(admin.getId());
         assertThat(updatedRoom.getStatus()).isEqualTo(ChatStatus.IN_PROGRESS);
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isTrue();
+        assertThat(hasActiveMember(room.getId(), admin.getId())).isTrue();
     }
 
     @Test
@@ -166,7 +166,7 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         String accessToken = accessToken(admin);
 
         // when & then
@@ -184,14 +184,14 @@ class ChatControllerTest {
         ChatRoom updatedRoom = chatRoomRepository.findById(room.getId()).orElseThrow();
 
         assertThat(updatedRoom.getAdminId()).isNull();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isFalse();
+        assertThat(hasActiveMember(room.getId(), admin.getId())).isFalse();
     }
 
     @Test
     void 문의상태변경_일반회원이면_실패한다() throws Exception {
         // given
         User user = saveUser("홍길동");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         String accessToken = accessToken(user);
 
         // when & then
@@ -213,7 +213,7 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         String accessToken = accessToken(admin);
 
         // when & then
@@ -234,7 +234,7 @@ class ChatControllerTest {
     void 메시지조회_채팅방고객이면_최근메시지를최신순으로조회한다() throws Exception {
         // given
         User user = saveUser("홍길동");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         ChatMessage firstMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "첫 번째 메시지"));
         ChatMessage secondMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "두 번째 메시지"));
         String accessToken = accessToken(user);
@@ -257,7 +257,7 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "문의 메시지"));
         String accessToken = accessToken(admin);
 
@@ -270,7 +270,7 @@ class ChatControllerTest {
         ChatRoom updatedRoom = chatRoomRepository.findById(room.getId()).orElseThrow();
 
         assertThat(updatedRoom.getAdminId()).isNull();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isFalse();
+        assertThat(hasActiveMember(room.getId(), admin.getId())).isFalse();
     }
 
     @Test
@@ -278,7 +278,7 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
 
         // when
         chatRoomService.validateRoomAccess(room.getId(), admin);
@@ -287,7 +287,7 @@ class ChatControllerTest {
         ChatRoom updatedRoom = chatRoomRepository.findById(room.getId()).orElseThrow();
         assertThat(updatedRoom.getAdminId()).isNull();
         assertThat(updatedRoom.getAdminName()).isNull();
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isFalse();
+        assertThat(hasActiveMember(room.getId(), admin.getId())).isFalse();
     }
 
     @Test
@@ -296,7 +296,7 @@ class ChatControllerTest {
         User user = saveUser("홍길동");
         User firstAdmin = saveAdmin("첫번째관리자");
         User secondAdmin = saveAdmin("두번째관리자");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         chatFacade.sendMessage(new ChatMessageRequest(room.getId(), "문의 확인했습니다."), firstAdmin);
 
         // when & then
@@ -311,7 +311,7 @@ class ChatControllerTest {
         // given
         User owner = saveUser("홍길동");
         User other = saveUser("김철수");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(owner));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(owner));
         String accessToken = accessToken(other);
 
         // when & then
@@ -326,7 +326,7 @@ class ChatControllerTest {
     void 이전메시지조회_기준메시지보다작은메시지만조회한다() throws Exception {
         // given
         User user = saveUser("홍길동");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         ChatMessage firstMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "첫 번째 메시지"));
         ChatMessage secondMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "두 번째 메시지"));
         chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "세 번째 메시지"));
@@ -347,7 +347,7 @@ class ChatControllerTest {
     void 이후메시지조회_마지막수신메시지보다큰메시지를오래된순으로조회한다() throws Exception {
         // given
         User user = saveUser("홍길동");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         ChatMessage firstMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "첫 번째 메시지"));
         ChatMessage secondMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "두 번째 메시지"));
         ChatMessage thirdMessage = chatMessageRepository.save(ChatMessage.create(user.getId(), user.getName(), room, "세 번째 메시지"));
@@ -384,7 +384,7 @@ class ChatControllerTest {
     void 채팅방퇴장_참여자퇴장시간을저장하고_재입장하면초기화한다() {
         // given
         User user = saveUser("홍길동");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
 
         // when
         chatFacade.enterRoom(room.getId(), user);
@@ -412,7 +412,7 @@ class ChatControllerTest {
     void 완료된채팅방이면_메시지와입퇴장메시지를_저장하지않는다() {
         // given
         User user = saveUser("홍길동");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         room.changeStatus(ChatStatus.IN_PROGRESS);
         room.changeStatus(ChatStatus.COMPLETED);
         chatRoomRepository.save(room);
@@ -443,7 +443,7 @@ class ChatControllerTest {
         // given
         User user = saveUser("홍길동");
         User admin = saveAdmin("관리자");
-        ChatRoom room = chatRoomRepository.save(new ChatRoom(user));
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
         ChatMessageRequest request = new ChatMessageRequest(room.getId(), "문의 확인했습니다.");
 
         // when
@@ -454,7 +454,7 @@ class ChatControllerTest {
         assertThat(updatedRoom.getAdminId()).isEqualTo(admin.getId());
         assertThat(updatedRoom.getAdminName()).isEqualTo("관리자");
         assertThat(updatedRoom.getStatus()).isEqualTo(ChatStatus.IN_PROGRESS);
-        assertThat(chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), admin.getId())).isTrue();
+        assertThat(hasActiveMember(room.getId(), admin.getId())).isTrue();
     }
 
     private User saveUser(String name) {
@@ -470,6 +470,12 @@ class ChatControllerTest {
 
     private String accessToken(User user) {
         return jwtTokenProvider.createAccessToken(user.getId());
+    }
+
+    private boolean hasActiveMember(Long roomId, Long userId) {
+        return chatMemberRepository.findByChatRoomIdAndUserId(roomId, userId)
+                .filter(member -> member.getLeftAt() == null)
+                .isPresent();
     }
 
     private String uniqueEmail() {

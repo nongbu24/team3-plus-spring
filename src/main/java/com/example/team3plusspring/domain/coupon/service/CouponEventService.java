@@ -58,7 +58,8 @@ public class CouponEventService {
 			request.getDiscountAmount(),
 			request.getTotalQuantity(),
 			request.getStartsAt(),
-			request.getEndsAt()
+			request.getEndsAt(),
+			request.getValidDays()
 		);
 
 		CouponEvent savedCouponEvent = couponEventRepository.save(couponEvent);
@@ -80,7 +81,7 @@ public class CouponEventService {
 
 		Pageable pageable = PageRequest.of(page, size);
 
-		return couponEventRepository.findByStatus(CouponEventStatus.OPEN, pageable)
+		return couponEventRepository.findOpenCouponEvents(LocalDateTime.now(), pageable)
 			.map(GetCouponEventListResponse::from);
 	}
 
@@ -116,7 +117,7 @@ public class CouponEventService {
 			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
 		}
 
-		UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId);
+		UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId, couponEvent.getValidDays());
 		UserCoupon savedUserCoupon = userCouponRepository.save(userCoupon);
 
 		return IssueCouponResponse.from(savedUserCoupon);

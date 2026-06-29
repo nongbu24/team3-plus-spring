@@ -103,4 +103,20 @@ public class CartService {
                 itemDetails.stream().mapToInt(CartItemDetailResponse::getLineAmount).sum()
         );
     }
+
+    @Transactional
+    public Cart findByUser(Long userId) {
+        return cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+    }
+
+    @Transactional
+    public List<CartItem> findOrderCartItemsByCartId(Long cartId, List<Long> cartItemIds) {
+        return cartItemRepository.findByCartIdAndIdInOrderByProductId(cartItemIds, cartId);
+    }
+
+    @Transactional
+    public void deleteOrderCartItems(List<CartItem> cartItems) {
+        cartItemRepository.deleteAllInBatch(cartItems);
+    }
 }

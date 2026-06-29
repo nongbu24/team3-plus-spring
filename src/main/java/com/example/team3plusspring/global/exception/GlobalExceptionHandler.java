@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -99,6 +100,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.METHOD_NOT_ALLOWED.getHttpStatus())
                 .body(ApiResponse.error(ErrorCode.METHOD_NOT_ALLOWED));
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDeniedException() {
+        return ResponseEntity
+                .status(ErrorCode.FORBIDDEN.getHttpStatus())
+                .body(ApiResponse.error(ErrorCode.FORBIDDEN));
     }
 
     // 위에서 처리하지 못한 예상 밖의 서버 예외가 발생했을 때 사용하는 에러

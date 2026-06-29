@@ -126,7 +126,9 @@ POST /api/payments/webhook
 | `PENDING` | 결제 대기 |
 | `PAID` | 결제 완료 |
 | `FAILED` | 결제 실패 |
+| `CANCEL_REQUESTED` | PG 결제 취소 처리 중 |
 | `CANCELED` | 결제 취소 |
+| `REVIEW_REQUIRED` | PG 결제 취소 결과 확인 필요 |
 | `REFUNDED` | 환불 완료 |
 
 ### RefundStatus
@@ -146,6 +148,14 @@ POST /api/payments/webhook
 | `RECEIVED` | 웹훅 수신 |
 | `PROCESSED` | 처리 완료 |
 | `FAILED` | 처리 실패 |
+
+### ChatStatus
+
+| 값 | 설명 |
+| --- | --- |
+| `WAITING` | 관리자 배정 대기 |
+| `IN_PROGRESS` | 문의 진행 중 |
+| `COMPLETED` | 문의 완료 |
 
 ## 공통 에러 코드
 
@@ -181,6 +191,7 @@ POST /api/payments/webhook
 | `CART_ITEM_NOT_FOUND` | 404 | 장바구니 상품 없음 |
 | `CART_ITEM_ACCESS_DENIED` | 403 | 타인의 장바구니 상품 접근 |
 | `CART_STOCK_EXCEEDED` | 409 | 장바구니 수량이 재고 초과 |
+| `CART_ITEM_SELECTION_INVALID` | 400 | 선택한 장바구니 항목이 유효하지 않음 |
 | `ORDER_NOT_FOUND` | 404 | 주문 없음 |
 | `ORDER_ACCESS_DENIED` | 403 | 타인의 주문 접근 |
 | `ORDER_CANCEL_NOT_ALLOWED` | 409 | 결제 전 취소가 불가능한 주문 상태 |
@@ -196,10 +207,19 @@ POST /api/payments/webhook
 | `PAYMENT_ALREADY_PROCESSED` | 409 | 이미 처리된 결제 |
 | `PAYMENT_AMOUNT_MISMATCH` | 400 | 결제 승인 금액 불일치 |
 | `PAYMENT_STATUS_NOT_PAID` | 400 | 외부 결제 상태가 성공 상태가 아님 |
+| `PAYMENT_NOT_COMPLETED` | 409 | 외부 결제가 아직 완료되지 않음 |
+| `PAYMENT_CANCEL_PENDING` | 409 | PG 결제 취소 처리 중 |
+| `PAYMENT_REVIEW_REQUIRED` | 409 | PG 결제 취소 결과 확인 필요 |
+| `PAYMENT_STATUS_INVALID` | 409 | 허용되지 않는 결제 상태 변경 |
 | `PAYMENT_WEBHOOK_INVALID` | 400 | 결제 웹훅 요청이 올바르지 않음 |
 | `REFUND_NOT_ALLOWED` | 409 | 환불 가능한 결제 상태가 아님 |
 | `REFUND_NOT_FOUND` | 404 | 환불 내역 없음 |
 | `REFUND_AMOUNT_INVALID` | 400 | 환불 금액 오류 |
+| `CHAT_ROOM_NOT_FOUND` | 404 | 채팅방 없음 |
+| `CHAT_ROOM_ACCESS_DENIED` | 403 | 접근 권한이 없는 채팅방 |
+| `CHAT_ROOM_ALREADY_COMPLETED` | 409 | 이미 완료된 채팅방 |
+| `INVALID_CHAT_STATUS_TRANSITION` | 409 | 허용되지 않는 문의 상태 변경 |
+| `ADMIN_NOT_FOUND` | 404 | 관리자 없음 |
 | `POPULAR_SEARCH_KEYWORD_NOT_FOUND` | 404 | 인기 검색어 없음 |
 | `WEBHOOK_SIGNATURE_INVALID` | 400 | 웹훅 서명 검증 실패 |
 | `WEBHOOK_PAYLOAD_INVALID` | 400 | 웹훅 본문 파싱 실패 |

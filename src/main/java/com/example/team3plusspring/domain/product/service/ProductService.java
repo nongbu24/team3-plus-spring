@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.product.service;
 
 import com.example.team3plusspring.domain.category.entity.Category;
 import com.example.team3plusspring.domain.category.repository.CategoryRepository;
+import com.example.team3plusspring.domain.order.entity.OrderItem;
 import com.example.team3plusspring.domain.product.dto.GetOneProductResponse;
 import com.example.team3plusspring.domain.product.dto.GetProductsResponse;
 import com.example.team3plusspring.domain.product.entity.Product;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -94,5 +96,42 @@ public class ProductService {
         product.decreaseStock(quantity);
 
         return product;
+    }
+
+    @Transactional
+    public List<Product> getOrderableProductsForUpdate(List<Long> productIds) {
+        List<Product> products = productRepository.findAllByIdInForUpdate(productIds);
+
+        if (products.size() != productIds.size()) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return products;
+    }
+
+    @Transactional
+    public void restoreStocks(List<OrderItem> orderItems) {
+        Map<Long, Integer> quantitiesByProductId = orderItems.stream()
+                .collect(Collectors.toMap(
+                        OrderItem::getProductId,
+                        OrderItem::getQuantity,
+                        Integer::sum
+                ));
+
+        List<Long> productIds = quantitiesByProductId.keySet().stream()
+                .sorted()
+                .toList();
+        List<Product> products = productRepository.findAllByIdInForUpdate(productIds);
+
+        if (products.size() != productIds.size()) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        Map<Long, Product> productsById = products.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        quantitiesByProductId.forEach((productId, quantity) ->
+                productsById.get(productId).increaseStock(quantity)
+        );
     }
 }

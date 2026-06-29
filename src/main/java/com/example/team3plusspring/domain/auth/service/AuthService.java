@@ -34,7 +34,7 @@ public class AuthService {
                 request.getPhone()
         );
         User savedUser = userRepository.save(user);
-        cartRepository.save(Cart.create(savedUser));
+        cartRepository.save(Cart.create(savedUser.getId()));
 
         return SignupResponse.from(savedUser);
     }
@@ -50,15 +50,10 @@ public class AuthService {
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getId());
 
-        return new LoginResponse(
-                "Bearer",
+        return LoginResponse.of(
                 accessToken,
                 jwtTokenProvider.getAccessTokenExpiresInSeconds(),
-                new LoginResponse.UserSummary(
-                        user.getId(),
-                        user.getEmail(),
-                        user.getName()
-                )
+                user
         );
     }
 
