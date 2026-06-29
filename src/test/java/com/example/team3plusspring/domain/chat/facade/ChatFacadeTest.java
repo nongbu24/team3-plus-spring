@@ -9,6 +9,7 @@ import com.example.team3plusspring.domain.chat.repository.ChatMessageRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
 import com.example.team3plusspring.domain.chat.service.ChatAdminSessionService;
 import com.example.team3plusspring.domain.user.entity.User;
+import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +47,30 @@ class ChatFacadeTest {
 
     @InjectMocks
     ChatFacade chatFacade;
+
+    @Test
+    void 입장_배정전관리자이면_채팅참여자로저장하지않는다() {
+        // given
+        User customer = user(1L);
+        User admin = admin(2L);
+        ChatRoom room = room(10L, customer);
+
+        given(chatRoomRepository.findByIdWithLock(room.getId())).willReturn(Optional.of(room));
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", 100L);
+
+            return message;
+        });
+
+        // when
+        ChatMessageResponse response = chatFacade.enterRoom(room.getId(), admin);
+
+        // then
+        assertThat(response.getContent()).isEqualTo("관리자님이 입장했습니다");
+        verify(chatMemberRepository, never()).findByChatRoomIdAndUserId(room.getId(), admin.getId());
+        verify(chatMemberRepository, never()).save(any(ChatMember.class));
+    }
 
     @Test
     void 자동만료퇴장_이미퇴장한회원이면_퇴장메시지를저장하지않는다() {
@@ -103,6 +128,14 @@ class ChatFacadeTest {
         ReflectionTestUtils.setField(user, "id", id);
 
         return user;
+    }
+
+    private User admin(Long id) {
+        User admin = User.create("admin@example.com", "Password123", "관리자", "010-1234-5678");
+        ReflectionTestUtils.setField(admin, "id", id);
+        ReflectionTestUtils.setField(admin, "role", UserRole.ADMIN);
+
+        return admin;
     }
 
     private ChatRoom room(Long id, User user) {

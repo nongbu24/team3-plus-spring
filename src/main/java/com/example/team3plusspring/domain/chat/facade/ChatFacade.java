@@ -100,11 +100,16 @@ public class ChatFacade {
         chatRoom.validateAccess(sender);
         chatRoom.validateNotCompleted();
 
-        if (join) {
+        if (join && shouldJoinAsMember(chatRoom, sender)) {
             joinIfNeeded(chatRoom, sender);
         }
 
         return chatRoom;
+    }
+
+    private boolean shouldJoinAsMember(ChatRoom room, User user) {
+        return room.getCustomerId().equals(user.getId())
+                || (room.getAdminId() != null && room.getAdminId().equals(user.getId()));
     }
 
     private void joinIfNeeded(ChatRoom room, User user) {
@@ -125,6 +130,7 @@ public class ChatFacade {
         if (sender.getRole() == UserRole.ADMIN && room.getStatus() == ChatStatus.WAITING) {
             room.assignAdmin(sender);
             room.changeStatus(ChatStatus.IN_PROGRESS);
+            joinIfNeeded(room, sender);
 
             return sender.getId();
         }

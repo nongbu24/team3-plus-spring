@@ -108,9 +108,11 @@ public class ChatRoomService {
     }
 
     private void joinIfNeeded(ChatRoom room, User user) {
-        if (!chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), user.getId())) {
-            chatMemberRepository.save(ChatMember.join(room, user));
-        }
+        chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId())
+                .ifPresentOrElse(
+                        ChatMember::rejoin,
+                        () -> chatMemberRepository.save(ChatMember.join(room, user))
+                );
     }
 
     private void handleAdminAssignedAfterCommit(Long roomId, Long assignedAdminId) {
