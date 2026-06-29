@@ -17,6 +17,8 @@ import com.example.team3plusspring.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +37,7 @@ public class ChatFacade {
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
         if (assignedAdminId != null) {
-            chatAdminSessionService.handleAdminAssigned(chatRoom.getId(), assignedAdminId);
+            handleAdminAssignedAfterCommit(chatRoom.getId(), assignedAdminId);
         }
 
         return new ChatSendResult(ChatMessageResponse.from(savedMessage), assignedAdminId);
@@ -99,5 +101,14 @@ public class ChatFacade {
         }
 
         return null;
+    }
+
+    private void handleAdminAssignedAfterCommit(Long roomId, Long assignedAdminId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+            }
+        });
     }
 }

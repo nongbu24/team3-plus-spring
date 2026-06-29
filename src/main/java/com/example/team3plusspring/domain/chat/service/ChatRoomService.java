@@ -14,6 +14,8 @@ import com.example.team3plusspring.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -76,7 +78,7 @@ public class ChatRoomService {
         room.changeStatus(request.getStatus());
 
         if (assignedAdminId != null) {
-            chatAdminSessionService.handleAdminAssigned(room.getId(), assignedAdminId);
+            handleAdminAssignedAfterCommit(room.getId(), assignedAdminId);
         }
 
         return ChatRoomResponse.from(room);
@@ -109,6 +111,15 @@ public class ChatRoomService {
         if (!chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), user.getId())) {
             chatMemberRepository.save(ChatMember.join(room, user));
         }
+    }
+
+    private void handleAdminAssignedAfterCommit(Long roomId, Long assignedAdminId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+            }
+        });
     }
 
 }
