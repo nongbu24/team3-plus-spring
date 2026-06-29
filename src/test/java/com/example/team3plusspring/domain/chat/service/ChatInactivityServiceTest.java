@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.chat.service;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.dto.ChatMessageType;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +49,8 @@ class ChatInactivityServiceTest {
         // then
         verify(chatMessagePublisher).publish(
                 eq(1L),
-                argThat(message -> "일정 시간 동안 채팅 입력이 없다면 자동으로 채팅이 종료됩니다.".equals(message.getContent()))
+                argThat(message -> "일정 시간 동안 채팅 입력이 없다면 자동으로 채팅이 종료됩니다.".equals(message.getContent())
+                        && message.getMessageType() == ChatMessageType.SYSTEM)
         );
     }
 
