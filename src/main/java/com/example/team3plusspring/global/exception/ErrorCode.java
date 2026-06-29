@@ -73,6 +73,8 @@ public enum ErrorCode {
     PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 결제입니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 승인 금액이 일치하지 않습니다."),
     PAYMENT_STATUS_NOT_PAID(HttpStatus.BAD_REQUEST, "PortOne 결제 상태가 성공 상태가 아닙니다."),
+    PAYMENT_NOT_COMPLETED(HttpStatus.CONFLICT, "결제가 아직 완료되지 않았습니다."),
+    PAYMENT_CANCEL_PENDING(HttpStatus.CONFLICT, "결제 취소가 처리 중입니다."),
     PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST, "결제 웹훅 요청이 올바르지 않습니다."),
     PAYMENT_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 결제 상태 변경입니다."),
 

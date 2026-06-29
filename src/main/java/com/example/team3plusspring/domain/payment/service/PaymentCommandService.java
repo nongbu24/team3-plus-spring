@@ -50,11 +50,27 @@ public class PaymentCommandService {
         }
 
         validatePending(payment);
+        payment.markAsFailed();
+        cancelOrderAndRestore(payment);
+    }
 
+    @Transactional
+    public void cancelPayment(Long paymentId) {
+        Payment payment = paymentService.findPaymentForUpdate(paymentId);
+
+        if (payment.getStatus() == PaymentStatus.CANCELED) {
+            return;
+        }
+
+        validatePending(payment);
+        payment.markAsCanceled();
+        cancelOrderAndRestore(payment);
+    }
+
+    private void cancelOrderAndRestore(Payment payment) {
         Order order = orderService.findOrderForUpdate(payment.getOrderId());
         List<OrderItem> orderItems = orderService.findOrderItems(order.getId());
 
-        payment.markAsFailed();
         order.markAsCancelled();
         productService.restoreStocks(orderItems);
         userCouponService.restoreCouponByOrderId(order.getId());

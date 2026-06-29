@@ -6,5 +6,5 @@ public interface PaymentGateway {
     PaymentGatewayResponse getPayment(String paymentId);
 
     // 결제 전액 취소
-    void cancelPayment(String paymentId, String reason);
+    PaymentCancellationResult cancelPayment(String paymentId, String reason);
 }

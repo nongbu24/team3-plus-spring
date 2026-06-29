@@ -6,8 +6,11 @@ import com.example.team3plusspring.domain.payment.dto.ConfirmPaymentRequest;
 import com.example.team3plusspring.domain.payment.dto.ConfirmPaymentResponse;
 import com.example.team3plusspring.domain.payment.entity.Payment;
 import com.example.team3plusspring.domain.payment.entity.PaymentStatus;
+import com.example.team3plusspring.domain.payment.port.PaymentCancellationResult;
+import com.example.team3plusspring.domain.payment.port.PaymentCancellationStatus;
 import com.example.team3plusspring.domain.payment.port.PaymentGateway;
 import com.example.team3plusspring.domain.payment.port.PaymentGatewayResponse;
+import com.example.team3plusspring.domain.payment.port.PaymentGatewayStatus;
 import com.example.team3plusspring.domain.payment.service.PaymentCommandService;
 import com.example.team3plusspring.domain.payment.service.PaymentService;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -21,10 +24,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentFacade {
-
-    // PortOne 결제 완료 상태값. 문자열 비교 시 매직 스트링을 피하기 위해 상수화
-    private static final String PG_STATUS_PAID = "PAID";
-
     private final PaymentService paymentService;
     private final PaymentCommandService paymentCommandService;
     private final PaymentGateway paymentGateway;
@@ -61,34 +60,80 @@ public class PaymentFacade {
         // PortOne API로 실제 결제 정보를 조회한다. 클라이언트가 보낸 결제 결과는 그대로 신뢰하지 않는다.
         PaymentGatewayResponse pgPayment = paymentGateway.getPayment(portonePaymentId);
 
-        // PortOne 결제 상태가 결제 완료 상태인지 검증한다.
-        if (!PG_STATUS_PAID.equals(pgPayment.getStatus())) {
-            log.error("결제 승인 실패 - PG 상태 비정상 : paymentId={}, pgStatus={}", payment.getId(), pgPayment.getStatus());
+        return confirmByGatewayStatus(payment, pgPayment);
+    }
 
-            // PG에서 결제가 완료되지 않은 경우 주문/결제를 실패 처리하고 선차감 재고를 복구한다.
-            paymentCommandService.failPayment(payment.getId());
-            throw new BusinessException(ErrorCode.PAYMENT_STATUS_NOT_PAID);
-        }
+    private ConfirmPaymentResponse confirmByGatewayStatus(
+            Payment payment,
+            PaymentGatewayResponse pgPayment
+    ) {
+        PaymentGatewayStatus status = pgPayment.getStatus();
 
-        // 서버가 산정한 PG 실결제 금액과 PortOne 승인 금액이 정확히 일치하는지 검증한다.
-        if (payment.getPaymentAmount() != pgPayment.getTotalAmount()) {
-            log.error("결제 승인 실패 - 금액 불일치 : paymentId={}, DB금액={}, PG금액={}",
-                    payment.getId(), payment.getPaymentAmount(), pgPayment.getTotalAmount());
-
-            // 외부 결제는 성공했지만 내부 검증이 실패한 경우 PortOne 결제를 보상 취소한다.
-            try {
-                paymentGateway.cancelPayment(portonePaymentId, "결제 금액 불일치 자동 취소");
-            } catch (Exception e) {
-                log.error("PG 자동 취소 실패 : 수동 처리 필요 : portonePaymentId={}", portonePaymentId, e);
+        return switch (status) {
+            case PAID -> confirmPaidPayment(payment, pgPayment);
+            case FAILED -> failPayment(payment);
+            case CANCELLED -> cancelPayment(payment);
+            case READY, PENDING, VIRTUAL_ACCOUNT_ISSUED -> throw new BusinessException(
+                    ErrorCode.PAYMENT_NOT_COMPLETED
+            );
+            case PARTIAL_CANCELLED, UNKNOWN -> {
+                log.error("결제 승인 보류 - 처리할 수 없는 PG 상태: paymentId={}, pgStatus={}",
+                        payment.getId(), status);
+                throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
             }
+        };
+    }
 
-            // 내부 주문/결제는 실패 처리하고 선차감 재고를 복구한다.
-            paymentCommandService.failPayment(payment.getId());
-            throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
-        }
+    private ConfirmPaymentResponse confirmPaidPayment(
+            Payment payment,
+            PaymentGatewayResponse pgPayment
+    ) {
+        validatePaymentAmount(payment, pgPayment);
 
-        // 모든 검증이 통과되면 공통 결제 완료 트랜잭션을 호출한다.
         Payment confirmedPayment = paymentCommandService.completePayment(payment.getId());
         return ConfirmPaymentResponse.from(confirmedPayment);
+    }
+
+    private ConfirmPaymentResponse failPayment(Payment payment) {
+        paymentCommandService.failPayment(payment.getId());
+        throw new BusinessException(ErrorCode.PAYMENT_STATUS_NOT_PAID);
+    }
+
+    private ConfirmPaymentResponse cancelPayment(Payment payment) {
+        paymentCommandService.cancelPayment(payment.getId());
+        throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+    }
+
+    private void validatePaymentAmount(
+            Payment payment,
+            PaymentGatewayResponse pgPayment
+    ) {
+        if (payment.getPaymentAmount() == pgPayment.getTotalAmount()) {
+            return;
+        }
+
+        log.error("결제 승인 실패 - 금액 불일치: paymentId={}, DB금액={}, PG금액={}",
+                payment.getId(), payment.getPaymentAmount(), pgPayment.getTotalAmount());
+
+        PaymentCancellationResult cancellation = paymentGateway.cancelPayment(
+                payment.getPortonePaymentId(),
+                "결제 금액 불일치 자동 취소"
+        );
+
+        handleAmountMismatchCancellation(payment, cancellation.status());
+    }
+
+    private void handleAmountMismatchCancellation(
+            Payment payment,
+            PaymentCancellationStatus cancellationStatus
+    ) {
+        switch (cancellationStatus) {
+            case SUCCEEDED -> {
+                paymentCommandService.cancelPayment(payment.getId());
+                throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+            }
+            case REQUESTED -> throw new BusinessException(ErrorCode.PAYMENT_CANCEL_PENDING);
+            case FAILED, UNKNOWN -> throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
+        }
     }
 }

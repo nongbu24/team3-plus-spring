@@ -72,7 +72,7 @@ public class Payment extends BaseEntity {
     }
 
     private String generatePortOnePaymentId() {
-        return "payment_" + UUID.randomUUID();
+        return "pay_" + UUID.randomUUID();
     }
 
     // 결제 상태 변경 로직
