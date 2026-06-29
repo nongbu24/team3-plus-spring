@@ -45,6 +45,16 @@ public class PaymentFacade {
             return ConfirmPaymentResponse.from(payment);
         }
 
+        // 취소가 이미 접수된 결제는 PortOne 취소 API를 다시 호출하지 않고 기존 처리 결과를 반환한다.
+        if (payment.getStatus() == PaymentStatus.CANCEL_REQUESTED) {
+            throw new BusinessException(ErrorCode.PAYMENT_CANCEL_PENDING);
+        }
+
+        // 취소 결과를 자동으로 확정할 수 없는 결제는 중복 요청을 막고 수동 확인 대상으로 유지한다.
+        if (payment.getStatus() == PaymentStatus.REVIEW_REQUIRED) {
+            throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
+        }
+
         // 결제 대기 상태가 아니면 결제 확정 처리가 불가능하다.
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
@@ -115,10 +125,23 @@ public class PaymentFacade {
         log.error("결제 승인 실패 - 금액 불일치: paymentId={}, DB금액={}, PG금액={}",
                 payment.getId(), payment.getPaymentAmount(), pgPayment.getTotalAmount());
 
-        PaymentCancellationResult cancellation = paymentGateway.cancelPayment(
-                payment.getPortonePaymentId(),
-                "결제 금액 불일치 자동 취소"
-        );
+        boolean cancellationStarted = paymentCommandService.requestCancellation(payment.getId());
+
+        if (!cancellationStarted) {
+            throw new BusinessException(ErrorCode.PAYMENT_CANCEL_PENDING);
+        }
+
+        PaymentCancellationResult cancellation;
+
+        try {
+            cancellation = paymentGateway.cancelPayment(
+                    payment.getPortonePaymentId(),
+                    "결제 금액 불일치 자동 취소"
+            );
+        } catch (BusinessException exception) {
+            paymentCommandService.markPaymentForReview(payment.getId());
+            throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
+        }
 
         handleAmountMismatchCancellation(payment, cancellation.status());
     }
@@ -133,7 +156,10 @@ public class PaymentFacade {
                 throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
             }
             case REQUESTED -> throw new BusinessException(ErrorCode.PAYMENT_CANCEL_PENDING);
-            case FAILED, UNKNOWN -> throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
+            case FAILED, UNKNOWN -> {
+                paymentCommandService.markPaymentForReview(payment.getId());
+                throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
+            }
         }
     }
 }

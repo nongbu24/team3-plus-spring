@@ -62,9 +62,44 @@ public class PaymentCommandService {
             return;
         }
 
+        if (payment.getStatus() == PaymentStatus.CANCEL_REQUESTED
+                || payment.getStatus() == PaymentStatus.REVIEW_REQUIRED) {
+            payment.markAsCanceled();
+            return;
+        }
+
         validatePending(payment);
         payment.markAsCanceled();
         cancelOrderAndRestore(payment);
+    }
+
+    @Transactional
+    public boolean requestCancellation(Long paymentId) {
+        Payment payment = paymentService.findPaymentForUpdate(paymentId);
+
+        if (payment.getStatus() == PaymentStatus.CANCEL_REQUESTED) {
+            return false;
+        }
+
+        validatePending(payment);
+        payment.markAsCancelRequested();
+        cancelOrderAndRestore(payment);
+        return true;
+    }
+
+    @Transactional
+    public void markPaymentForReview(Long paymentId) {
+        Payment payment = paymentService.findPaymentForUpdate(paymentId);
+
+        if (payment.getStatus() == PaymentStatus.REVIEW_REQUIRED) {
+            return;
+        }
+
+        if (payment.getStatus() != PaymentStatus.CANCEL_REQUESTED) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+        }
+
+        payment.markAsReviewRequired();
     }
 
     private void cancelOrderAndRestore(Payment payment) {
