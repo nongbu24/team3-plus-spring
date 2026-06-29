@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.coupon.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -100,6 +101,7 @@ public class CouponEventService {
 	 */
 
 	@Transactional
+	@CacheEvict(value = "couponEvents", allEntries = true)
 	@RedisLock(key = "lock:coupon:", argIndex = 1)
 	public IssueCouponResponse issueCoupon(Long userId, Long couponEventId) {
 
