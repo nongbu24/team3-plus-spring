@@ -40,7 +40,7 @@ public class InMemoryChatActivityStore implements ChatActivityStore {
     }
 
     @Override
-    public Set<Long> findExpiredRoomIds(Set<Long> roomIds, Duration timeout) {
+    public Set<Long> findAndClaimExpiredRoomIds(Set<Long> roomIds, Duration timeout) {
         LocalDateTime expiredThreshold = LocalDateTime.now().minus(timeout);
 
         return roomIds.stream()

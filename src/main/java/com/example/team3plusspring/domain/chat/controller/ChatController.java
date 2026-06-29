@@ -39,15 +39,20 @@ public class ChatController {
     ) {
         User sender = getAuthenticatedUser(principal);
 
-        if (chatSessionRegistry.isEntered(sessionId, sender.getId(), request.getRoomId())) {
+        if (!chatSessionRegistry.enter(sessionId, sender.getId(), request.getRoomId())) {
             return;
         }
 
-        ChatMessageResponse response = chatFacade.enterRoom(request.getRoomId(), sender);
+        ChatMessageResponse response;
 
-        if (chatSessionRegistry.enter(sessionId, sender.getId(), request.getRoomId())) {
-            chatMessagePublisher.publish(request.getRoomId(), response);
+        try {
+            response = chatFacade.enterRoom(request.getRoomId(), sender);
+        } catch (RuntimeException exception) {
+            chatSessionRegistry.rollbackEnter(sessionId, sender.getId(), request.getRoomId());
+            throw exception;
         }
+
+        chatMessagePublisher.publish(request.getRoomId(), response);
     }
 
     // 일반 채팅 메시지를 저장한 뒤 같은 방을 구독 중인 클라이언트들에게 발행한다.

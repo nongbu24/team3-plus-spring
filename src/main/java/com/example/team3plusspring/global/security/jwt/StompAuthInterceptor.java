@@ -49,6 +49,8 @@ public class StompAuthInterceptor implements ChannelInterceptor {
             authenticate(accessor);
         } else if (StompCommand.SUBSCRIBE.equals(command)) {
             validateSubscription(accessor);
+        } else if (StompCommand.UNSUBSCRIBE.equals(command)) {
+            removeSubscription(accessor);
         }
 
         return message;
@@ -78,10 +80,15 @@ public class StompAuthInterceptor implements ChannelInterceptor {
         chatRoomService.validateRoomAccess(roomId, userDetails.getUser());
         chatSessionRegistry.subscribe(
                 getSessionId(accessor),
+                accessor.getSubscriptionId(),
                 userDetails.getUser().getId(),
                 userDetails.getUser().getRole(),
                 roomId
         );
+    }
+
+    private void removeSubscription(StompHeaderAccessor accessor) {
+        chatSessionRegistry.unsubscribe(getSessionId(accessor), accessor.getSubscriptionId());
     }
 
     private Authentication getAuthentication(StompHeaderAccessor accessor) {

@@ -10,5 +10,5 @@ public interface ChatActivityStore {
 
     Set<Long> findAndMarkWarningRoomIds(Set<Long> roomIds, Duration warningAfter);
 
-    Set<Long> findExpiredRoomIds(Set<Long> roomIds, Duration timeout);
+    Set<Long> findAndClaimExpiredRoomIds(Set<Long> roomIds, Duration timeout);
 }

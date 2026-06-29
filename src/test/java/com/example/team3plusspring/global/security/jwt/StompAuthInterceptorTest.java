@@ -88,7 +88,7 @@ class StompAuthInterceptorTest {
         // then
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         verify(chatRoomService).validateRoomAccess(1L, userDetails.getUser());
-        verify(chatSessionRegistry).subscribe("session-1", userDetails.getUser().getId(), UserRole.USER, 1L);
+        verify(chatSessionRegistry).subscribe("session-1", null, userDetails.getUser().getId(), UserRole.USER, 1L);
     }
 
     @Test
@@ -101,6 +101,21 @@ class StompAuthInterceptorTest {
         // when & then
         assertThatThrownBy(() -> stompAuthInterceptor.preSend(message, null))
                 .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void 구독해제_세션과구독아이디로_구독정보를제거한다() {
+        // given
+        StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.UNSUBSCRIBE);
+        accessor.setSessionId("session-1");
+        accessor.setSubscriptionId("sub-1");
+        Message<byte[]> message = message(accessor);
+
+        // when
+        stompAuthInterceptor.preSend(message, null);
+
+        // then
+        verify(chatSessionRegistry).unsubscribe("session-1", "sub-1");
     }
 
     private Authentication authentication() {

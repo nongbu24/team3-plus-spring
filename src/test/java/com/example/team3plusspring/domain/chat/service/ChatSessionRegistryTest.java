@@ -47,6 +47,34 @@ class ChatSessionRegistryTest {
     }
 
     @Test
+    void 입장선점을되돌리면_해당세션의입장정보와활동정보를정리한다() {
+        // given
+        chatSessionRegistry.enter("session-1", 1L, 10L);
+
+        // when
+        chatSessionRegistry.rollbackEnter("session-1", 1L, 10L);
+
+        // then
+        assertThat(chatSessionRegistry.isEntered("session-1", 1L, 10L)).isFalse();
+        assertThat(chatSessionRegistry.findAndMarkWarningRoomIds(java.time.Duration.ZERO)).isEmpty();
+    }
+
+    @Test
+    void 입장선점을되돌려도_같은방의다른활성세션은유지한다() {
+        // given
+        chatSessionRegistry.enter("session-1", 1L, 10L);
+        chatSessionRegistry.enter("session-2", 1L, 10L);
+
+        // when
+        chatSessionRegistry.rollbackEnter("session-1", 1L, 10L);
+
+        // then
+        assertThat(chatSessionRegistry.isEntered("session-1", 1L, 10L)).isFalse();
+        assertThat(chatSessionRegistry.isEntered("session-2", 1L, 10L)).isTrue();
+        assertThat(chatSessionRegistry.findAndMarkWarningRoomIds(java.time.Duration.ZERO)).containsExactly(10L);
+    }
+
+    @Test
     void 명시적으로퇴장하면_같은사용자의같은방입장정보를제거한다() {
         // given
         chatSessionRegistry.enter("session-1", 1L, 10L);
@@ -78,19 +106,35 @@ class ChatSessionRegistryTest {
     }
 
     @Test
+    void 구독해제하면_같은세션의_해당구독만_무효화한다() {
+        // given
+        chatSessionRegistry.subscribe("session-1", "sub-1", 1L, UserRole.USER, 10L);
+        chatSessionRegistry.subscribe("session-1", "sub-2", 1L, UserRole.USER, 20L);
+
+        // when
+        chatSessionRegistry.unsubscribe("session-1", "sub-1");
+
+        // then
+        assertThat(chatSessionRegistry.isSubscribed("session-1", 10L)).isFalse();
+        assertThat(chatSessionRegistry.isSubscribed("session-1", 20L)).isTrue();
+    }
+
+    @Test
     void 담당자가배정되면_같은방의다른관리자구독과입장정보만제거한다() {
         // given
-        chatSessionRegistry.subscribe("assigned-admin", 1L, UserRole.ADMIN, 10L);
-        chatSessionRegistry.subscribe("other-admin", 2L, UserRole.ADMIN, 10L);
+        chatSessionRegistry.subscribe("assigned-admin", "sub-1", 1L, UserRole.ADMIN, 10L);
+        chatSessionRegistry.subscribe("other-admin", "sub-2", 2L, UserRole.ADMIN, 10L);
         chatSessionRegistry.subscribe("customer", 3L, UserRole.USER, 10L);
         chatSessionRegistry.subscribe("other-room-admin", 2L, UserRole.ADMIN, 20L);
         chatSessionRegistry.enter("other-admin", 2L, 10L);
         chatSessionRegistry.enter("other-admin", 2L, 20L);
 
         // when
-        chatSessionRegistry.removeAdminSessionsExcept(10L, 1L);
+        var removedSubscriptions = chatSessionRegistry.removeAdminSessionsExcept(10L, 1L);
 
         // then
+        assertThat(removedSubscriptions)
+                .containsExactly(new ChatSessionRegistry.RemovedAdminSubscription("other-admin", "sub-2"));
         assertThat(chatSessionRegistry.isSubscribed("assigned-admin", 10L)).isTrue();
         assertThat(chatSessionRegistry.isSubscribed("other-admin", 10L)).isFalse();
         assertThat(chatSessionRegistry.isSubscribed("customer", 10L)).isTrue();

@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 public class RedisChatActivityStore implements ChatActivityStore {
     private static final String LAST_ACTIVITY_KEY_PREFIX = "chat:activity:room:";
     private static final String WARNING_KEY_PREFIX = "chat:activity:warning:room:";
+    private static final String EXPIRED_KEY_PREFIX = "chat:activity:expired:room:";
+    private static final Duration EXPIRED_CLAIM_TTL = Duration.ofSeconds(30);
 
     private final StringRedisTemplate redisTemplate;
 
@@ -26,12 +28,14 @@ public class RedisChatActivityStore implements ChatActivityStore {
 
         redisTemplate.opsForValue().set(lastActivityKey(roomId), now);
         redisTemplate.delete(warningKey(roomId));
+        redisTemplate.delete(expiredKey(roomId));
     }
 
     @Override
     public void removeRoomActivity(Long roomId) {
         redisTemplate.delete(lastActivityKey(roomId));
         redisTemplate.delete(warningKey(roomId));
+        redisTemplate.delete(expiredKey(roomId));
     }
 
     @Override
@@ -45,11 +49,12 @@ public class RedisChatActivityStore implements ChatActivityStore {
     }
 
     @Override
-    public Set<Long> findExpiredRoomIds(Set<Long> roomIds, Duration timeout) {
+    public Set<Long> findAndClaimExpiredRoomIds(Set<Long> roomIds, Duration timeout) {
         long expiredThreshold = Instant.now().minus(timeout).toEpochMilli();
 
         return roomIds.stream()
                 .filter(roomId -> isExpired(roomId, expiredThreshold))
+                .filter(this::claimExpiredIfAbsent)
                 .collect(Collectors.toSet());
     }
 
@@ -64,6 +69,13 @@ public class RedisChatActivityStore implements ChatActivityStore {
                 .setIfAbsent(warningKey(roomId), "1");
 
         return Boolean.TRUE.equals(marked);
+    }
+
+    private boolean claimExpiredIfAbsent(Long roomId) {
+        Boolean claimed = redisTemplate.opsForValue()
+                .setIfAbsent(expiredKey(roomId), "1", EXPIRED_CLAIM_TTL);
+
+        return Boolean.TRUE.equals(claimed);
     }
 
     private boolean isExpired(Long roomId, long expiredThreshold) {
@@ -88,5 +100,9 @@ public class RedisChatActivityStore implements ChatActivityStore {
 
     private String warningKey(Long roomId) {
         return WARNING_KEY_PREFIX + roomId;
+    }
+
+    private String expiredKey(Long roomId) {
+        return EXPIRED_KEY_PREFIX + roomId;
     }
 }

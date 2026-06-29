@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -42,6 +43,7 @@ class RedisChatActivityStoreTest {
         // then
         verify(valueOperations).set(eq("chat:activity:room:1"), anyString());
         verify(redisTemplate).delete("chat:activity:warning:room:1");
+        verify(redisTemplate).delete("chat:activity:expired:room:1");
     }
 
     @Test
@@ -74,6 +76,44 @@ class RedisChatActivityStoreTest {
         Set<Long> roomIds = redisChatActivityStore.findAndMarkWarningRoomIds(
                 Set.of(1L),
                 Duration.ofMinutes(4).plusSeconds(30)
+        );
+
+        // then
+        assertThat(roomIds).isEmpty();
+    }
+
+    @Test
+    void 만료대상방은_만료마커를처음저장한서버에서만_반환한다() {
+        // given
+        long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
+
+        when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
+        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1"), eq("1"), any(Duration.class)))
+                .thenReturn(true);
+
+        // when
+        Set<Long> roomIds = redisChatActivityStore.findAndClaimExpiredRoomIds(
+                Set.of(1L),
+                Duration.ofMinutes(5)
+        );
+
+        // then
+        assertThat(roomIds).containsExactly(1L);
+    }
+
+    @Test
+    void 다른서버가이미만료처리를선점한방은_다시만료처리하지않는다() {
+        // given
+        long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
+
+        when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
+        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1"), eq("1"), any(Duration.class)))
+                .thenReturn(false);
+
+        // when
+        Set<Long> roomIds = redisChatActivityStore.findAndClaimExpiredRoomIds(
+                Set.of(1L),
+                Duration.ofMinutes(5)
         );
 
         // then

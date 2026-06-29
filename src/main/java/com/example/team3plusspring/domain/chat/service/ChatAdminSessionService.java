@@ -3,10 +3,14 @@ package com.example.team3plusspring.domain.chat.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class ChatAdminSessionService {
     private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatWebSocketSessionManager chatWebSocketSessionManager;
     private final ChatAdminAssignmentEventPublisher chatAdminAssignmentEventPublisher;
 
     /**
@@ -23,6 +27,13 @@ public class ChatAdminSessionService {
      * 그래서 원격 이벤트 수신자는 이 메서드만 호출해서 자기 서버의 구독만 무효화한다.
      */
     public void closeOtherAdminSessions(Long roomId, Long assignedAdminId) {
-        chatSessionRegistry.removeAdminSessionsExcept(roomId, assignedAdminId);
+        Set<ChatSessionRegistry.RemovedAdminSubscription> removedSubscriptions =
+                chatSessionRegistry.removeAdminSessionsExcept(roomId, assignedAdminId);
+
+        Set<String> removedSessionIds = removedSubscriptions.stream()
+                .map(ChatSessionRegistry.RemovedAdminSubscription::sessionId)
+                .collect(Collectors.toSet());
+
+        chatWebSocketSessionManager.closeSessions(removedSessionIds);
     }
 }

@@ -37,7 +37,11 @@ public class ChatSessionRegistry {
     }
 
     public synchronized void subscribe(String sessionId, Long userId, UserRole role, Long roomId) {
-        SessionSubscription subscription = new SessionSubscription(userId, role, roomId);
+        subscribe(sessionId, null, userId, role, roomId);
+    }
+
+    public synchronized void subscribe(String sessionId, String subscriptionId, Long userId, UserRole role, Long roomId) {
+        SessionSubscription subscription = new SessionSubscription(subscriptionId, userId, role, roomId);
         sessionSubscriptions.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet())
                 .add(subscription);
     }
@@ -47,6 +51,24 @@ public class ChatSessionRegistry {
 
         return subscriptions != null && subscriptions.stream()
                 .anyMatch(subscription -> subscription.roomId().equals(roomId));
+    }
+
+    public synchronized void unsubscribe(String sessionId, String subscriptionId) {
+        if (subscriptionId == null || subscriptionId.isBlank()) {
+            return;
+        }
+
+        Set<SessionSubscription> subscriptions = sessionSubscriptions.get(sessionId);
+
+        if (subscriptions == null) {
+            return;
+        }
+
+        subscriptions.removeIf(subscription -> subscription.isSameSubscription(subscriptionId));
+
+        if (subscriptions.isEmpty()) {
+            sessionSubscriptions.remove(sessionId);
+        }
     }
 
     public synchronized boolean isEntered(String sessionId, Long userId, Long roomId) {
@@ -74,6 +96,26 @@ public class ChatSessionRegistry {
         return added;
     }
 
+    public synchronized void rollbackEnter(String sessionId, Long userId, Long roomId) {
+        Set<SessionRoom> rooms = sessionRooms.get(sessionId);
+
+        if (rooms == null) {
+            return;
+        }
+
+        SessionRoom sessionRoom = new SessionRoom(userId, roomId);
+
+        if (!rooms.remove(sessionRoom)) {
+            return;
+        }
+
+        if (rooms.isEmpty()) {
+            sessionRooms.remove(sessionId);
+        }
+
+        decreaseActiveSessionCount(sessionRoom);
+    }
+
     public synchronized void refreshRoomActivity(Long roomId) {
         chatActivityStore.refreshRoomActivity(roomId);
     }
@@ -83,7 +125,7 @@ public class ChatSessionRegistry {
     }
 
     public synchronized Set<InactiveChatSession> expireInactiveSessions(Duration timeout) {
-        Set<Long> expiredRoomIds = chatActivityStore.findExpiredRoomIds(activeRoomIds(), timeout);
+        Set<Long> expiredRoomIds = chatActivityStore.findAndClaimExpiredRoomIds(activeRoomIds(), timeout);
 
         Set<SessionRoom> expiredRooms = activeSessionCounts.keySet()
                 .stream()
@@ -114,17 +156,27 @@ public class ChatSessionRegistry {
         removeRoomActivityIfNoActiveSession(roomId);
     }
 
-    public synchronized void removeAdminSessionsExcept(Long roomId, Long assignedAdminId) {
-        sessionSubscriptions.forEach((sessionId, subscriptions) -> {
-            boolean removed = subscriptions.removeIf(subscription -> subscription.isOtherAdmin(roomId, assignedAdminId));
+    public synchronized Set<RemovedAdminSubscription> removeAdminSessionsExcept(Long roomId, Long assignedAdminId) {
+        Set<RemovedAdminSubscription> removedSubscriptions = new HashSet<>();
 
-            if (removed) {
+        sessionSubscriptions.forEach((sessionId, subscriptions) -> {
+            Set<SessionSubscription> targetSubscriptions = subscriptions.stream()
+                    .filter(subscription -> subscription.isOtherAdmin(roomId, assignedAdminId))
+                    .collect(Collectors.toSet());
+
+            if (!targetSubscriptions.isEmpty()) {
+                targetSubscriptions.forEach(subscription ->
+                        removedSubscriptions.add(new RemovedAdminSubscription(sessionId, subscription.subscriptionId()))
+                );
+                subscriptions.removeAll(targetSubscriptions);
                 removeEnteredRoom(sessionId, roomId);
             }
         });
 
         sessionSubscriptions.entrySet()
                 .removeIf(entry -> entry.getValue().isEmpty());
+
+        return removedSubscriptions;
     }
 
     public synchronized void removeSession(String sessionId) {
@@ -203,10 +255,17 @@ public class ChatSessionRegistry {
     public record InactiveChatSession(Long userId, Long roomId) {
     }
 
+    public record RemovedAdminSubscription(String sessionId, String subscriptionId) {
+    }
+
     private record SessionRoom(Long userId, Long roomId) {
     }
 
-    private record SessionSubscription(Long userId, UserRole role, Long roomId) {
+    private record SessionSubscription(String subscriptionId, Long userId, UserRole role, Long roomId) {
+        private boolean isSameSubscription(String targetSubscriptionId) {
+            return subscriptionId != null && subscriptionId.equals(targetSubscriptionId);
+        }
+
         private boolean isSameUserRoom(Long targetUserId, Long targetRoomId) {
             return userId.equals(targetUserId) && roomId.equals(targetRoomId);
         }
