@@ -275,7 +275,7 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(payment.getPaymentAmount()).isEqualTo(25_000);
         assertThat(productRepository.findById(keyboard.getId()).orElseThrow().getStock()).isEqualTo(3);
         assertThat(productRepository.findById(mouse.getId()).orElseThrow().getStock()).isEqualTo(3);
-        assertThat(cartItemRepository.count()).isEqualTo(2);
+        assertThat(cartItemRepository.count()).isZero();
     }
 
     @Test
@@ -314,9 +314,10 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
                 3_000,
                 100,
                 LocalDateTime.now().minusDays(1),
-                LocalDateTime.now().plusDays(1)
+                LocalDateTime.now().plusDays(1),
+                10
         ));
-        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId()));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 10));
 
         // when
         orderFacade.createOrderFromCart(
@@ -339,7 +340,7 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(usedCoupon.getStatus()).isEqualTo(UserCouponStatus.USED);
         assertThat(usedCoupon.getOrderId()).isEqualTo(order.getId());
         assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(3);
-        assertThat(cartItemRepository.count()).isEqualTo(1);
+        assertThat(cartItemRepository.count()).isZero();
     }
 
     @Test
