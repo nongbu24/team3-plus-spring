@@ -10,7 +10,7 @@ public interface ChatMessageRepositoryCustom {
 
     List<ChatMessage> findMessagesBeforeByRoom(Long roomId, Long lastMessageId, Pageable pageable);
 
-    List<ChatMessage> findMessagesAfterByRoom(Long roomId, Long lastReceivedMessageId, Pageable pageable);
+    List<ChatMessage> findMessagesAfterByRoom(Long roomId, Long lastMessageId, Pageable pageable);
 
     List<ChatMessage> findRecentByRoom(Long roomId, Pageable pageable);
 }

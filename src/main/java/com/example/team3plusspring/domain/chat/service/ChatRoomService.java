@@ -12,10 +12,14 @@ import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,9 @@ import java.util.List;
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMemberRepository chatMemberRepository;
+    private final ChatAdminSessionService chatAdminSessionService;
+    private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     @Transactional
     public ChatRoomResponse createMyRoom(User user) {
@@ -34,26 +41,22 @@ public class ChatRoomService {
         return ChatRoomResponse.from(room);
     }
 
-    public List<ChatRoomResponse> getRooms(User user, ChatStatus status) {
-        if (user.getRole() == UserRole.ADMIN) {
-            List<ChatRoom> rooms = status == null
-                    ? chatRoomRepository.findAll()
-                    : chatRoomRepository.findAllByStatus(status);
+    public Page<ChatRoomResponse> getRooms(User user, ChatStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-            return rooms
-                    .stream()
-                    .map(ChatRoomResponse::from)
-                    .toList();
+        if (user.getRole() == UserRole.ADMIN) {
+            Page<ChatRoom> rooms = status == null
+                    ? chatRoomRepository.findAll(pageable)
+                    : chatRoomRepository.findAllByStatus(status, pageable);
+
+            return rooms.map(ChatRoomResponse::from);
         }
 
-        List<ChatRoom> rooms = status == null
-                ? chatRoomRepository.findAllByCustomerId(user.getId())
-                : chatRoomRepository.findAllByCustomerIdAndStatus(user.getId(), status);
+        Page<ChatRoom> rooms = status == null
+                ? chatRoomRepository.findAllByCustomerId(user.getId(), pageable)
+                : chatRoomRepository.findAllByCustomerIdAndStatus(user.getId(), status, pageable);
 
-        return rooms
-                .stream()
-                .map(ChatRoomResponse::from)
-                .toList();
+        return rooms.map(ChatRoomResponse::from);
     }
 
     public void validateRoomAccess(Long roomId, User user) {
@@ -71,8 +74,17 @@ public class ChatRoomService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         room.validateAccess(user);
-        assignAdminWhenStartProgress(room, user, request.getStatus());
+        Long assignedAdminId = assignAdminWhenStartProgress(room, user, request.getStatus());
+        boolean completingRoom = request.getStatus() == ChatStatus.COMPLETED;
         room.changeStatus(request.getStatus());
+
+        if (assignedAdminId != null) {
+            handleAdminAssignedAfterCommit(room.getId(), assignedAdminId);
+        }
+
+        if (completingRoom) {
+            handleRoomCompletedAfterCommit(room.getId(), room.getCustomerId(), room.getAdminId());
+        }
 
         return ChatRoomResponse.from(room);
     }
@@ -89,17 +101,50 @@ public class ChatRoomService {
         }
     }
 
-    private void assignAdminWhenStartProgress(ChatRoom room, User user, ChatStatus nextStatus) {
+    private Long assignAdminWhenStartProgress(ChatRoom room, User user, ChatStatus nextStatus) {
         if (room.getStatus() == ChatStatus.WAITING && nextStatus == ChatStatus.IN_PROGRESS) {
             room.assignAdmin(user);
             joinIfNeeded(room, user);
+
+            return user.getId();
         }
+
+        return null;
     }
 
     private void joinIfNeeded(ChatRoom room, User user) {
-        if (!chatMemberRepository.existsByChatRoomIdAndUserIdAndLeftAtIsNull(room.getId(), user.getId())) {
-            chatMemberRepository.save(ChatMember.join(room, user));
-        }
+        chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId())
+                .ifPresentOrElse(
+                        ChatMember::rejoin,
+                        () -> chatMemberRepository.save(ChatMember.join(room, user))
+                );
+    }
+
+    private void handleAdminAssignedAfterCommit(Long roomId, Long assignedAdminId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+            }
+        });
+    }
+
+    private void handleRoomCompletedAfterCommit(Long roomId, Long customerId, Long adminId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                cleanupUserSessions(roomId, customerId);
+
+                if (adminId != null && !adminId.equals(customerId)) {
+                    cleanupUserSessions(roomId, adminId);
+                }
+            }
+        });
+    }
+
+    private void cleanupUserSessions(Long roomId, Long userId) {
+        chatSessionRegistry.removeLocalSessions(userId, roomId);
+        chatSessionExpiredEventPublisher.publish(roomId, userId);
     }
 
 }
