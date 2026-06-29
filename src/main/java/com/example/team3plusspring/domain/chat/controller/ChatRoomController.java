@@ -7,9 +7,13 @@ import com.example.team3plusspring.domain.chat.service.ChatRoomService;
 import com.example.team3plusspring.global.response.ApiResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,11 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/chat/rooms")
 @RequiredArgsConstructor
+@Validated
 public class ChatRoomController {
     private final ChatRoomService chatRoomService;
 
@@ -37,11 +40,13 @@ public class ChatRoomController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getRooms(
+    public ResponseEntity<ApiResponse<Page<ChatRoomResponse>>> getRooms(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false) ChatStatus status
+            @RequestParam(required = false) ChatStatus status,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size
     ) {
-        List<ChatRoomResponse> response = chatRoomService.getRooms(userDetails.getUser(), status);
+        Page<ChatRoomResponse> response = chatRoomService.getRooms(userDetails.getUser(), status, page, size);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }

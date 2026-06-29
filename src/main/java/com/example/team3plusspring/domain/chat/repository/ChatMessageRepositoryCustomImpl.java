@@ -17,6 +17,7 @@ public class ChatMessageRepositoryCustomImpl implements ChatMessageRepositoryCus
     public List<ChatMessage> findRecentMessages(Pageable pageable) {
         return queryFactory
                 .selectFrom(chatMessage)
+                .join(chatMessage.chatRoom).fetchJoin()
                 .orderBy(chatMessage.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -38,12 +39,12 @@ public class ChatMessageRepositoryCustomImpl implements ChatMessageRepositoryCus
     }
 
     @Override
-    public List<ChatMessage> findMessagesAfterByRoom(Long roomId, Long lastReceivedMessageId, Pageable pageable) {
+    public List<ChatMessage> findMessagesAfterByRoom(Long roomId, Long lastMessageId, Pageable pageable) {
         return queryFactory
                 .selectFrom(chatMessage)
                 .where(
                         chatMessage.chatRoom.id.eq(roomId),
-                        chatMessage.id.gt(lastReceivedMessageId)
+                        chatMessage.id.gt(lastMessageId)
                 )
                 .orderBy(chatMessage.id.asc())
                 .offset(pageable.getOffset())

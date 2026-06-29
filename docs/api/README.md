@@ -56,7 +56,7 @@
 | 채팅 | 문의 상태 변경 | PATCH | `/api/chat/rooms/{roomId}/status` | 필요 (관리자) |
 | 채팅 | 채팅방 최근 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages` | 필요 |
 | 채팅 | 특정 메시지 이전 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages/before/{lastMessageId}` | 필요 |
-| 채팅 | 미수신 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages/after/{lastReceivedMessageId}` | 필요 |
+| 채팅 | 미수신 메시지 조회 | GET | `/api/chat/rooms/{roomId}/messages/after/{lastMessageId}` | 필요 |
 | 채팅 | 전체 최근 메시지 조회 | GET | `/api/chat/messages` | 필요 (관리자) |
 
 ## 설계 메모

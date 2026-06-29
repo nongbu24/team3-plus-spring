@@ -72,7 +72,12 @@ public class ChatMember extends BaseEntity {
         this.leftAt = null;
     }
 
-    public void leave() {
+    public boolean leave() {
+        if (leftAt != null) {
+            return false;
+        }
+
         this.leftAt = LocalDateTime.now();
+        return true;
     }
 }
