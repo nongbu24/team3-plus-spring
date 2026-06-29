@@ -25,14 +25,14 @@ public class ChatFacade {
     private final ChatMemberRepository chatMemberRepository;
 
     @Transactional
-    public ChatMessageResponse sendMessage(ChatMessageRequest request, User sender) {
+    public ChatSendResult sendMessage(ChatMessageRequest request, User sender) {
         ChatRoom chatRoom = getAccessibleRoom(request.getRoomId(), sender, true);
-        startProgressIfAdminSendsFirstMessage(chatRoom, sender);
+        Long assignedAdminId = startProgressIfAdminSendsFirstMessage(chatRoom, sender);
 
         ChatMessage message = ChatMessage.create(sender.getId(), sender.getName(), chatRoom, request.getContent());
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        return ChatMessageResponse.from(savedMessage);
+        return new ChatSendResult(ChatMessageResponse.from(savedMessage), assignedAdminId);
     }
 
     @Transactional
@@ -84,10 +84,14 @@ public class ChatFacade {
                 .ifPresent(ChatMember::leave);
     }
 
-    private void startProgressIfAdminSendsFirstMessage(ChatRoom room, User sender) {
+    private Long startProgressIfAdminSendsFirstMessage(ChatRoom room, User sender) {
         if (sender.getRole() == UserRole.ADMIN && room.getStatus() == ChatStatus.WAITING) {
             room.assignAdmin(sender);
             room.changeStatus(ChatStatus.IN_PROGRESS);
+
+            return sender.getId();
         }
+
+        return null;
     }
 }

@@ -1,7 +1,9 @@
 package com.example.team3plusspring.global.security.jwt;
 
 import com.example.team3plusspring.domain.chat.service.ChatRoomService;
+import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
 import com.example.team3plusspring.domain.user.entity.User;
+import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,6 +33,9 @@ class StompAuthInterceptorTest {
 
     @Mock
     ChatRoomService chatRoomService;
+
+    @Mock
+    ChatSessionRegistry chatSessionRegistry;
 
     @InjectMocks
     StompAuthInterceptor stompAuthInterceptor;
@@ -72,6 +78,7 @@ class StompAuthInterceptorTest {
         Authentication authentication = authentication();
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
         accessor.setDestination("/sub/chat/1");
+        accessor.setSessionId("session-1");
         accessor.setUser(authentication);
         Message<byte[]> message = message(accessor);
 
@@ -81,6 +88,7 @@ class StompAuthInterceptorTest {
         // then
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         verify(chatRoomService).validateRoomAccess(1L, userDetails.getUser());
+        verify(chatSessionRegistry).subscribe("session-1", userDetails.getUser().getId(), UserRole.USER, 1L);
     }
 
     @Test
@@ -97,6 +105,7 @@ class StompAuthInterceptorTest {
 
     private Authentication authentication() {
         User user = User.create("user@example.com", "password", "홍길동", "010-1234-5678");
+        ReflectionTestUtils.setField(user, "id", 1L);
         CustomUserDetails userDetails = new CustomUserDetails(user);
 
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

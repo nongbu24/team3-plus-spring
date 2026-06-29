@@ -1,5 +1,6 @@
 package com.example.team3plusspring.global.security.jwt;
 
+import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
 import com.example.team3plusspring.domain.chat.service.ChatRoomService;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -24,6 +25,7 @@ public class StompAuthInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final ChatRoomService chatRoomService;
+    private final ChatSessionRegistry chatSessionRegistry;
 
     /**
      * STOMP 프레임이 서버로 들어올 때마다 호출되는 진입점이다.
@@ -74,6 +76,12 @@ public class StompAuthInterceptor implements ChannelInterceptor {
         Long roomId = getRoomId(destination);
 
         chatRoomService.validateRoomAccess(roomId, userDetails.getUser());
+        chatSessionRegistry.subscribe(
+                getSessionId(accessor),
+                userDetails.getUser().getId(),
+                userDetails.getUser().getRole(),
+                roomId
+        );
     }
 
     private Authentication getAuthentication(StompHeaderAccessor accessor) {
@@ -98,6 +106,16 @@ public class StompAuthInterceptor implements ChannelInterceptor {
         } catch (NumberFormatException exception) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND);
         }
+    }
+
+    private String getSessionId(StompHeaderAccessor accessor) {
+        String sessionId = accessor.getSessionId();
+
+        if (!StringUtils.hasText(sessionId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        return sessionId;
     }
 
     private String resolveToken(StompHeaderAccessor accessor) {

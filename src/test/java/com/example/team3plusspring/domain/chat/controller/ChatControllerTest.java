@@ -4,8 +4,10 @@ import com.example.team3plusspring.domain.chat.dto.ChatMessageRequest;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.dto.ChatRoomEventRequest;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
+import com.example.team3plusspring.domain.chat.facade.ChatSendResult;
 import com.example.team3plusspring.domain.chat.service.ChatMessagePublisher;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
+import com.example.team3plusspring.domain.chat.service.WebSocketSessionStore;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
@@ -37,6 +39,9 @@ class ChatControllerTest {
     @Mock
     ChatSessionRegistry chatSessionRegistry;
 
+    @Mock
+    WebSocketSessionStore webSocketSessionStore;
+
     @InjectMocks
     ChatController chatController;
 
@@ -48,13 +53,33 @@ class ChatControllerTest {
         ChatMessageRequest request = new ChatMessageRequest(1L, "안녕하세요");
         ChatMessageResponse response = response(10L, "안녕하세요");
 
-        when(chatFacade.sendMessage(request, user)).thenReturn(response);
+        when(chatFacade.sendMessage(request, user)).thenReturn(new ChatSendResult(response, null));
 
         // when
         chatController.send(request, authentication);
 
         // then
         verify(chatFacade).sendMessage(request, user);
+        verify(chatMessagePublisher).publish(1L, response);
+    }
+
+    @Test
+    void 메시지전송_관리자가처음응답해서담당자가되면_다른관리자세션을닫고발행한다() {
+        // given
+        Authentication authentication = authentication();
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ChatMessageRequest request = new ChatMessageRequest(1L, "확인해보겠습니다");
+        ChatMessageResponse response = response(10L, "확인해보겠습니다");
+
+        when(chatFacade.sendMessage(request, user)).thenReturn(new ChatSendResult(response, user.getId()));
+        when(chatSessionRegistry.removeAdminSessionsExcept(1L, user.getId())).thenReturn(Set.of("session-2"));
+
+        // when
+        chatController.send(request, authentication);
+
+        // then
+        verify(chatSessionRegistry).removeAdminSessionsExcept(1L, user.getId());
+        verify(webSocketSessionStore).close("session-2");
         verify(chatMessagePublisher).publish(1L, response);
     }
 
@@ -75,6 +100,28 @@ class ChatControllerTest {
         verify(chatFacade).enterRoom(1L, user);
         verify(chatSessionRegistry).enter("session-1", user.getId(), 1L);
         verify(chatMessagePublisher).publish(1L, response);
+    }
+
+    @Test
+    void 명시적퇴장_같은사용자의같은방세션을모두닫는다() {
+        // given
+        Authentication authentication = authentication();
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatMessageResponse response = response(12L, "홍길동님이 퇴장했습니다");
+
+        when(chatFacade.leaveRoom(1L, user)).thenReturn(response);
+        when(chatSessionRegistry.leaveAll(user.getId(), 1L)).thenReturn(Set.of("session-1", "session-2"));
+
+        // when
+        chatController.leave(request, "session-1", authentication);
+
+        // then
+        verify(chatFacade).leaveRoom(1L, user);
+        verify(chatSessionRegistry).leaveAll(user.getId(), 1L);
+        verify(chatMessagePublisher).publish(1L, response);
+        verify(webSocketSessionStore).close("session-1");
+        verify(webSocketSessionStore).close("session-2");
     }
 
     @Test
