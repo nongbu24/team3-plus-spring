@@ -5,11 +5,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.data.domain.Page;
 
 import com.example.team3plusspring.domain.coupon.dto.GetCouponEventListResponse;
@@ -18,6 +21,8 @@ import com.example.team3plusspring.domain.coupon.entity.DiscountType;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.service.CouponEventService;
 import com.example.team3plusspring.support.RedisTestSupport;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 
 import jakarta.persistence.EntityManagerFactory;
 
@@ -32,6 +37,9 @@ public class CouponEventCachingTest extends RedisTestSupport {
 
 	@Autowired
 	private CouponEventRepository couponEventRepository;
+
+	@Autowired
+	private CacheManager cacheManager;
 
 	@Test
 	void 캐시가_없으면_동시조회_횟수만큼_쿼리가_반복_실행된다() throws InterruptedException {
@@ -57,7 +65,7 @@ public class CouponEventCachingTest extends RedisTestSupport {
 	}
 
 	@Test
-	void 캐시_적용후_발급해면_목록_조회결과의_발급수량이_즉시_반영된다() {
+	void 캐시_적용후_발급하면_목록_조회결과의_발급수량이_즉시_반영된다() {
 
 		CouponEvent couponEvent = couponEventRepository.save(
 			CouponEvent.create(
@@ -88,5 +96,37 @@ public class CouponEventCachingTest extends RedisTestSupport {
 
 		System.out.println("발급 전: " + issuedQuantityBeforeIssue);
 		System.out.println("발급 후: " + issuedQuantityAfterIssue);
+	}
+
+	@Test
+	void 발급이_잦아지면_캐시_적중률이_떨어진다() {
+
+		CouponEvent couponEvent = couponEventRepository.save(
+			CouponEvent.create(
+				"hit율테스트쿠폰",
+				DiscountType.FIXED,
+				1000,
+				1000,
+				LocalDateTime.now().minusDays(1),
+				LocalDateTime.now().plusDays(1),
+				7
+			)
+		);
+
+		CaffeineCache springCache = (CaffeineCache) cacheManager.getCache("couponEvents");
+		Cache<Object, Object> nativeCache = springCache.getNativeCache();
+
+		CacheStats before = nativeCache.stats();
+
+		for (long userId = 1; userId <= 100; userId++) {
+			couponEventService.getCouponEvents(0, 10);
+			couponEventService.issueCoupon(userId, couponEvent.getId());
+		}
+
+		CacheStats delta = nativeCache.stats().minus(before);
+
+		System.out.println("히트 수: " + delta.hitCount());
+		System.out.println("미스 수: " + delta.missCount());
+		System.out.println("적중률 : " + delta.hitRate());
 	}
 }
