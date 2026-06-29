@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.chat.controller;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.dto.ChatRoomMessagesResponse;
 import com.example.team3plusspring.domain.chat.service.ChatQueryService;
 import com.example.team3plusspring.global.response.ApiResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
@@ -24,10 +25,10 @@ public class ChatQueryController {
 
     @GetMapping("/messages")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getRecentMessagesForAdmin(
+    public ResponseEntity<ApiResponse<List<ChatRoomMessagesResponse>>> getRecentMessagesForAdmin(
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size
     ) {
-        List<ChatMessageResponse> response = chatQueryService.getRecentMessages(size);
+        List<ChatRoomMessagesResponse> response = chatQueryService.getRecentMessagesGroupedByRoom(size);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }

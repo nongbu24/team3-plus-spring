@@ -17,6 +17,7 @@ public class ChatMessageRepositoryCustomImpl implements ChatMessageRepositoryCus
     public List<ChatMessage> findRecentMessages(Pageable pageable) {
         return queryFactory
                 .selectFrom(chatMessage)
+                .join(chatMessage.chatRoom).fetchJoin()
                 .orderBy(chatMessage.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())

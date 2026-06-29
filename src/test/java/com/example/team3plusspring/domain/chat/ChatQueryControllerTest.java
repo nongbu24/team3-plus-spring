@@ -1,5 +1,9 @@
 package com.example.team3plusspring.domain.chat;
 
+import com.example.team3plusspring.domain.chat.entity.ChatMessage;
+import com.example.team3plusspring.domain.chat.entity.ChatRoom;
+import com.example.team3plusspring.domain.chat.repository.ChatMessageRepository;
+import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.domain.user.repository.UserRepository;
@@ -35,6 +39,12 @@ class ChatQueryControllerTest extends RedisTestSupport {
     UserRepository userRepository;
 
     @Autowired
+    ChatRoomRepository chatRoomRepository;
+
+    @Autowired
+    ChatMessageRepository chatMessageRepository;
+
+    @Autowired
     PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -51,6 +61,31 @@ class ChatQueryControllerTest extends RedisTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(BODY_STATUS))
                 .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    void 전체메시지조회_최근대화방기준으로_메시지를묶어서반환한다() throws Exception {
+        // given
+        String accessToken = createAdminAccessToken();
+        User customer1 = saveUser("고객1");
+        User customer2 = saveUser("고객2");
+        ChatRoom room1 = chatRoomRepository.save(ChatRoom.create(customer1));
+        ChatRoom room2 = chatRoomRepository.save(ChatRoom.create(customer2));
+
+        chatMessageRepository.save(ChatMessage.create(customer1.getId(), customer1.getName(), room1, "방1 첫 메시지"));
+        chatMessageRepository.save(ChatMessage.create(customer2.getId(), customer2.getName(), room2, "방2 메시지"));
+        chatMessageRepository.save(ChatMessage.create(customer1.getId(), customer1.getName(), room1, "방1 최신 메시지"));
+
+        // when & then
+        mockMvc.perform(get("/api/chat/messages")
+                        .param("size", "3")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].roomId").value(room1.getId()))
+                .andExpect(jsonPath("$.data[0].messages[0].content").value("방1 최신 메시지"))
+                .andExpect(jsonPath("$.data[0].messages[1].content").value("방1 첫 메시지"))
+                .andExpect(jsonPath("$.data[1].roomId").value(room2.getId()))
+                .andExpect(jsonPath("$.data[1].messages[0].content").value("방2 메시지"));
     }
 
     @Test
@@ -108,6 +143,15 @@ class ChatQueryControllerTest extends RedisTestSupport {
         User savedAdmin = userRepository.save(admin);
 
         return jwtTokenProvider.createAccessToken(savedAdmin.getId());
+    }
+
+    private User saveUser(String name) {
+        return userRepository.save(User.create(
+                uniqueEmail(),
+                passwordEncoder.encode("Password123"),
+                name,
+                "010-1234-5678"
+        ));
     }
 
     private String uniqueEmail() {
