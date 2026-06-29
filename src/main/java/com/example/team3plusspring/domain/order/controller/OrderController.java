@@ -1,8 +1,7 @@
 package com.example.team3plusspring.domain.order.controller;
 
-import com.example.team3plusspring.domain.order.dto.CreateDirectOrderRequest;
-import com.example.team3plusspring.domain.order.dto.CreateOrderFromCartRequest;
-import com.example.team3plusspring.domain.order.dto.CreateOrderResponse;
+import com.example.team3plusspring.domain.order.dto.*;
+import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.facade.OrderFacade;
 import com.example.team3plusspring.global.response.ApiResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
@@ -11,10 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,6 +40,16 @@ public class OrderController {
         CreateOrderResponse response = orderFacade.createOrderFromCart(userDetails.getUserId(), request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED, response));
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<GetOneOrderResponse>> getOneOrder(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable Long orderId
+    ) {
+        GetOneOrderResponse response = orderFacade.getOneOrder(userDetails.getUserId(), orderId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
 }
