@@ -95,11 +95,13 @@ class ChatStompIntegrationTest extends RedisTestSupport {
         StompSession otherSession = connect(jwtTokenProvider.createAccessToken(otherUser.getId())).getConnectedSession();
         StompSession ownerSession = connect(jwtTokenProvider.createAccessToken(owner.getId())).getConnectedSession();
         CompletableFuture<String> receivedMessage = new CompletableFuture<>();
+        CompletableFuture<String> enteredMessage = new CompletableFuture<>();
 
         otherSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(receivedMessage));
-        sendEnter(ownerSession, room.getId());
-        ownerSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(new CompletableFuture<>()));
+        ownerSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(enteredMessage, "방주인님이 입장했습니다"));
         waitBrieflyForSubscription();
+        sendEnter(ownerSession, room.getId());
+        enteredMessage.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         // when
         sendChatMessage(ownerSession, room.getId(), "권한 없는 사용자는 받으면 안 되는 메시지");
@@ -117,9 +119,12 @@ class ChatStompIntegrationTest extends RedisTestSupport {
         StompSession userSession = connect(jwtTokenProvider.createAccessToken(user.getId())).getConnectedSession();
 
         CompletableFuture<String> receivedMessage = new CompletableFuture<>();
-        sendEnter(userSession, room.getId());
+        CompletableFuture<String> enteredMessage = new CompletableFuture<>();
+        userSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(enteredMessage, "홍길동님이 입장했습니다"));
         userSession.subscribe("/sub/chat/" + room.getId(), new ChatMessageFrameHandler(receivedMessage, "안녕하세요"));
         waitBrieflyForSubscription();
+        sendEnter(userSession, room.getId());
+        enteredMessage.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         // when
         sendChatMessage(userSession, room.getId(), "안녕하세요");
@@ -186,7 +191,7 @@ class ChatStompIntegrationTest extends RedisTestSupport {
     }
 
     private void waitBrieflyForSubscription() throws InterruptedException {
-        TimeUnit.MILLISECONDS.sleep(300);
+        TimeUnit.SECONDS.sleep(1);
     }
 
     private User saveUser(String name) {

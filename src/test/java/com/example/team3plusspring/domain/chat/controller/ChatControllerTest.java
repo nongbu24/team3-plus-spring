@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -90,6 +91,7 @@ class ChatControllerTest {
         ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
         ChatMessageResponse response = response(11L, "홍길동님이 입장했습니다");
 
+        when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(true);
         when(chatFacade.enterRoom(1L, user)).thenReturn(response);
         when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(true);
 
@@ -98,9 +100,27 @@ class ChatControllerTest {
 
         // then
         var inOrder = inOrder(chatSessionRegistry, chatFacade, chatMessagePublisher);
+        inOrder.verify(chatSessionRegistry).isSubscribed("session-1", 1L);
         inOrder.verify(chatSessionRegistry).enter("session-1", user.getId(), 1L);
         inOrder.verify(chatFacade).enterRoom(1L, user);
         inOrder.verify(chatMessagePublisher).publish(1L, response);
+    }
+
+    @Test
+    void 입장_현재세션이방을구독한상태가아니면_실패한다() {
+        // given
+        Authentication authentication = authentication();
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+
+        when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> chatController.enter(request, "session-1", authentication))
+                .isInstanceOf(BusinessException.class);
+        verify(chatSessionRegistry).isSubscribed("session-1", 1L);
+        verify(chatSessionRegistry, never()).enter("session-1", user.getId(), 1L);
+        verifyNoInteractions(chatFacade, chatMessagePublisher);
     }
 
     @Test
@@ -110,12 +130,14 @@ class ChatControllerTest {
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
         ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
 
+        when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(true);
         when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(false);
 
         // when
         chatController.enter(request, "session-1", authentication);
 
         // then
+        verify(chatSessionRegistry).isSubscribed("session-1", 1L);
         verify(chatSessionRegistry).enter("session-1", user.getId(), 1L);
         verifyNoInteractions(chatFacade, chatMessagePublisher);
     }
@@ -127,6 +149,7 @@ class ChatControllerTest {
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
         ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
 
+        when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(true);
         when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(true);
         when(chatFacade.enterRoom(1L, user)).thenThrow(new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
 
@@ -135,6 +158,7 @@ class ChatControllerTest {
                 .isInstanceOf(BusinessException.class);
 
         var inOrder = inOrder(chatSessionRegistry, chatFacade);
+        inOrder.verify(chatSessionRegistry).isSubscribed("session-1", 1L);
         inOrder.verify(chatSessionRegistry).enter("session-1", user.getId(), 1L);
         inOrder.verify(chatFacade).enterRoom(1L, user);
         inOrder.verify(chatSessionRegistry).rollbackEnter("session-1", user.getId(), 1L);

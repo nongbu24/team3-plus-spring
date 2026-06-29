@@ -39,6 +39,10 @@ public class ChatController {
     ) {
         User sender = getAuthenticatedUser(principal);
 
+        if (!chatSessionRegistry.isSubscribed(sessionId, request.getRoomId())) {
+            throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
+        }
+
         if (!chatSessionRegistry.enter(sessionId, sender.getId(), request.getRoomId())) {
             return;
         }
