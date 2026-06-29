@@ -8,11 +8,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.data.domain.Page;
 
 import com.example.team3plusspring.domain.coupon.dto.GetCouponEventListResponse;
@@ -21,8 +21,6 @@ import com.example.team3plusspring.domain.coupon.entity.DiscountType;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.service.CouponEventService;
 import com.example.team3plusspring.support.RedisTestSupport;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.stats.CacheStats;
 
 import jakarta.persistence.EntityManagerFactory;
 
@@ -40,6 +38,11 @@ public class CouponEventCachingTest extends RedisTestSupport {
 
 	@Autowired
 	private CacheManager cacheManager;
+
+	@BeforeEach
+	void clearCache() {
+		cacheManager.getCache("couponEvents").clear();
+	}
 
 	@Test
 	void 캐시가_없으면_동시조회_횟수만큼_쿼리가_반복_실행된다() throws InterruptedException {
@@ -113,20 +116,15 @@ public class CouponEventCachingTest extends RedisTestSupport {
 			)
 		);
 
-		CaffeineCache springCache = (CaffeineCache) cacheManager.getCache("couponEvents");
-		Cache<Object, Object> nativeCache = springCache.getNativeCache();
-
-		CacheStats before = nativeCache.stats();
+		Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+		statistics.setStatisticsEnabled(true);
+		statistics.clear();
 
 		for (long userId = 1; userId <= 100; userId++) {
 			couponEventService.getCouponEvents(0, 10);
 			couponEventService.issueCoupon(userId, couponEvent.getId());
 		}
 
-		CacheStats delta = nativeCache.stats().minus(before);
-
-		System.out.println("히트 수: " + delta.hitCount());
-		System.out.println("미스 수: " + delta.missCount());
-		System.out.println("적중률 : " + delta.hitRate());
+		System.out.println("조회+발급 100세트 동안 실행된 쿼리 수: " + statistics.getQueryExecutionCount());
 	}
 }
