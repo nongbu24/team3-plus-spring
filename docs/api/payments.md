@@ -9,8 +9,39 @@
 
 | Method | Path | 설명 | 인증 |
 | --- | --- | --- | --- |
+| `GET` | `/api/config/portone` | PortOne 결제창 공개 설정 조회 | 불필요 |
 | `POST` | `/api/payments/confirm` | 결제 승인 검증 | 필요 |
 | `POST` | `/api/payments/webhook` | PortOne 웹훅 수신 | 웹훅 검증 |
+
+## GET `/api/config/portone`
+
+프론트엔드에서 PortOne 결제창을 초기화할 때 필요한 공개 설정을 조회합니다.
+
+- 인증: 불필요
+- HTTP Status: `200 OK`
+
+### Request Body
+
+없음
+
+### Response Body
+
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "storeId": "store-00000000-0000-0000-0000-000000000000",
+    "channelKey": "channel-key-00000000-0000-0000-0000-000000000000"
+  }
+}
+```
+
+### 처리 규칙
+
+- PortOne 결제창 초기화에 필요한 `storeId`, `channelKey`만 반환합니다.
+- `apiSecret`은 PortOne 서버 API 인증에만 사용하며 응답에 포함하지 않습니다.
+- 공개 API이므로 JWT 인증 없이 호출할 수 있습니다.
 
 ## POST `/api/payments/confirm`
 
