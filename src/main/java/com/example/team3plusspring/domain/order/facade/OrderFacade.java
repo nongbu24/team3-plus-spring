@@ -19,6 +19,7 @@ import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -180,5 +181,11 @@ public class OrderFacade {
                 .map(OrderItemResponse::from)
                 .toList();
         return GetOneOrderResponse.of(order, items);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GetOrderListResponse> getOrderList(Long userId, OrderStatus status, int page, int size) {
+        return orderService.findOrders(userId, status, page, size)
+                .map(GetOrderListResponse::from);
     }
 }

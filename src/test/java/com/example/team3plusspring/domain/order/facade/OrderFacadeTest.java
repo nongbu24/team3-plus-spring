@@ -3,6 +3,7 @@ package com.example.team3plusspring.domain.order.facade;
 import com.example.team3plusspring.domain.cart.service.CartService;
 import com.example.team3plusspring.domain.coupon.service.UserCouponService;
 import com.example.team3plusspring.domain.order.dto.GetOneOrderResponse;
+import com.example.team3plusspring.domain.order.dto.GetOrderListResponse;
 import com.example.team3plusspring.domain.order.entity.Order;
 import com.example.team3plusspring.domain.order.entity.OrderItem;
 import com.example.team3plusspring.domain.order.entity.OrderStatus;
@@ -17,6 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -114,6 +118,38 @@ class OrderFacadeTest {
         verify(orderService, never()).findOrderItems(anyLong());
     }
 
+    @Test
+    void 주문목록조회_조회된주문을응답페이지로변환한다() {
+        // given
+        LocalDateTime createdAt = LocalDateTime.of(2026, 6, 29, 12, 0);
+        Order order = orderListItem(createdAt);
+        Page<Order> orders = new PageImpl<>(List.of(order), PageRequest.of(0, 10), 1);
+
+        when(orderService.findOrders(USER_ID, OrderStatus.COMPLETED, 0, 10)).thenReturn(orders);
+
+        // when
+        Page<GetOrderListResponse> response = orderFacade.getOrderList(
+                USER_ID,
+                OrderStatus.COMPLETED,
+                0,
+                10
+        );
+
+        // then
+        assertThat(response.getTotalElements()).isEqualTo(1);
+        assertThat(response.getNumber()).isZero();
+        assertThat(response.getSize()).isEqualTo(10);
+        assertThat(response.getContent()).singleElement().satisfies(item -> {
+            assertThat(item.getOrderId()).isEqualTo(ORDER_ID);
+            assertThat(item.getOrderNumber()).isEqualTo("order-number");
+            assertThat(item.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+            assertThat(item.getTotalProductAmount()).isEqualTo(25_000);
+            assertThat(item.getUsedCouponAmount()).isEqualTo(5_000);
+            assertThat(item.getPaymentAmount()).isEqualTo(20_000);
+            assertThat(item.getCreatedAt()).isEqualTo(createdAt);
+        });
+    }
+
     private Order order(Long userId, LocalDateTime createdAt) {
         Order order = org.mockito.Mockito.mock(Order.class);
         when(order.getId()).thenReturn(ORDER_ID);
@@ -137,5 +173,17 @@ class OrderFacadeTest {
         when(orderItem.getQuantity()).thenReturn(quantity);
         when(orderItem.getLineAmount()).thenReturn(unitPrice * quantity);
         return orderItem;
+    }
+
+    private Order orderListItem(LocalDateTime createdAt) {
+        Order order = org.mockito.Mockito.mock(Order.class);
+        when(order.getId()).thenReturn(ORDER_ID);
+        when(order.getOrderNumber()).thenReturn("order-number");
+        when(order.getStatus()).thenReturn(OrderStatus.COMPLETED);
+        when(order.getTotalProductAmount()).thenReturn(25_000);
+        when(order.getUsedCouponAmount()).thenReturn(5_000);
+        when(order.getPaymentAmount()).thenReturn(20_000);
+        when(order.getCreatedAt()).thenReturn(createdAt);
+        return order;
     }
 }
