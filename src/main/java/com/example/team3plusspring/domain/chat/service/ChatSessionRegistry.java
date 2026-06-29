@@ -127,6 +127,7 @@ public class ChatSessionRegistry {
     public synchronized Set<InactiveChatSession> expireInactiveSessions(Duration timeout) {
         return chatActivityStore.findAndClaimExpiredSessions(activeSessions(), timeout)
                 .stream()
+                .filter(chatActivityStore::isExpiredClaimStillValid)
                 .map(activeSession -> expire(new SessionRoom(activeSession.userId(), activeSession.roomId())))
                 .collect(Collectors.toSet());
     }

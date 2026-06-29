@@ -16,6 +16,10 @@ public interface ChatActivityStore {
 
     Set<ActiveChatSession> findAndClaimExpiredSessions(Set<ActiveChatSession> activeSessions, Duration timeout);
 
+    default boolean isExpiredClaimStillValid(ActiveChatSession activeSession) {
+        return true;
+    }
+
     record ActiveChatSession(Long userId, Long roomId) {
     }
 }

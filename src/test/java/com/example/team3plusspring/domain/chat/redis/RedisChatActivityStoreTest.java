@@ -96,7 +96,11 @@ class RedisChatActivityStoreTest {
         long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
 
         when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
-        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1:user:10"), eq("1"), any(Duration.class)))
+        when(valueOperations.setIfAbsent(
+                eq("chat:activity:expired:room:1:user:10"),
+                eq(String.valueOf(oldActivityAt)),
+                any(Duration.class)
+        ))
                 .thenReturn(true);
 
         // when
@@ -115,7 +119,11 @@ class RedisChatActivityStoreTest {
         long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
 
         when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
-        when(valueOperations.setIfAbsent(eq("chat:activity:expired:room:1:user:10"), eq("1"), any(Duration.class)))
+        when(valueOperations.setIfAbsent(
+                eq("chat:activity:expired:room:1:user:10"),
+                eq(String.valueOf(oldActivityAt)),
+                any(Duration.class)
+        ))
                 .thenReturn(false);
 
         // when
@@ -126,5 +134,48 @@ class RedisChatActivityStoreTest {
 
         // then
         assertThat(sessions).isEmpty();
+    }
+
+    @Test
+    void 만료선점후_마지막활동시각이같으면_선점이유효하다() {
+        // given
+        long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
+
+        when(valueOperations.get("chat:activity:expired:room:1:user:10")).thenReturn(String.valueOf(oldActivityAt));
+        when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(oldActivityAt));
+
+        // when
+        boolean valid = redisChatActivityStore.isExpiredClaimStillValid(new ActiveChatSession(10L, 1L));
+
+        // then
+        assertThat(valid).isTrue();
+    }
+
+    @Test
+    void 만료선점후_마지막활동시각이바뀌면_선점이무효하다() {
+        // given
+        long oldActivityAt = System.currentTimeMillis() - Duration.ofMinutes(6).toMillis();
+        long refreshedActivityAt = System.currentTimeMillis();
+
+        when(valueOperations.get("chat:activity:expired:room:1:user:10")).thenReturn(String.valueOf(oldActivityAt));
+        when(valueOperations.get("chat:activity:room:1")).thenReturn(String.valueOf(refreshedActivityAt));
+
+        // when
+        boolean valid = redisChatActivityStore.isExpiredClaimStillValid(new ActiveChatSession(10L, 1L));
+
+        // then
+        assertThat(valid).isFalse();
+    }
+
+    @Test
+    void 만료선점후_선점키가삭제되면_선점이무효하다() {
+        // given
+        when(valueOperations.get("chat:activity:expired:room:1:user:10")).thenReturn(null);
+
+        // when
+        boolean valid = redisChatActivityStore.isExpiredClaimStillValid(new ActiveChatSession(10L, 1L));
+
+        // then
+        assertThat(valid).isFalse();
     }
 }

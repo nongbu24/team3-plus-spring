@@ -3,7 +3,12 @@ package com.example.team3plusspring.domain.chat.service;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -219,5 +224,28 @@ class ChatSessionRegistryTest {
         // then
         assertThat(registry.canSend("session-1", 1L, 10L)).isFalse();
         assertThat(registry.canSend("session-2", 2L, 10L)).isTrue();
+    }
+
+    @Test
+    void 만료선점후_활동상태가바뀌면_퇴장처리하지않는다() {
+        // given
+        ChatActivityStore chatActivityStore = mock(ChatActivityStore.class);
+        ChatSessionRegistry registry = new ChatSessionRegistry(chatActivityStore);
+        ChatActivityStore.ActiveChatSession activeSession = new ChatActivityStore.ActiveChatSession(1L, 10L);
+
+        registry.subscribe("session-1", 1L, UserRole.USER, 10L);
+        registry.enter("session-1", 1L, 10L);
+
+        when(chatActivityStore.findAndClaimExpiredSessions(any(), eq(Duration.ofMinutes(5))))
+                .thenReturn(Set.of(activeSession));
+        when(chatActivityStore.isExpiredClaimStillValid(activeSession)).thenReturn(false);
+
+        // when
+        Set<ChatSessionRegistry.InactiveChatSession> expiredSessions =
+                registry.expireInactiveSessions(Duration.ofMinutes(5));
+
+        // then
+        assertThat(expiredSessions).isEmpty();
+        assertThat(registry.canSend("session-1", 1L, 10L)).isTrue();
     }
 }
