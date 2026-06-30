@@ -1,9 +1,11 @@
 package com.example.team3plusspring.domain.payment.facade;
 
 import com.example.team3plusspring.domain.order.entity.Order;
+import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.service.OrderService;
 import com.example.team3plusspring.domain.payment.dto.ConfirmPaymentRequest;
 import com.example.team3plusspring.domain.payment.dto.ConfirmPaymentResponse;
+import com.example.team3plusspring.domain.payment.dto.StartPaymentResponse;
 import com.example.team3plusspring.domain.payment.entity.Payment;
 import com.example.team3plusspring.domain.payment.entity.PaymentStatus;
 import com.example.team3plusspring.domain.payment.port.PaymentCancellationResult;
@@ -51,6 +53,41 @@ class PaymentFacadeTest {
 
     @InjectMocks
     PaymentFacade paymentFacade;
+
+    @Test
+    void 결제시작_본인결제이면_PortOne결제정보를반환한다() {
+        // given
+        Payment payment = payment();
+        when(paymentCommandService.startPayment(USER_ID, PAYMENT_ID)).thenReturn(payment);
+
+        // when
+        StartPaymentResponse response = paymentFacade.start(USER_ID, PAYMENT_ID);
+
+        // then
+        assertThat(response.getPaymentId()).isEqualTo(PAYMENT_ID);
+        assertThat(response.getOrderId()).isEqualTo(ORDER_ID);
+        assertThat(response.getPortOnePaymentId()).isEqualTo(payment.getPortonePaymentId());
+        assertThat(response.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(response.getPaymentAmount()).isEqualTo(PAYMENT_AMOUNT);
+        verify(paymentCommandService).startPayment(USER_ID, PAYMENT_ID);
+        verifyNoInteractions(paymentGateway);
+    }
+
+    @Test
+    void 결제확정_주문이준비상태이면_PG를조회하지않고실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = readyOrder(USER_ID);
+        ConfirmPaymentRequest request = request(payment.getPortonePaymentId());
+        givenPaymentAndOrder(payment, order);
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_NOT_STARTED));
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY);
+        verifyNoInteractions(paymentGateway, paymentCommandService);
+    }
 
     @Test
     void 결제확정_PG결제가완료되고금액이일치하면_결제를완료한다() {
@@ -382,6 +419,13 @@ class PaymentFacadeTest {
     }
 
     private Order order(Long userId) {
+        Order order = readyOrder(userId);
+        order.markAsPaymentPending();
+
+        return order;
+    }
+
+    private Order readyOrder(Long userId) {
         Order order = Order.create(userId, PAYMENT_AMOUNT, 0);
         ReflectionTestUtils.setField(order, "id", ORDER_ID);
         return order;
