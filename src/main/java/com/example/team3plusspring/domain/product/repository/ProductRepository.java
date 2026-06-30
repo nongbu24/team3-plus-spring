@@ -25,6 +25,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             Pageable pageable
     );
 
+    @Query("SELECT p FROM Product p WHERE " +
+            "(:keyword IS NULL OR p.name LIKE %:keyword% OR p.description LIKE %:keyword%) AND " +
+            "(:status IS NULL OR p.status = :status)")
+    Page<Product> findByChatbotKeyword(
+            @Param("keyword") String keyword,
+            @Param("status") ProductStatus status,
+            Pageable pageable
+    );
+
+    Page<Product> findByCategoryIdInAndStatus(List<Long> categoryIds, ProductStatus status, Pageable pageable);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Product p where p.id = :productId")
     Optional<Product> findByIdForUpdate(@Param("productId") Long productId);
