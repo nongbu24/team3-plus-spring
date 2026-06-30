@@ -9,7 +9,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_product_category_id", columnList = "category_id"),
+        @Index(name = "idx_product_status", columnList = "status"),
+        @Index(name = "idx_product_best", columnList = "status, category_id, price")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Product extends BaseEntity {
