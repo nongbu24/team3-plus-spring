@@ -78,6 +78,7 @@ public class ChatMember extends BaseEntity {
         }
 
         this.leftAt = LocalDateTime.now();
+
         return true;
     }
 }

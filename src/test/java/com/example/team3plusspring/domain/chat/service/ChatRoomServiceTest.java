@@ -1,8 +1,9 @@
 package com.example.team3plusspring.domain.chat.service;
 
-import com.example.team3plusspring.domain.chat.dto.UpdateChatRoomStatusRequest;
+import com.example.team3plusspring.domain.chat.dto.ChatRoomStatusRequest;
 import com.example.team3plusspring.domain.chat.entity.ChatRoom;
 import com.example.team3plusspring.domain.chat.entity.ChatStatus;
+import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.repository.ChatMemberRepository;
 import com.example.team3plusspring.domain.chat.repository.ChatRoomRepository;
 import com.example.team3plusspring.domain.user.entity.User;
@@ -44,7 +45,7 @@ class ChatRoomServiceTest {
         User customer = user(1L);
         User admin = admin(2L);
         ChatRoom room = inProgressRoom(10L, customer, admin);
-        UpdateChatRoomStatusRequest request = updateStatusRequest(ChatStatus.COMPLETED);
+        ChatRoomStatusRequest request = ChatRoomStatusRequest.of(ChatStatus.COMPLETED);
         ChatRoomService chatRoomService = new ChatRoomService(
                 chatRoomRepository,
                 chatMemberRepository,
@@ -72,18 +73,11 @@ class ChatRoomServiceTest {
         verify(chatSessionExpiredEventPublisher).publish(room.getId(), admin.getId());
     }
 
-    private UpdateChatRoomStatusRequest updateStatusRequest(ChatStatus status) {
-        UpdateChatRoomStatusRequest request = new UpdateChatRoomStatusRequest();
-        ReflectionTestUtils.setField(request, "status", status);
-
-        return request;
-    }
-
     private ChatRoom inProgressRoom(Long id, User customer, User admin) {
         ChatRoom room = ChatRoom.create(customer);
         ReflectionTestUtils.setField(room, "id", id);
         room.assignAdmin(admin);
-        room.changeStatus(ChatStatus.IN_PROGRESS);
+        room.changeTo(ChatStatus.IN_PROGRESS);
 
         return room;
     }

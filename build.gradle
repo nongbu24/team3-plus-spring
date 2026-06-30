@@ -52,6 +52,11 @@ dependencies {
 
     // redis
     implementation 'org.redisson:redisson:4.6.1'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Caching
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     // WebSocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'

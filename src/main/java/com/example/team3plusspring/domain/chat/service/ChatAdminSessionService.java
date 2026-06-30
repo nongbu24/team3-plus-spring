@@ -1,5 +1,7 @@
 package com.example.team3plusspring.domain.chat.service;
 
+import com.example.team3plusspring.domain.chat.port.ChatAdminAssignmentEventPublisher;
+import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +28,7 @@ public class ChatAdminSessionService {
      * 그래서 원격 이벤트 수신자는 이 메서드만 호출해서 자기 서버의 구독만 무효화한다.
      */
     public void closeOtherAdminSessions(Long roomId, Long assignedAdminId) {
-        Set<ChatSessionRegistry.RemovedAdminSubscription> removedSubscriptions =
+        Set<RemovedAdminSubscription> removedSubscriptions =
                 chatSessionRegistry.removeAdminSessionsExcept(roomId, assignedAdminId);
 
         chatStompSubscriptionManager.unsubscribeAll(removedSubscriptions);

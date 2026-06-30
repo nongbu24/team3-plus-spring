@@ -10,6 +10,7 @@ import com.example.team3plusspring.domain.user.repository.UserRepository;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import com.example.team3plusspring.global.security.jwt.JwtTokenProvider;
 import com.example.team3plusspring.support.RedisTestSupport;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,17 +51,10 @@ class ChatQueryControllerTest extends RedisTestSupport {
     @Autowired
     JwtTokenProvider jwtTokenProvider;
 
-    @Test
-    void 전체메시지조회_관리자토큰_성공한다() throws Exception {
-        // given
-        String accessToken = createAdminAccessToken();
-
-        // when & then
-        mockMvc.perform(get("/api/chat/messages")
-                        .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(BODY_STATUS))
-                .andExpect(jsonPath("$.data").isArray());
+    @BeforeEach
+    void setUp() {
+        chatMessageRepository.deleteAllInBatch();
+        chatRoomRepository.deleteAllInBatch();
     }
 
     @Test
@@ -101,6 +95,36 @@ class ChatQueryControllerTest extends RedisTestSupport {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(ErrorCode.FORBIDDEN.getHttpStatus().value()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN.name()));
+    }
+
+    @Test
+    void 전체메시지조회_size가최대값을초과하면_검증에실패한다() throws Exception {
+        // given
+        String accessToken = createAdminAccessToken();
+
+        // when & then
+        mockMvc.perform(get("/api/chat/messages")
+                        .param("size", "101")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(ErrorCode.VALIDATION_FAILED.getHttpStatus().value()))
+                .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_FAILED.name()));
+    }
+
+    @Test
+    void 이후메시지조회_size가500이면_검증을통과한다() throws Exception {
+        // given
+        User customer = saveUser("홍길동");
+        ChatRoom room = chatRoomRepository.save(ChatRoom.create(customer));
+        String accessToken = jwtTokenProvider.createAccessToken(customer.getId());
+
+        // when & then
+        mockMvc.perform(get("/api/chat/rooms/{roomId}/messages/after/{lastMessageId}", room.getId(), 0L)
+                        .param("size", "500")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(BODY_STATUS))
+                .andExpect(jsonPath("$.data").isArray());
     }
 
     private void signup(String email, String password) throws Exception {

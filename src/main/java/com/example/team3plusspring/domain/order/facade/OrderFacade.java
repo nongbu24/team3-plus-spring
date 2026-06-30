@@ -5,14 +5,13 @@ import com.example.team3plusspring.domain.cart.entity.CartItem;
 import com.example.team3plusspring.domain.cart.service.CartService;
 import com.example.team3plusspring.domain.coupon.entity.UserCoupon;
 import com.example.team3plusspring.domain.coupon.service.UserCouponService;
-import com.example.team3plusspring.domain.order.dto.CreateDirectOrderRequest;
-import com.example.team3plusspring.domain.order.dto.CreateOrderFromCartRequest;
-import com.example.team3plusspring.domain.order.dto.CreateOrderResponse;
-import com.example.team3plusspring.domain.order.dto.OrderItemResponse;
+import com.example.team3plusspring.domain.order.dto.*;
 import com.example.team3plusspring.domain.order.entity.Order;
 import com.example.team3plusspring.domain.order.entity.OrderItem;
+import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.service.OrderService;
 import com.example.team3plusspring.domain.payment.entity.Payment;
+import com.example.team3plusspring.domain.payment.entity.PaymentStatus;
 import com.example.team3plusspring.domain.payment.service.PaymentService;
 import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.service.ProductService;
@@ -21,6 +20,7 @@ import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -162,6 +162,57 @@ public class OrderFacade {
                 .map(OrderItemResponse::from)
                 .toList();
 
+        // 14. 주문에 사용한 장바구니 상품만 삭제
+        cartService.deleteOrderCartItems(cartItems);
+
         return CreateOrderResponse.of(order, items, payment);
+    }
+
+    @Transactional(readOnly = true)
+    public GetOneOrderResponse getOneOrder(Long userId, Long orderId) {
+        Order order = orderService.findOrder(orderId);
+
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        List<OrderItem> orderItems = orderService.findOrderItems(order.getId());
+
+        List<OrderItemResponse> items = orderItems.stream()
+                .map(OrderItemResponse::from)
+                .toList();
+        return GetOneOrderResponse.of(order, items);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GetOrderListResponse> getOrderList(Long userId, OrderStatus status, int page, int size) {
+        return orderService.findOrders(userId, status, page, size)
+                .map(GetOrderListResponse::from);
+    }
+
+    @Transactional
+    public CancelOrderResponse cancel(Long userId, Long orderId) {
+        Payment payment = paymentService.findPaymentForUpdateByOrderId(orderId);
+        Order order = orderService.findOrderForUpdate(orderId);
+
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        if (order.getStatus() != OrderStatus.READY
+                || payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ORDER_CANCEL_NOT_ALLOWED);
+        }
+
+        OrderStatus previousStatus = order.getStatus();
+        List<OrderItem> orderItems = orderService.findOrderItems(orderId);
+
+        productService.restoreStocks(orderItems);
+        userCouponService.restoreCouponByOrderId(orderId);
+
+        order.markAsCancelled();
+        payment.markAsCanceled();
+
+        return CancelOrderResponse.of(order, previousStatus);
     }
 }

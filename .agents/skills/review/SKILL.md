@@ -64,7 +64,7 @@ git diff --name-only
 - `references/backend-review-checklist.md`
     - Controller, Service, Repository, Entity, DTO, validation, security, transaction, idempotency를 리뷰할 때
 - `references/payment-domain-review-checklist.md`
-    - 주문, 결제, 환불, 웹훅, 포인트, 멤버십, 구독 도메인 코드나 문서를 리뷰할 때
+    - 주문, 결제, 웹훅 도메인 코드나 문서를 리뷰할 때
 - `references/documentation-consistency-checklist.md`
     - 사용자가 문서 정합성을 요청했거나 README/API/ERD 변경사항을 리뷰할 때
 

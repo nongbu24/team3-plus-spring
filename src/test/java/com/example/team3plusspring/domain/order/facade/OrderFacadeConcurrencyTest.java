@@ -19,6 +19,7 @@ import com.example.team3plusspring.domain.order.repository.OrderRepository;
 import com.example.team3plusspring.domain.payment.entity.Payment;
 import com.example.team3plusspring.domain.payment.entity.PaymentStatus;
 import com.example.team3plusspring.domain.payment.repository.PaymentRepository;
+import com.example.team3plusspring.domain.payment.service.PaymentCommandService;
 import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.repository.ProductRepository;
 import com.example.team3plusspring.domain.user.entity.User;
@@ -50,6 +51,9 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
 
     @Autowired
     OrderFacade orderFacade;
+
+    @Autowired
+    PaymentCommandService paymentCommandService;
 
     @Autowired
     UserRepository userRepository;
@@ -107,7 +111,7 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(orderRepository.count()).isEqualTo(1);
         assertThat(orderItemRepository.count()).isEqualTo(1);
         assertThat(paymentRepository.count()).isEqualTo(1);
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY);
         assertThat(order.getTotalProductAmount()).isEqualTo(20_000);
         assertThat(order.getUsedCouponAmount()).isZero();
         assertThat(order.getPaymentAmount()).isEqualTo(20_000);
@@ -144,7 +148,7 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(orderRepository.count()).isEqualTo(1);
         assertThat(orderItemRepository.count()).isEqualTo(1);
         assertThat(paymentRepository.count()).isEqualTo(1);
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY);
         assertThat(order.getTotalProductAmount()).isEqualTo(20_000);
         assertThat(order.getUsedCouponAmount()).isEqualTo(3_000);
         assertThat(order.getPaymentAmount()).isEqualTo(17_000);
@@ -173,6 +177,44 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(orderRepository.count()).isEqualTo(1);
         assertThat(paymentRepository.count()).isEqualTo(1);
         assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isZero();
+    }
+
+    @Test
+    void 결제시작과주문취소가동시에요청되면_한요청만성공하고상태가일치한다() throws Exception {
+        // given
+        User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
+        Product product = productRepository.save(Product.create("keyboard", "mechanical keyboard", 10_000, 1, 1L));
+        orderFacade.createDirectOrder(user.getId(), directOrderRequest(product.getId(), 1, null));
+
+        Order order = orderRepository.findAll().get(0);
+        Payment payment = paymentRepository.findAll().get(0);
+
+        // when
+        List<Throwable> results = runConcurrently(
+                () -> paymentCommandService.startPayment(user.getId(), payment.getId()),
+                () -> orderFacade.cancel(user.getId(), order.getId())
+        );
+
+        // then
+        assertThat(successCount(results)).isEqualTo(1);
+        assertThat(
+                errorCount(results, ErrorCode.ORDER_CANCEL_NOT_ALLOWED)
+                        + errorCount(results, ErrorCode.PAYMENT_ALREADY_PROCESSED)
+        ).isEqualTo(1);
+
+        Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        Payment updatedPayment = paymentRepository.findById(payment.getId()).orElseThrow();
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+
+        if (updatedOrder.getStatus() == OrderStatus.PAYMENT_PENDING) {
+            assertThat(updatedPayment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+            assertThat(updatedProduct.getStock()).isZero();
+            return;
+        }
+
+        assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.CANCELED);
+        assertThat(updatedPayment.getStatus()).isEqualTo(PaymentStatus.CANCELED);
+        assertThat(updatedProduct.getStock()).isEqualTo(1);
     }
 
     @Test
@@ -266,7 +308,7 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(orderRepository.count()).isEqualTo(1);
         assertThat(orderItemRepository.count()).isEqualTo(2);
         assertThat(paymentRepository.count()).isEqualTo(1);
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY);
         assertThat(order.getTotalProductAmount()).isEqualTo(25_000);
         assertThat(order.getUsedCouponAmount()).isZero();
         assertThat(order.getPaymentAmount()).isEqualTo(25_000);
@@ -275,7 +317,7 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(payment.getPaymentAmount()).isEqualTo(25_000);
         assertThat(productRepository.findById(keyboard.getId()).orElseThrow().getStock()).isEqualTo(3);
         assertThat(productRepository.findById(mouse.getId()).orElseThrow().getStock()).isEqualTo(3);
-        assertThat(cartItemRepository.count()).isEqualTo(2);
+        assertThat(cartItemRepository.count()).isZero();
     }
 
     @Test
@@ -315,9 +357,9 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
                 100,
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().plusDays(1),
-                30
+                10
         ));
-        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 30));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 10));
 
         // when
         orderFacade.createOrderFromCart(
@@ -340,7 +382,7 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
         assertThat(usedCoupon.getStatus()).isEqualTo(UserCouponStatus.USED);
         assertThat(usedCoupon.getOrderId()).isEqualTo(order.getId());
         assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(3);
-        assertThat(cartItemRepository.count()).isEqualTo(1);
+        assertThat(cartItemRepository.count()).isZero();
     }
 
     @Test

@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -20,6 +22,22 @@ public class UserService {
         User user = findActiveUser(userId);
 
         return UserMeResponse.from(user);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    @Transactional
+    public User createUser(String email, String password, String name, String phone) {
+        User user = User.create(email, password, name, phone);
+        return userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findActiveUserByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email);
     }
 
     @Transactional(readOnly = true)

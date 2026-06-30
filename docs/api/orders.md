@@ -48,9 +48,8 @@
   "data": {
     "orderId": 200,
     "paymentId": 300,
-    "orderNumber": "ORD-20260622-000001",
-    "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
-    "status": "PAYMENT_PENDING",
+    "orderNumber": "order_550e8400-e29b-41d4-a716-446655440000",
+    "status": "READY",
     "totalProductAmount": 78000,
     "usedCouponAmount": 10000,
     "paymentAmount": 68000,
@@ -64,7 +63,7 @@
         "lineAmount": 78000
       }
     ],
-    "createdAt": "2026-06-22T18:30:00+09:00"
+    "createdAt": "2026-06-22T18:30:00"
   }
 }
 ```
@@ -195,12 +194,12 @@
     "content": [
       {
         "orderId": 200,
-        "orderNumber": "ORD-20260622-000001",
+        "orderNumber": "order_550e8400-e29b-41d4-a716-446655440000",
         "status": "PAYMENT_PENDING",
         "totalProductAmount": 78000,
         "usedCouponAmount": 10000,
         "paymentAmount": 68000,
-        "orderedAt": "2026-06-22T18:30:00+09:00"
+        "createdAt": "2026-06-22T18:30:00"
       }
     ],
     "page": 0,
@@ -246,7 +245,7 @@
   "message": "요청이 성공했습니다.",
   "data": {
     "orderId": 200,
-    "orderNumber": "ORD-20260622-000001",
+    "orderNumber": "order_550e8400-e29b-41d4-a716-446655440000",
     "status": "PAYMENT_PENDING",
     "totalProductAmount": 78000,
     "usedCouponAmount": 10000,
@@ -261,7 +260,7 @@
         "lineAmount": 78000
       }
     ],
-    "orderedAt": "2026-06-22T18:30:00+09:00",
+    "createdAt": "2026-06-22T18:30:00",
     "canceledAt": null
   }
 }
@@ -271,7 +270,7 @@
 
 - 주문 소유자만 상세 조회할 수 있습니다.
 - 주문 상품의 `productName`, `unitPrice`는 주문 생성 시점에 저장된 스냅샷 값입니다.
-- 결제 확정 요청에는 주문 생성 응답의 `paymentId`와 `portOnePaymentId`를 사용합니다.
+- 주문 생성 응답의 `paymentId`로 결제 시작 API를 호출한 뒤 반환된 `portOnePaymentId`를 PortOne 결제창과 결제 확정 요청에 사용합니다.
 
 ### Errors
 
@@ -283,7 +282,7 @@
 
 ## POST `/api/orders/{orderId}/cancel`
 
-결제 전 주문을 취소합니다. 결제 완료 이후 취소는 환불 API에서 처리합니다.
+결제 전 주문을 취소합니다.
 
 - 인증: 필요
 - HTTP Status: `200 OK`
@@ -306,10 +305,10 @@
   "message": "요청이 성공했습니다.",
   "data": {
     "orderId": 200,
-    "orderNumber": "ORD-20260622-000001",
-    "previousStatus": "PAYMENT_PENDING",
+    "orderNumber": "order_550e8400-e29b-41d4-a716-446655440000",
+    "previousStatus": "READY",
     "currentStatus": "CANCELED",
-    "canceledAt": "2026-06-22T18:40:00+09:00"
+    "canceledAt": "2026-06-22T18:40:00"
   }
 }
 ```
@@ -317,10 +316,9 @@
 ### 처리 규칙
 
 - 주문 소유자만 취소할 수 있습니다.
-- 주문 상태가 `PAYMENT_PENDING`인 결제 전 주문만 직접 취소할 수 있습니다.
+- 주문 상태가 `READY`이고 결제 상태가 `PENDING`인 PG 결제 시작 전 주문만 직접 취소할 수 있습니다.
 - 취소 시 주문 상태는 `CANCELED`로 변경합니다.
 - 주문 생성 시 차감하거나 예약한 재고와 쿠폰이 있다면 함께 복구합니다.
-- 결제 완료 이후 취소는 `/api/refunds`를 사용합니다.
 
 ### Errors
 
@@ -334,7 +332,7 @@
 ## 설계 메모
 
 - 주문 생성 시 상품명과 상품 가격은 주문 당시 값으로 복사합니다.
-- 결제 전 취소는 주문 도메인에서 처리하고, 결제 후 취소는 환불 도메인에서 처리합니다.
+- 결제 전 취소는 주문 도메인에서 처리합니다.
 - 최종 결제 금액은 상품 총액에서 쿠폰 할인 금액을 차감해 서버에서 다시 계산해야 합니다.
 - 주문 생성과 재고 차감은 하나의 트랜잭션으로 처리합니다.
 - 쿠폰 할인 금액은 클라이언트가 전달하지 않고 `userCouponId`를 기준으로 서버에서 계산합니다.

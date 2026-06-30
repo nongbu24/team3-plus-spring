@@ -95,13 +95,7 @@
   "message": "요청이 성공했습니다.",
   "data": {
     "tokenType": "Bearer",
-    "accessToken": "eyJhbGciOi...",
-    "expiresIn": 3600,
-    "user": {
-      "userId": 1,
-      "email": "customer@example.com",
-      "name": "홍길동"
-    }
+    "accessToken": "eyJhbGciOi..."
   }
 }
 ```

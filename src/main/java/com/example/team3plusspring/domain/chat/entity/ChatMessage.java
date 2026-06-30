@@ -30,7 +30,7 @@ public class ChatMessage extends BaseEntity {
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) default 'CHAT'")
+    @Column(nullable = false, length = 20)
     private ChatMessageType messageType;
 
     private ChatMessage(Long senderId, String senderName, ChatRoom chatRoom, String content, ChatMessageType messageType) {
@@ -45,7 +45,7 @@ public class ChatMessage extends BaseEntity {
         return new ChatMessage(senderId, senderName, chatRoom, content, ChatMessageType.CHAT);
     }
 
-    public static ChatMessage createSystem(Long senderId, String senderName, ChatRoom chatRoom, String content) {
+    public static ChatMessage system(Long senderId, String senderName, ChatRoom chatRoom, String content) {
         return new ChatMessage(senderId, senderName, chatRoom, content, ChatMessageType.SYSTEM);
     }
 }

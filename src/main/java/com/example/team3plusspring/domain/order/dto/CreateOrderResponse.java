@@ -16,7 +16,6 @@ public class CreateOrderResponse {
     private final Long orderId;
     private final Long paymentId;
     private final String orderNumber;
-    private final String portOnePaymentId;
     private final OrderStatus status;
     private final int totalProductAmount;
     private final int usedCouponAmount;
@@ -29,7 +28,6 @@ public class CreateOrderResponse {
                 order.getId(),
                 payment.getId(),
                 order.getOrderNumber(),
-                payment.getPortonePaymentId(),
                 order.getStatus(),
                 order.getTotalProductAmount(),
                 order.getUsedCouponAmount(),

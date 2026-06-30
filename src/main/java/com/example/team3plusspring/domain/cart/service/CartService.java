@@ -10,6 +10,7 @@ import com.example.team3plusspring.domain.cart.repository.CartItemRepository;
 import com.example.team3plusspring.domain.cart.repository.CartRepository;
 import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.repository.ProductRepository;
+import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
@@ -67,6 +68,11 @@ public class CartService {
         return AddCartItemResponse.of(savedCartItem, product);
     }
 
+    @Transactional
+    public Cart createCart(User user) {
+        return cartRepository.save(Cart.create(user.getId()));
+    }
+
     @Transactional(readOnly = true)
     public GetCartResponse getMyCart(CustomUserDetails userDetails) {
         // 1. 장바구니 조회
@@ -113,7 +119,10 @@ public class CartService {
     @Transactional
     public List<CartItem> findOrderCartItemsByCartId(Long cartId, List<Long> cartItemIds) {
         return cartItemRepository.findByCartIdAndIdInOrderByProductId(cartItemIds, cartId);
-
     }
 
+    @Transactional
+    public void deleteOrderCartItems(List<CartItem> cartItems) {
+        cartItemRepository.deleteAllInBatch(cartItems);
+    }
 }

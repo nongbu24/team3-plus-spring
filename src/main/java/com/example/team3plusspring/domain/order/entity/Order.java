@@ -46,7 +46,7 @@ public class Order extends BaseEntity {
 
         this.userId = userId;
         this.orderNumber = generateOrderNumber();
-        this.status = OrderStatus.PAYMENT_PENDING;
+        this.status = OrderStatus.READY;
         this.totalProductAmount = totalProductAmount;
         this.usedCouponAmount = usedCouponAmount;
         this.paymentAmount = totalProductAmount - usedCouponAmount;
@@ -56,6 +56,10 @@ public class Order extends BaseEntity {
         return new Order(userId, totalProductAmount, usedCouponAmount);
     }
 
+    public void markAsPaymentPending() {
+        changeStatus(OrderStatus.PAYMENT_PENDING);
+    }
+
     public void markAsCompleted() {
         changeStatus(OrderStatus.COMPLETED);
     }
@@ -63,14 +67,6 @@ public class Order extends BaseEntity {
     public void markAsCancelled() {
         changeStatus(OrderStatus.CANCELED);
         this.canceled_at = LocalDateTime.now();
-    }
-
-    public void markAsRefundRequested() {
-        changeStatus(OrderStatus.REFUND_REQUESTED);
-    }
-
-    public void markAsRefunded() {
-        changeStatus(OrderStatus.REFUNDED);
     }
 
     private String generateOrderNumber() {

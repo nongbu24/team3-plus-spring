@@ -1,6 +1,6 @@
 package com.example.team3plusspring.domain.chat.redis;
 
-import com.example.team3plusspring.domain.chat.service.ChatSessionExpiredEventPublisher;
+import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;

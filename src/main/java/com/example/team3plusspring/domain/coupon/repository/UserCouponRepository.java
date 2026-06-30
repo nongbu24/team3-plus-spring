@@ -30,4 +30,8 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long>, U
 	Optional<UserCoupon> findByIdAndUserIdForUpdate(@Param("userCouponId") Long userCouponId, @Param("userId") Long userId);
 
 	long countByCouponEventId(Long couponEventId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select uc from UserCoupon uc where uc.orderId = :orderId")
+	Optional<UserCoupon> findByOrderIdForUpdate(@Param("orderId") Long orderId);
 }

@@ -23,8 +23,6 @@ CreateOrderRequest
 CreateOrderResponse
 ConfirmPaymentRequest
 ConfirmPaymentResponse
-RefundPaymentRequest
-RefundPaymentResponse
 ```
 
 DTO는 `class`를 사용한다.
