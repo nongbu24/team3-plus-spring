@@ -1,6 +1,8 @@
 package com.example.team3plusspring.domain.order.entity;
 
 /**
+ * READY → PAYMENT_PENDING : 주문 준비 → PG 결제 시작
+ * READY → CANCELED : 주문 준비 → 결제 전 주문 취소
  * PAYMENT_PENDING → COMPLETED : 결제 대기 → 주문 완료(결제 성공 = 주문 성공)
  * PAYMENT_PENDING → CANCELED : 결제 대기 → 주문 취소(결제 실패 or 주문 취소)
  * COMPLETED → REFUND_REQUESTED : 주문 완료 → 환불 요청
@@ -10,6 +12,12 @@ package com.example.team3plusspring.domain.order.entity;
  **/
 public enum OrderStatus {
 
+    READY {
+        @Override
+        public boolean canTransitTo(OrderStatus target) {
+            return target == PAYMENT_PENDING || target == CANCELED;
+        }
+    },
     PAYMENT_PENDING {
         @Override
         public boolean canTransitTo(OrderStatus target) {

@@ -31,4 +31,10 @@ public class PaymentService {
         return paymentRepository.findByIdForUpdate(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
     }
+
+    @Transactional
+    public Payment findPaymentForUpdateByOrderId(Long orderId) {
+        return paymentRepository.findByOrderIdForUpdate(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
 }

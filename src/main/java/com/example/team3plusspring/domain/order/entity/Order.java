@@ -46,7 +46,7 @@ public class Order extends BaseEntity {
 
         this.userId = userId;
         this.orderNumber = generateOrderNumber();
-        this.status = OrderStatus.PAYMENT_PENDING;
+        this.status = OrderStatus.READY;
         this.totalProductAmount = totalProductAmount;
         this.usedCouponAmount = usedCouponAmount;
         this.paymentAmount = totalProductAmount - usedCouponAmount;
@@ -54,6 +54,10 @@ public class Order extends BaseEntity {
 
     public static Order create(Long userId, int totalProductAmount, int usedCouponAmount) {
         return new Order(userId, totalProductAmount, usedCouponAmount);
+    }
+
+    public void markAsPaymentPending() {
+        changeStatus(OrderStatus.PAYMENT_PENDING);
     }
 
     public void markAsCompleted() {
