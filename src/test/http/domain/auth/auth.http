@@ -57,21 +57,9 @@ Content-Type: application/json
   "password": "WrongPassword123"
 }
 
-### 6. 내 정보 조회 성공
-GET {{baseUrl}}/api/users/me
-Authorization: Bearer {{accessToken}}
-
-### 7. 내 정보 조회 실패 - 토큰 없음
-GET {{baseUrl}}/api/users/me
-
-### 8. 로그아웃 성공
+### 6. 로그아웃 성공
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{accessToken}}
 
-### 9. 회원 탈퇴 성공
-POST {{baseUrl}}/api/users/delete
-Authorization: Bearer {{accessToken}}
-
-### 10. 탈퇴 후 기존 토큰 사용 실패
-GET {{baseUrl}}/api/users/me
-Authorization: Bearer {{accessToken}}
+### 7. 로그아웃 실패 - 토큰 없음
+POST {{baseUrl}}/api/auth/logout

@@ -29,11 +29,7 @@ public class AuthService {
     public LoginResponse createLoginResponse(User user) {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId());
 
-        return LoginResponse.of(
-                accessToken,
-                jwtTokenProvider.getAccessTokenExpiresInSeconds(),
-                user
-        );
+        return LoginResponse.of(accessToken);
     }
 
     public LogoutResponse logout() {
