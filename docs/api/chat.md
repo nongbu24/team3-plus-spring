@@ -649,7 +649,6 @@ Authorization: Bearer {accessToken}
 | `VALIDATION_FAILED` | 요청 payload 형식 오류 또는 필수 값 누락 |
 | `CHAT_ROOM_NOT_FOUND` | 채팅방이 없음 |
 | `CHAT_ROOM_ACCESS_DENIED` | 입장하지 않은 채팅방에서 퇴장 시도 |
-| `CHAT_ROOM_ALREADY_COMPLETED` | 이미 완료된 채팅방에서 퇴장 시도. 서버는 세션 정리만 수행하고 퇴장 메시지는 발행하지 않음 |
 
 ### 실시간 시스템 메시지
 
