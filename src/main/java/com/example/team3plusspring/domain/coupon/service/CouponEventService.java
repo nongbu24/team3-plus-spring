@@ -3,6 +3,7 @@ package com.example.team3plusspring.domain.coupon.service;
 import java.time.LocalDateTime;
 
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -134,6 +135,9 @@ public class CouponEventService {
 			return IssueCouponResponse.from(savedUserCoupon);
 		} catch (BusinessException e) {
 			throw e;
+		} catch (DataIntegrityViolationException e) {
+			couponStockCounter.restoreStock(couponEventId);
+			throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
 		} catch (Exception e) {
 			couponStockCounter.restoreStock(couponEventId);
 			throw e;

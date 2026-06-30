@@ -47,6 +47,7 @@ public class UserCouponService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
     public int calculateDiscountAmount(UserCoupon userCoupon, int totalProductAmount) {
         userCoupon.validateUsablePeriod(LocalDateTime.now());
 
