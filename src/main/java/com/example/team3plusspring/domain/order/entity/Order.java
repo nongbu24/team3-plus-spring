@@ -69,14 +69,6 @@ public class Order extends BaseEntity {
         this.canceled_at = LocalDateTime.now();
     }
 
-    public void markAsRefundRequested() {
-        changeStatus(OrderStatus.REFUND_REQUESTED);
-    }
-
-    public void markAsRefunded() {
-        changeStatus(OrderStatus.REFUNDED);
-    }
-
     private String generateOrderNumber() {
         return "order_" + UUID.randomUUID();
     }

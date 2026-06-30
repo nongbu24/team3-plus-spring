@@ -80,11 +80,6 @@ public enum ErrorCode {
     PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST, "결제 웹훅 요청이 올바르지 않습니다."),
     PAYMENT_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 결제 상태 변경입니다."),
 
-    // Refund
-    REFUND_NOT_ALLOWED(HttpStatus.CONFLICT, "환불 가능한 결제 상태가 아닙니다."),
-    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "환불 내역을 찾을 수 없습니다."),
-    REFUND_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "환불 금액이 올바르지 않습니다."),
-
     // Chat
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
     CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 채팅방에 접근할 수 없습니다."),
