@@ -121,15 +121,22 @@ public class CouponEventService {
 			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
 		}
 
-		long updatedRows = couponEventRepository.increaseIssuedQuantity(couponEventId);
-		if (updatedRows == 0) {
+		try {
+			long updatedRows = couponEventRepository.increaseIssuedQuantity(couponEventId);
+			if (updatedRows == 0) {
+				couponStockCounter.restoreStock(couponEventId);
+				throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
+			}
+
+			UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId, couponEvent.getValidDays());
+			UserCoupon savedUserCoupon = userCouponRepository.save(userCoupon);
+
+			return IssueCouponResponse.from(savedUserCoupon);
+		} catch (BusinessException e) {
+			throw e;
+		} catch (Exception e) {
 			couponStockCounter.restoreStock(couponEventId);
-			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
+			throw e;
 		}
-
-		UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId, couponEvent.getValidDays());
-		UserCoupon savedUserCoupon = userCouponRepository.save(userCoupon);
-
-		return IssueCouponResponse.from(savedUserCoupon);
 	}
 }
