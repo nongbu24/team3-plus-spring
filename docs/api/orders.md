@@ -64,7 +64,7 @@
         "lineAmount": 78000
       }
     ],
-    "createdAt": "2026-06-22T18:30:00+09:00"
+    "createdAt": "2026-06-22T18:30:00"
   }
 }
 ```
@@ -200,7 +200,7 @@
         "totalProductAmount": 78000,
         "usedCouponAmount": 10000,
         "paymentAmount": 68000,
-        "orderedAt": "2026-06-22T18:30:00+09:00"
+        "createdAt": "2026-06-22T18:30:00"
       }
     ],
     "page": 0,
@@ -261,7 +261,7 @@
         "lineAmount": 78000
       }
     ],
-    "orderedAt": "2026-06-22T18:30:00+09:00",
+    "createdAt": "2026-06-22T18:30:00",
     "canceledAt": null
   }
 }
