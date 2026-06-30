@@ -102,8 +102,7 @@
         "issuedQuantity": 0,
         "status": "OPEN",
         "startsAt": "2026-06-23T00:00:00",
-        "endsAt": "2026-06-30T23:59:59",
-        "validDays": 30
+        "endsAt": "2026-06-30T23:59:59"
       }
     ],
     "totalElements": 1,
