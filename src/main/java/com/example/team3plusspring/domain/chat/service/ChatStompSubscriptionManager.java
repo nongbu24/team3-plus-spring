@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.chat.service;
 
+import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
@@ -20,18 +21,18 @@ public class ChatStompSubscriptionManager {
         this.clientInboundChannel = clientInboundChannel;
     }
 
-    public void unsubscribeAll(Set<ChatSessionRegistry.RemovedAdminSubscription> subscriptions) {
+    public void unsubscribeAll(Set<RemovedAdminSubscription> subscriptions) {
         subscriptions.forEach(this::unsubscribe);
     }
 
-    private void unsubscribe(ChatSessionRegistry.RemovedAdminSubscription subscription) {
-        if (!StringUtils.hasText(subscription.sessionId()) || !StringUtils.hasText(subscription.subscriptionId())) {
+    private void unsubscribe(RemovedAdminSubscription subscription) {
+        if (!StringUtils.hasText(subscription.getSessionId()) || !StringUtils.hasText(subscription.getSubscriptionId())) {
             return;
         }
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.UNSUBSCRIBE);
-        accessor.setSessionId(subscription.sessionId());
-        accessor.setSubscriptionId(subscription.subscriptionId());
+        accessor.setSessionId(subscription.getSessionId());
+        accessor.setSubscriptionId(subscription.getSubscriptionId());
         accessor.setLeaveMutable(true);
 
         Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());

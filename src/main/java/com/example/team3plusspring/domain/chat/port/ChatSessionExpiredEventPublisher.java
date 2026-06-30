@@ -1,4 +1,4 @@
-package com.example.team3plusspring.domain.chat.service;
+package com.example.team3plusspring.domain.chat.port;
 
 /**
  * 비활성 만료로 퇴장 확정된 세션을 다른 서버 인스턴스에 알리는 통로다.

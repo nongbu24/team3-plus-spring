@@ -1,6 +1,6 @@
 package com.example.team3plusspring.domain.chat.redis;
 
-import com.example.team3plusspring.domain.chat.service.ChatActivityStore.ActiveChatSession;
+import com.example.team3plusspring.domain.chat.port.ActiveChatSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
