@@ -138,7 +138,6 @@ created_at이 인덱스에 포함되어 있어 별도 정렬 없이 인덱스를
 
 ```sql
 CREATE INDEX idx_product_real ON products(status, category_id, created_at);
-CREATE INDEX idx_product_category_id ON products(category_id);
 ```
 
 1. price는 실제 API에 없는 조건이라 인덱스에 포함시켜도 의미가 없었고,
@@ -151,7 +150,12 @@ CREATE INDEX idx_product_category_id ON products(category_id);
 4. 직접 작성한 단순 쿼리가 아니라, show-sql로 확인한 실제 SQL을
    기준으로 분석해야 신뢰할 수 있는 결과가 나온다는 것을 배웠습니다.
 
-idx_product_category_id는 category_id 단독 조건(idx_product_real의 왼쪽
-컬럼이 아닌 단독 사용 시)에 필요해 별도로 유지했습니다. idx_product_status,
-idx_category_name은 각각 idx_product_real과 중복되거나 실제 코드에서
-사용되지 않아 제거했습니다.
+idx_product_category_id도 EXPLAIN으로 단독 사용 여부를 확인했습니다.
+category_id만 있는 단순 쿼리로 테스트했을 때는 이 인덱스가 단독으로
+사용되는 것을 확인했지만, ProductService 코드를 다시 보니 status가
+null이면 항상 ON_SALE로 채워진 뒤 Repository로 넘어가는 구조였습니다.
+즉 실제 API에서는 status 조건이 항상 포함되어 idx_product_real로
+충분히 처리되고, category_id가 단독으로 쓰이는 경우는 없었습니다.
+따라서 idx_product_category_id도 불필요한 인덱스로 판단해 제거했습니다.
+idx_product_status, idx_category_name도 각각 idx_product_real과
+중복되거나 실제 코드에서 사용되지 않아 제거했습니다.
