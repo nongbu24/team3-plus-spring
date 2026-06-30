@@ -94,6 +94,7 @@
   "status": 200,
   "message": "요청이 성공했습니다.",
   "data": {
+    "tokenType": "Bearer",
     "accessToken": "eyJhbGciOi..."
   }
 }
