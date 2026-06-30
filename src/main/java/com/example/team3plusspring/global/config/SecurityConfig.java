@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -44,6 +46,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) ->
                                 securityErrorResponseWriter.write(response, ErrorCode.UNAUTHORIZED)
                         )
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                securityErrorResponseWriter.write(response, ErrorCode.FORBIDDEN)
+                        )
                 )
 
                 .authorizeHttpRequests(auth -> auth
@@ -53,7 +58,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v2/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/search/popular").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/coupon-events").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/config/portone").permitAll()
                         .requestMatchers("/error").permitAll()
 
                         // 인증 필요한 api 요청

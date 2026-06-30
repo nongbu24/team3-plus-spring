@@ -9,6 +9,7 @@ erDiagram
     users ||--|| carts : owns
     users ||--o{ orders : places
     users ||--o{ user_coupons : owns
+    users ||--o{ chat_members : joins
 
     categories ||--o{ products : classifies
     products ||--o{ cart_items : added_to
@@ -24,6 +25,9 @@ erDiagram
 
     coupon_events ||--o{ user_coupons : issues
 
+    chat_rooms ||--o{ chat_messages : contains
+    chat_rooms ||--o{ chat_members : has
+
     users {
         BIGINT id PK "회원 ID"
         VARCHAR email UK "로그인 이메일"
@@ -38,7 +42,7 @@ erDiagram
 
     carts {
         BIGINT id PK "장바구니 ID"
-        BIGINT user_id FK "회원 ID"
+        BIGINT user_id "회원 ID"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -52,13 +56,47 @@ erDiagram
         DATETIME updated_at "수정일시"
     }
 
+    chat_rooms {
+        BIGINT id PK "채팅방 ID"
+        VARCHAR name "채팅방 이름"
+        BIGINT customer_id "문의 고객 ID"
+        VARCHAR customer_name "문의 고객 이름"
+        BIGINT admin_id "담당 관리자 ID"
+        VARCHAR admin_name "담당 관리자 이름"
+        VARCHAR status "문의 상태"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
+    }
+
+    chat_messages {
+        BIGINT id PK "채팅 메시지 ID"
+        BIGINT sender_id "발신자 ID"
+        VARCHAR sender_name "발신자 이름"
+        BIGINT chat_room_id FK "채팅방 ID"
+        VARCHAR content "메시지 내용"
+        VARCHAR message_type "메시지 유형"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
+    }
+
+    chat_members {
+        BIGINT id PK "참여자 ID"
+        BIGINT room_id FK "채팅방 ID"
+        BIGINT user_id "회원 ID 스냅샷"
+        VARCHAR user_name "회원 이름"
+        VARCHAR role "참여자 권한"
+        DATETIME joined_at "참여일시"
+        DATETIME left_at "퇴장일시"
+        DATETIME created_at "생성일시"
+        DATETIME updated_at "수정일시"
+    }
+
     categories {
         BIGINT id PK "카테고리 ID"
         VARCHAR name "카테고리명"
         BOOLEAN is_active "사용 여부"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
-        DATETIME deleted_at "삭제일시"
     }
 
     products {
@@ -71,7 +109,6 @@ erDiagram
         VARCHAR status "판매 상태"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
-        DATETIME deleted_at "삭제일시"
     }
 
     orders {
@@ -79,8 +116,9 @@ erDiagram
         BIGINT user_id FK "회원 ID"
         VARCHAR order_number UK "주문번호"
         VARCHAR status "주문 상태"
-        BIGINT total_product_amount "상품 총액"
-        BIGINT payment_amount "최종 결제 금액"
+        INT total_product_amount "상품 총액"
+        INT used_coupon_amount "쿠폰 할인 금액"
+        INT payment_amount "최종 결제 금액"
         DATETIME ordered_at "주문일시"
         DATETIME canceled_at "취소일시"
         DATETIME created_at "생성일시"
@@ -92,9 +130,9 @@ erDiagram
         BIGINT order_id FK "주문 ID"
         BIGINT product_id FK "상품 ID"
         VARCHAR product_name "주문 당시 상품명"
-        BIGINT unit_price "주문 당시 단가"
+        INT unit_price "주문 당시 단가"
         INT quantity "주문 수량"
-        BIGINT line_amount "상품별 금액"
+        INT line_amount "상품별 금액"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -104,8 +142,9 @@ erDiagram
         BIGINT order_id FK "주문 ID"
         VARCHAR portone_payment_id UK "PortOne 결제 ID"
         VARCHAR status "결제 상태"
-        BIGINT total_product_amount "상품 총액"
-        BIGINT payment_amount "최종 결제 금액"
+        INT total_product_amount "상품 총액"
+        INT used_coupon_amount "쿠폰 할인 금액"
+        INT payment_amount "최종 결제 금액"
         DATETIME approved_at "결제 승인일시"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
@@ -115,12 +154,13 @@ erDiagram
         BIGINT id PK "쿠폰 이벤트 ID"
         VARCHAR name "쿠폰 이벤트명"
         VARCHAR discount_type "할인 타입"
-        BIGINT discount_amount "할인 금액"
+        INT discount_amount "할인 금액"
         INT total_quantity "총 발급 수량"
         INT issued_quantity "발급 완료 수량"
         VARCHAR status "이벤트 상태"
         DATETIME starts_at "발급 시작일시"
         DATETIME ends_at "발급 종료일시"
+        INT valid_days "사용 가능 기간(일)"
         DATETIME created_at "생성일시"
         DATETIME updated_at "수정일시"
     }
@@ -185,7 +225,23 @@ erDiagram
 | 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
 | --- | --- | --- | --- | --- |
 | 장바구니 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id, UNIQUE |
+| 회원 ID | user_id | BIGINT | NOT NULL | UNIQUE, users.id 값 |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
+
+### chat_rooms
+
+CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
+
+| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
+| --- | --- | --- | --- | --- |
+| 채팅방 ID | id | BIGINT | NOT NULL | PK |
+| 채팅방 이름 | name | VARCHAR(255) | NULL |  |
+| 문의 고객 ID | customer_id | BIGINT | NOT NULL | users.id 값 스냅샷 |
+| 문의 고객 이름 | customer_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
+| 담당 관리자 ID | admin_id | BIGINT | NULL | 담당 관리자 배정 시 저장 |
+| 담당 관리자 이름 | admin_name | VARCHAR(255) | NULL | 관리자 이름 스냅샷 |
+| 문의 상태 | status | VARCHAR(20) | NOT NULL | WAITING, IN_PROGRESS, COMPLETED |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
 
@@ -204,6 +260,39 @@ erDiagram
 
 - 같은 장바구니에 같은 상품은 한 번만 담기도록 `(cart_id, product_id)`에 UNIQUE 제약을 둡니다.
 
+### chat_messages
+
+채팅방에 저장된 일반 메시지와 입장/퇴장 시스템 메시지를 저장합니다.
+
+| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
+| --- | --- | --- | --- | --- |
+| 채팅 메시지 ID | id | BIGINT | NOT NULL | PK |
+| 발신자 ID | sender_id | BIGINT | NOT NULL | users.id 값 스냅샷 |
+| 발신자 이름 | sender_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
+| 채팅방 ID | chat_room_id | BIGINT | NOT NULL | FK: chat_rooms.id |
+| 메시지 내용 | content | VARCHAR(1000) | NOT NULL | 1000자 이하 |
+| 메시지 유형 | message_type | VARCHAR(20) | NOT NULL | CHAT, SYSTEM |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
+
+### chat_members
+
+채팅방에 참여한 고객과 담당 관리자를 저장합니다.
+
+| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
+| --- | --- | --- | --- | --- |
+| 참여자 ID | id | BIGINT | NOT NULL | PK |
+| 채팅방 ID | room_id | BIGINT | NOT NULL | FK: chat_rooms.id |
+| 회원 ID | user_id | BIGINT | NOT NULL | users.id 값 스냅샷 |
+| 회원 이름 | user_name | VARCHAR(255) | NOT NULL | 회원 이름 스냅샷 |
+| 참여자 권한 | role | VARCHAR(20) | NOT NULL | USER, ADMIN |
+| 참여일시 | joined_at | DATETIME | NOT NULL |  |
+| 퇴장일시 | left_at | DATETIME | NULL |  |
+| 생성일시 | created_at | DATETIME | NOT NULL |  |
+| 수정일시 | updated_at | DATETIME | NULL |  |
+
+- 같은 채팅방에 같은 회원은 한 번만 참여자로 저장되도록 `(room_id, user_id)`에 UNIQUE 제약을 둡니다.
+
 ### categories
 
 상품 목록/상세 응답의 `categoryId`, `categoryName`을 위한 내부 분류 테이블입니다.
@@ -215,7 +304,6 @@ erDiagram
 | 사용 여부 | is_active | BOOLEAN | NOT NULL | 기본값 true |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
-| 삭제일시 | deleted_at | DATETIME | NULL |  |
 
 ### products
 
@@ -232,25 +320,23 @@ erDiagram
 | 판매 상태 | status | VARCHAR(30)  | NOT NULL | ON_SALE, SOLD_OUT, DISCONTINUED |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
-| 삭제일시 | deleted_at | DATETIME | NULL | 사용자 조회에서 제외 |
 
 ### orders
 
 주문 생성, 주문 목록/상세 조회, 결제 전 주문 취소의 기준 테이블입니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- |---|
-| 주문 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id|
-| 주문번호 | order_number | VARCHAR(50) | NOT NULL | UNIQUE |
+| 논리명 | 컬럼명 | 타입 | NULL     | 제약/비고                                                            |
+| --- | --- | --- |----------|------------------------------------------------------------------|
+| 주문 ID | id | BIGINT | NOT NULL | PK                                                               |
+| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id                                                     |
+| 주문번호 | order_number | VARCHAR(50) | NOT NULL | UNIQUE                                                           |
 | 주문 상태 | status | VARCHAR(30) | NOT NULL | PAYMENT_PENDING, COMPLETED, CANCELED |
-| 상품 총액 | total_product_amount | BIGINT | NOT NULL | 주문 상품 합계 |
-| 쿠폰 할인 금액 | used_coupon_amount | BIGINT | NULL | 쿠폰 미 사용 시 NULL |
-| 최종 결제 금액 | payment_amount | BIGINT | NOT NULL | 상품 총액 - 쿠폰 할인 금액 |
-| 주문일시 | ordered_at | DATETIME | NOT NULL |    |
-| 취소일시 | canceled_at | DATETIME | NULL | 결제 전 취소 시 값 저장 |
-| 생성일시 | created_at | DATETIME | NOT NULL |                                                                |
-| 수정일시 | updated_at | DATETIME | NULL |                                                                |
+| 상품 총액 | total_product_amount | INT | NOT NULL | 주문 상품 합계                                                         |
+| 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 쿠폰 미 사용 시 0                                                      |
+| 최종 결제 금액 | payment_amount | INT | NOT NULL | 상품 총액 - 쿠폰 할인 금액                                                 |
+| 취소일시 | canceled_at | DATETIME | NULL     | 결제 전 취소 시 값 저장                                                   |
+| 생성일시 | created_at | DATETIME | NOT NULL |                                                                  |
+| 수정일시 | updated_at | DATETIME | NULL     |                                                                  |
 
 ### order_items
 
@@ -262,9 +348,9 @@ erDiagram
 | 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id |
 | 상품 ID | product_id | BIGINT | NOT NULL | FK: products.id |
 | 주문 당시 상품명 | product_name | VARCHAR(100) | NOT NULL | 상품명 스냅샷 |
-| 주문 당시 단가 | unit_price | BIGINT | NOT NULL | 가격 스냅샷 |
+| 주문 당시 단가 | unit_price | INT | NOT NULL | 가격 스냅샷 |
 | 주문 수량 | quantity | INT | NOT NULL | 1 이상 |
-| 상품별 금액 | line_amount | BIGINT | NOT NULL | unit_price * quantity |
+| 상품별 금액 | line_amount | INT | NOT NULL | unit_price * quantity |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
 
@@ -272,18 +358,18 @@ erDiagram
 
 결제 승인 검증의 기준 테이블입니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 결제 ID | id | BIGINT | NOT NULL | PK |
-| 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id, UNIQUE |
-| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NULL | UNIQUE, 결제 승인 검증 시 저장 가능 |
+| 논리명 | 컬럼명 | 타입 | NULL     | 제약/비고                                     |
+| --- | --- | --- |----------|-------------------------------------------|
+| 결제 ID | id | BIGINT | NOT NULL | PK                                        |
+| 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id, UNIQUE                     |
+| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NOT NULL | UNIQUE, 결제 승인 검증 시 저장 가능                  |
 | 결제 상태 | status | VARCHAR(30) | NOT NULL | PENDING, PAID, FAILED, CANCELED |
-| 상품 총액 | total_product_amount | BIGINT | NOT NULL | 서버 계산 값 |
-| 쿠폰 할인 금액 | used_coupon_amount | BIGINT | NULL | 서버 계산 값, 쿠폰 미 사용 시 NULL |
-| 최종 결제 금액 | payment_amount | BIGINT | NOT NULL | PortOne 승인 금액과 비교 |
-| 결제 승인일시 | approved_at | DATETIME | NULL |  |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-| 수정일시 | updated_at | DATETIME | NULL |  |
+| 상품 총액 | total_product_amount | INT | NOT NULL | 서버 계산 값                                   |
+| 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 서버 계산 값, 쿠폰 미 사용 시 0                      |
+| 최종 결제 금액 | payment_amount | INT | NOT NULL | PortOne 승인 금액과 비교                         |
+| 결제 승인일시 | approved_at | DATETIME | NULL     |                                           |
+| 생성일시 | created_at | DATETIME | NOT NULL |                                           |
+| 수정일시 | updated_at | DATETIME | NULL     |                                           |
 
 ### coupon_events
 
@@ -300,6 +386,7 @@ erDiagram
 | 이벤트 상태 | status | VARCHAR(30)  | NOT NULL | OPEN, CLOSED |
 | 발급 시작일시 | starts_at | DATETIME     | NOT NULL |  |
 | 발급 종료일시 | ends_at | DATETIME     | NOT NULL |  |
+| 사용 가능 기간(일) | valid_days | INT          | NOT NULL | 발급일로부터 사용 가능한 일수. `user_coupons.expired_at = issued_at + valid_days`로 계산 |
 | 생성일시 | created_at | DATETIME     | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME     | NULL |  |
 
@@ -307,16 +394,16 @@ erDiagram
 
 회원이 보유한 쿠폰 목록을 저장합니다.
 
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 회원 쿠폰 ID | id | BIGINT | NOT NULL | PK |
-| 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id |
-| 쿠폰 이벤트 ID | coupon_event_id | BIGINT | NOT NULL | FK: coupon_events.id |
-| 사용 주문 ID | order_id | BIGINT | NULL | FK: orders.id |
+| 논리명 | 컬럼명 | 타입          | NULL | 제약/비고 |
+| --- | --- |-------------| --- | --- |
+| 회원 쿠폰 ID | id | BIGINT      | NOT NULL | PK |
+| 회원 ID | user_id | BIGINT      | NOT NULL | FK: users.id |
+| 쿠폰 이벤트 ID | coupon_event_id | BIGINT      | NOT NULL | FK: coupon_events.id |
+| 사용 주문 ID | order_id | BIGINT      | NULL | FK: orders.id |
 | 쿠폰 상태 | status | VARCHAR(30) | NOT NULL | ISSUED, USED, EXPIRED |
-| 발급일시 | issued_at | DATETIME | NOT NULL |  |
-| 사용일시 | used_at | DATETIME | NULL |  |
-| 만료일시 | expired_at | DATETIME | NULL |  |
+| 발급일시 | issued_at | DATETIME    | NOT NULL |  |
+| 사용일시 | used_at | DATETIME    | NULL |  |
+| 만료일시 | expired_at | DATETIME    | NULL |  |
 
 - 같은 회원이 같은 쿠폰 이벤트에서 중복 발급받지 못하도록 `(user_id, coupon_event_id)`에 UNIQUE 제약을 둡니다.
 
@@ -353,17 +440,20 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 
 ## 관계 요약
 
-| 관계 | 설명 |
-| --- | --- |
-| users - carts | 회원은 하나의 기본 장바구니를 가집니다. |
-| users - orders | 회원은 여러 주문을 생성할 수 있습니다. |
-| users - user_coupons | 회원은 여러 쿠폰을 보유할 수 있습니다. |
-| categories - products | 카테고리는 여러 상품을 분류할 수 있습니다. |
-| carts - cart_items | 장바구니는 여러 장바구니 상품을 담습니다. |
-| products - cart_items | 상품은 여러 장바구니에 담길 수 있습니다. |
-| orders - order_items | 주문은 여러 주문 상품을 가집니다. |
-| products - order_items | 상품은 주문 상품 스냅샷으로 기록됩니다. |
-| orders - payments | 주문은 하나의 결제와 연결됩니다. |
-| payments - webhook_events | 결제는 여러 웹훅 이벤트와 연결될 수 있습니다. |
+| 관계                           | 설명 |
+|------------------------------| --- |
+| users - carts                | 회원은 하나의 기본 장바구니를 가집니다. |
+| users - orders               | 회원은 여러 주문을 생성할 수 있습니다. |
+| users - user_coupons         | 회원은 여러 쿠폰을 보유할 수 있습니다. |
+| users - chat_members         | 회원은 여러 채팅방 참여자로 기록될 수 있습니다. |
+| chat_rooms - chat_messages   | 채팅방은 여러 메시지를 가집니다. |
+| chat_rooms - chat_members    | 채팅방은 고객과 담당 관리자 참여자를 가집니다. |
+| categories - products        | 카테고리는 여러 상품을 분류할 수 있습니다. |
+| carts - cart_items           | 장바구니는 여러 장바구니 상품을 담습니다. |
+| products - cart_items        | 상품은 여러 장바구니에 담길 수 있습니다. |
+| orders - order_items         | 주문은 여러 주문 상품을 가집니다. |
+| products - order_items       | 상품은 주문 상품 스냅샷으로 기록됩니다. |
+| orders - payments            | 주문은 하나의 결제와 연결됩니다. |
+| payments - webhook_events    | 결제는 여러 웹훅 이벤트와 연결될 수 있습니다. |
 | coupon_events - user_coupons | 쿠폰 이벤트는 여러 회원 쿠폰을 발급합니다. |
-| orders - user_coupons | 쿠폰을 사용한 경우 회원 쿠폰이 주문과 연결됩니다. |
+| orders - user_coupons        | 쿠폰을 사용한 경우 회원 쿠폰이 주문과 연결됩니다. |

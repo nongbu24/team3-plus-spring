@@ -9,6 +9,9 @@ public class CreateOrderRequest {
 
     @NotEmpty
     private List<OrderItemRequest> items;
+
+    @Positive
+    private Integer quantity;
 }
 ```
 

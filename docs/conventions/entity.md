@@ -16,6 +16,7 @@ Setter 남발을 피하고 의미 있는 상태 변경 메서드를 사용한다
 ```java
 payment.markAsPaid();
 order.complete();
+order.cancel();
 ```
 
 비권장:

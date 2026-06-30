@@ -46,7 +46,7 @@ public class AuthFacade {
 
         authService.validatePassword(request.getPassword(), user.getPassword());
 
-        return authService.createLoginResponse(user.getId());
+        return authService.createLoginResponse(user);
     }
 
     public LogoutResponse logout() {

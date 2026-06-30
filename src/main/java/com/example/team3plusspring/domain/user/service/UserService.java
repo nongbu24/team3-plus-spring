@@ -40,6 +40,11 @@ public class UserService {
         return userRepository.findByEmailAndDeletedAtIsNull(email);
     }
 
+    @Transactional(readOnly = true)
+    public void validateActiveUser(Long userId) {
+        findActiveUser(userId);
+    }
+
     @Transactional
     public UserDeleteResponse deleteMe(Long userId) {
         if (userId == null) {

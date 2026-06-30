@@ -54,7 +54,10 @@ public class CouponEvent extends BaseEntity {
 	@Column(name = "ends_at", nullable = false)
 	private LocalDateTime endsAt;
 
-	private CouponEvent(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
+	@Column(name = "valid_days", nullable = false)
+	private int validDays;
+
+	private CouponEvent(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt, int validDays) {
 		if (discountType == DiscountType.PERCENT && discountAmount > 100) {
 			throw new BusinessException(ErrorCode.INVALID_DISCOUNT_AMOUNT);
 		}
@@ -70,19 +73,11 @@ public class CouponEvent extends BaseEntity {
 		this.status = CouponEventStatus.OPEN;
 		this.startsAt = startsAt;
 		this.endsAt = endsAt;
+		this.validDays = validDays;
 	}
 
-	public static CouponEvent create(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt) {
-		return new CouponEvent(name, discountType, discountAmount, totalQuantity, startsAt, endsAt);
-	}
-
-	// 쿠폰 발급 수량 증가 메서드
-	public void increaseIssuedQuantity() {
-		if (issuedQuantity >= totalQuantity) {
-			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
-		}
-
-		this.issuedQuantity += 1;
+	public static CouponEvent create(String name, DiscountType discountType, int discountAmount, int totalQuantity, LocalDateTime startsAt, LocalDateTime endsAt, int validDays) {
+		return new CouponEvent(name, discountType, discountAmount, totalQuantity, startsAt, endsAt, validDays);
 	}
 
 	// 쿠폰 발급 가능 여부 확인 메서드
@@ -96,7 +91,7 @@ public class CouponEvent extends BaseEntity {
 	}
 
 	// 상품 총액 기준으로 실제 할인 금액을 계산하는 메서드
-	public long calculateDiscountAmount(long productAmount) {
+	public int calculateDiscountAmount(int productAmount) {
 		if (discountType == DiscountType.PERCENT) {
 			return productAmount * discountAmount / 100;
 		}

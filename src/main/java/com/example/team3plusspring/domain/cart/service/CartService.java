@@ -2,6 +2,8 @@ package com.example.team3plusspring.domain.cart.service;
 
 import com.example.team3plusspring.domain.cart.dto.AddCartItemRequest;
 import com.example.team3plusspring.domain.cart.dto.AddCartItemResponse;
+import com.example.team3plusspring.domain.cart.dto.CartItemDetailResponse;
+import com.example.team3plusspring.domain.cart.dto.GetCartResponse;
 import com.example.team3plusspring.domain.cart.entity.Cart;
 import com.example.team3plusspring.domain.cart.entity.CartItem;
 import com.example.team3plusspring.domain.cart.repository.CartItemRepository;
@@ -15,6 +17,10 @@ import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +51,7 @@ public class CartService {
                         throw new BusinessException(ErrorCode.CART_STOCK_EXCEEDED);
                     }
 
-                    existingCartItem.addQuantity(request.getQuantity());    // 이미 존재하는 경우 기존 장바구니 아이템 수량 증가
+                    existingCartItem.addQuantity(request.getQuantity());
 
                     return existingCartItem;
                 })
@@ -64,6 +70,59 @@ public class CartService {
 
     @Transactional
     public Cart createCart(User user) {
-        return cartRepository.save(Cart.create(user));
+        return cartRepository.save(Cart.create(user.getId()));
+    }
+
+    @Transactional(readOnly = true)
+    public GetCartResponse getMyCart(CustomUserDetails userDetails) {
+        // 1. 장바구니 조회
+        Cart cart = cartRepository.findByUserId(userDetails.getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+
+        // 2. 장바구니 아이템 조회
+        List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
+
+        // 3. 상품 ID 목록 추출
+        List<Long> productIds = cartItems.stream()
+                .map(CartItem::getProductId)
+                .toList(); // distinct() 제거
+
+        // 4. 상품들을 한 번에 조회
+        Map<Long, Product> productMap = productRepository.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, product -> product));
+
+        // 5. 상세 정보 매핑
+        List<CartItemDetailResponse> itemDetails = cartItems.stream()
+                .map(item -> {
+                    Product product = productMap.get(item.getProductId());
+                    if (product == null) {
+                        throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+                    }
+                    return CartItemDetailResponse.of(item, product);
+                })
+                .toList();
+
+        return GetCartResponse.of(
+                cart.getId(),
+                itemDetails,
+                cartItems.stream().mapToInt(CartItem::getQuantity).sum(),
+                itemDetails.stream().mapToInt(CartItemDetailResponse::getLineAmount).sum()
+        );
+    }
+
+    @Transactional
+    public Cart findByUser(Long userId) {
+        return cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+    }
+
+    @Transactional
+    public List<CartItem> findOrderCartItemsByCartId(Long cartId, List<Long> cartItemIds) {
+        return cartItemRepository.findByCartIdAndIdInOrderByProductId(cartItemIds, cartId);
+    }
+
+    @Transactional
+    public void deleteOrderCartItems(List<CartItem> cartItems) {
+        cartItemRepository.deleteAllInBatch(cartItems);
     }
 }

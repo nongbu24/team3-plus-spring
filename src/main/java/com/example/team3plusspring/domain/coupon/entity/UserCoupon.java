@@ -50,15 +50,22 @@ public class UserCoupon {
 	@Column(name = "expired_at")
 	private LocalDateTime expiredAt;
 
-	private UserCoupon(Long userId, Long couponEventId) {
+	private UserCoupon(Long userId, Long couponEventId, int validDays) {
 		this.userId = userId;
 		this.couponEventId = couponEventId;
 		this.status = UserCouponStatus.ISSUED;
 		this.issuedAt = LocalDateTime.now();
+		this.expiredAt = this.issuedAt.plusDays(validDays);
 	}
 
-	public static UserCoupon issue(Long userId, Long couponEventId) {
-		return new UserCoupon(userId, couponEventId);
+	public static UserCoupon issue(Long userId, Long couponEventId, int validDays) {
+		return new UserCoupon(userId, couponEventId, validDays);
+	}
+
+	public void validateUsablePeriod(LocalDateTime now) {
+		if (expiredAt != null && now.isAfter(expiredAt)) {
+			throw new BusinessException(ErrorCode.COUPON_EXPIRED);
+		}
 	}
 
 	// 쿠폰 사용 처리 메서드

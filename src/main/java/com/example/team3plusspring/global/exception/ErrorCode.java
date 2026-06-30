@@ -44,12 +44,15 @@ public enum ErrorCode {
     CART_ITEM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "타인의 장바구니 상품에 접근할 수 없습니다."),
     CART_STOCK_EXCEEDED(HttpStatus.CONFLICT, "장바구니 수량이 재고를 초과했습니다."),
     CART_ITEM_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "장바구니 상품 수량은 1개 이상이어야 합니다."),
+    CART_ITEM_SELECTION_INVALID(HttpStatus.BAD_REQUEST, "선택한 장바구니 항목이 유효하지 않습니다."),
 
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
     ORDER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "타인의 주문에 접근할 수 없습니다."),
     ORDER_CANCEL_NOT_ALLOWED(HttpStatus.CONFLICT, "결제대기 상태가 아니라 직접 취소할 수 없습니다."),
     ORDER_STOCK_SHORTAGE(HttpStatus.CONFLICT, "주문 생성 중 재고가 부족합니다."),
+    ORDER_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 주문 상태 변경입니다."),
+    ORDER_DISCOUNT_AMOUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "할인 금액은 상품 총액을 초과할 수 없습니다."),
 
     // Coupon
     COUPON_EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "쿠폰 이벤트를 찾을 수 없습니다."),
@@ -58,9 +61,11 @@ public enum ErrorCode {
     COUPON_STOCK_EXHAUSTED(HttpStatus.CONFLICT, "쿠폰 발급 수량이 소진되었습니다."),
     COUPON_ALREADY_USED(HttpStatus.CONFLICT, "이미 사용된 쿠폰입니다."),
     COUPON_NOT_USED(HttpStatus.CONFLICT, "사용되지 않은 쿠폰은 복구할 수 없습니다."),
+    COUPON_EXPIRED(HttpStatus.CONFLICT, "만료된 쿠폰입니다."),
     INVALID_DISCOUNT_AMOUNT(HttpStatus.BAD_REQUEST, "퍼센트 할인은 100을 초과할 수 없습니다."),
     INVALID_COUPON_EVENT_PERIOD(HttpStatus.BAD_REQUEST, "발급 시작일시는 종료일시보다 빠르거나 같아야 합니다."),
     COUPON_EVENT_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 쿠폰 이벤트 이름입니다."),
+    COUPON_ISSUE_LOCK_FAILED(HttpStatus.CONFLICT, "쿠폰 발급이 몰리고 있습니다. 잠시 후 다시 시도해주세요."),
 
     // Payment
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제를 찾을 수 없습니다."),
@@ -68,7 +73,18 @@ public enum ErrorCode {
     PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 결제입니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 승인 금액이 일치하지 않습니다."),
     PAYMENT_STATUS_NOT_PAID(HttpStatus.BAD_REQUEST, "PortOne 결제 상태가 성공 상태가 아닙니다."),
+    PAYMENT_NOT_COMPLETED(HttpStatus.CONFLICT, "결제가 아직 완료되지 않았습니다."),
+    PAYMENT_CANCEL_PENDING(HttpStatus.CONFLICT, "결제 취소가 처리 중입니다."),
+    PAYMENT_REVIEW_REQUIRED(HttpStatus.CONFLICT, "결제 취소 결과를 확인해야 합니다."),
     PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST, "결제 웹훅 요청이 올바르지 않습니다."),
+    PAYMENT_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 결제 상태 변경입니다."),
+
+    // Chat
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
+    CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 채팅방에 접근할 수 없습니다."),
+    CHAT_ROOM_ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 채팅방입니다."),
+    INVALID_CHAT_STATUS_TRANSITION(HttpStatus.CONFLICT, "변경할 수 없는 문의 상태입니다."),
+    ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "관리자를 찾을 수 없습니다."),
 
     // Search
     POPULAR_SEARCH_KEYWORD_NOT_FOUND(HttpStatus.NOT_FOUND, "인기 검색어를 찾을 수 없습니다."),

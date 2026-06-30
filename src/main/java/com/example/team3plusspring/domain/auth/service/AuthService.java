@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.auth.service;
 
 import com.example.team3plusspring.domain.auth.dto.LoginResponse;
 import com.example.team3plusspring.domain.auth.dto.LogoutResponse;
+import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import com.example.team3plusspring.global.security.jwt.JwtTokenProvider;
@@ -25,10 +26,14 @@ public class AuthService {
         }
     }
 
-    public LoginResponse createLoginResponse(Long userId) {
-        String accessToken = jwtTokenProvider.createAccessToken(userId);
+    public LoginResponse createLoginResponse(User user) {
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId());
 
-        return new LoginResponse(accessToken);
+        return LoginResponse.of(
+                accessToken,
+                jwtTokenProvider.getAccessTokenExpiresInSeconds(),
+                user
+        );
     }
 
     public LogoutResponse logout() {

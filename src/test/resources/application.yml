@@ -11,6 +11,13 @@ spring:
       ddl-auto: create-drop
     show-sql: false
 
+  sql:
+    init:
+      mode: always
+
 jwt:
   secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
   access-token-expiration-millis: 3600000
+
+REDIS_HOST: localhost
+REDIS_PORT: 6379

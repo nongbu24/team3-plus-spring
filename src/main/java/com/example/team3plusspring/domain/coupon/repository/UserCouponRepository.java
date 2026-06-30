@@ -1,12 +1,17 @@
 package com.example.team3plusspring.domain.coupon.repository;
 
 import java.util.List;
+import java.util.Optional;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.team3plusspring.domain.coupon.entity.UserCoupon;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
+public interface UserCouponRepository extends JpaRepository<UserCoupon, Long>, UserCouponRepositoryCustom{
 
 	/**
 	 * 같은 회원이 같은 쿠폰 이벤트를 중복으로 발급받았는지 확인한다.
@@ -15,10 +20,18 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
 	 */
 	boolean existsByUserIdAndCouponEventId(Long userId, Long couponEventId);
 
-	/**
-	 * 특정 회원이 발급 받은 모든 쿠폰을 조회한다.
-	 * "내 쿠폰 목록 조회" API(GET /api/users/me/coupons)에서
-	 * 로그인한 유저의 userId로 그 사람이 가진 쿠폰을 전부 가져오는 데 사용한다.
-	 */
-	List<UserCoupon> findAllByUserId(Long userId);
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+    select uc
+    from UserCoupon uc
+    where uc.id = :userCouponId
+      and uc.userId = :userId
+""")
+	Optional<UserCoupon> findByIdAndUserIdForUpdate(@Param("userCouponId") Long userCouponId, @Param("userId") Long userId);
+
+	long countByCouponEventId(Long couponEventId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select uc from UserCoupon uc where uc.orderId = :orderId")
+	Optional<UserCoupon> findByOrderIdForUpdate(@Param("orderId") Long orderId);
 }

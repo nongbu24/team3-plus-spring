@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.cart.controller;
 
 import com.example.team3plusspring.domain.cart.dto.AddCartItemRequest;
 import com.example.team3plusspring.domain.cart.dto.AddCartItemResponse;
+import com.example.team3plusspring.domain.cart.dto.GetCartResponse;
 import com.example.team3plusspring.domain.cart.service.CartService;
 import com.example.team3plusspring.global.response.ApiResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
@@ -10,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,5 +28,13 @@ public class CartController {
         AddCartItemResponse response = cartService.add(userDetails, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(HttpStatus.CREATED, response));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<GetCartResponse>> getMyCart(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        GetCartResponse response = cartService.getMyCart(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, response));
     }
 }
