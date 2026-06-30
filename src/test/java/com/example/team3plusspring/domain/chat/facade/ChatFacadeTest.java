@@ -129,6 +129,32 @@ class ChatFacadeTest {
         assertThat(messageCaptor.getValue().getMessageType()).isEqualTo(ChatMessageType.SYSTEM);
     }
 
+    @Test
+    void 명시적퇴장_고객이면_채팅방을완료상태로변경한다() {
+        // given
+        User user = user(1L);
+        ChatRoom room = room(10L, user);
+        ChatMember joinedMember = ChatMember.join(room, user);
+
+        given(chatRoomRepository.findByIdWithLock(room.getId())).willReturn(Optional.of(room));
+        given(chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId()))
+                .willReturn(Optional.of(joinedMember));
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", 100L);
+
+            return message;
+        });
+
+        // when
+        ChatMessageResponse response = chatFacade.leaveRoom(room.getId(), user);
+
+        // then
+        assertThat(room.getStatus()).isEqualTo(ChatStatus.COMPLETED);
+        assertThat(joinedMember.getLeftAt()).isNotNull();
+        assertThat(response.getContent()).isEqualTo("홍길동님이 퇴장했습니다");
+    }
+
     private User user(Long id) {
         User user = User.create("user@example.com", "Password123", "홍길동", "010-1234-5678");
         ReflectionTestUtils.setField(user, "id", id);

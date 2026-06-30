@@ -68,6 +68,10 @@ public class ChatRoom extends BaseEntity {
         return customerId.equals(user.getId());
     }
 
+    public boolean isCustomerUser(User user) {
+        return isCustomer(user);
+    }
+
     private boolean isAccessibleAdmin(User user) {
         return user.getRole() == UserRole.ADMIN
                 && (adminId == null || adminId.equals(user.getId()));
@@ -96,5 +100,9 @@ public class ChatRoom extends BaseEntity {
         }
 
         this.status = nextStatus;
+    }
+
+    public void complete() {
+        this.status = ChatStatus.COMPLETED;
     }
 }

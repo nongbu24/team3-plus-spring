@@ -61,6 +61,10 @@ public class ChatFacade {
         ChatRoom chatRoom = findOpenRoom(roomId, user, false);
         leaveIfJoined(chatRoom, user);
 
+        if (chatRoom.isCustomerUser(user)) {
+            chatRoom.complete();
+        }
+
         return saveSystemMessage(chatRoom, user, user.getName() + "님이 퇴장했습니다");
     }
 
@@ -147,6 +151,7 @@ public class ChatFacade {
 
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+
             return;
         }
 
