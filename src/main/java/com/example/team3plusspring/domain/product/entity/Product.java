@@ -10,9 +10,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "products", indexes = {
-        @Index(name = "idx_product_category_id", columnList = "category_id"),
-        @Index(name = "idx_product_status", columnList = "status"),
-        @Index(name = "idx_product_best", columnList = "status, category_id, price")
+        @Index(name = "idx_product_real", columnList = "status, category_id, created_at")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
