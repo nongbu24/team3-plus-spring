@@ -8,6 +8,7 @@ import com.example.team3plusspring.domain.order.dto.GetOrderListResponse;
 import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.facade.OrderFacade;
 import com.example.team3plusspring.global.response.ApiResponse;
+import com.example.team3plusspring.global.response.PageResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -62,15 +63,15 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<GetOrderListResponse>>> getOrderList(
+    public ResponseEntity<ApiResponse<PageResponse<GetOrderListResponse>>> getOrderList(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Page<GetOrderListResponse> response = orderFacade.getOrderList(userDetails.getUserId(), status, page, size);
+        Page<GetOrderListResponse> orders = orderFacade.getOrderList(userDetails.getUserId(), status, page, size);
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(orders)));
     }
 
 }
