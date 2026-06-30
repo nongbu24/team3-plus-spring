@@ -22,7 +22,6 @@
 ```java
 createOrder()
 confirmPayment()
-refundPayment()
 decreaseStock()
 restoreCoupon()
 refreshMembershipGrade()
