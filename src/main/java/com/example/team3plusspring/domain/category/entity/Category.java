@@ -7,7 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "categories", indexes = {
+        @Index(name = "idx_category_name", columnList = "name")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Category extends BaseEntity {
