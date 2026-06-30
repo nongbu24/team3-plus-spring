@@ -1,5 +1,7 @@
 package com.example.team3plusspring.domain.coupon;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 
@@ -24,5 +26,8 @@ public class LocalCacheMultiInstanceTest {
 
 		System.out.println("인스턴스A 캐시: " + instanceA.getCache("couponEvents").get("0-10"));
 		System.out.println("인스턴스B 캐시: " + instanceB.getCache("couponEvents").get("0-10"));
+
+		assertThat(instanceA.getCache("couponEvents").get("0-10")).isNull();
+		assertThat(instanceB.getCache("couponEvents").get("0-10")).isNotNull();
 	}
 }

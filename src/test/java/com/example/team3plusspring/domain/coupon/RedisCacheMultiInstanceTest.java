@@ -1,5 +1,7 @@
 package com.example.team3plusspring.domain.coupon;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
@@ -32,10 +34,13 @@ public class RedisCacheMultiInstanceTest {
 		instanceA.getCache("couponEvents").put("0-10", "issuedQuantity=0");
 
 		System.out.println("인스턴스B 캐시(A가 쓴 직후): " + instanceB.getCache("couponEvents").get("0-10"));
+		assertThat(instanceB.getCache("couponEvents").get("0-10")).isNotNull();
 
 		instanceA.getCache("couponEvents").evict("0-10");
 
 		System.out.println("인스턴스A 캐시: " + instanceA.getCache("couponEvents").get("0-10"));
 		System.out.println("인스턴스B 캐시: " + instanceB.getCache("couponEvents").get("0-10"));
+		assertThat(instanceA.getCache("couponEvents").get("0-10")).isNull();
+		assertThat(instanceB.getCache("couponEvents").get("0-10")).isNull();
 	}
 }
