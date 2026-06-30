@@ -330,7 +330,7 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | 주문 ID | id | BIGINT | NOT NULL | PK                                                               |
 | 회원 ID | user_id | BIGINT | NOT NULL | FK: users.id                                                     |
 | 주문번호 | order_number | VARCHAR(50) | NOT NULL | UNIQUE                                                           |
-| 주문 상태 | status | VARCHAR(30) | NOT NULL | PAYMENT_PENDING, COMPLETED, CANCELED |
+| 주문 상태 | status | VARCHAR(30) | NOT NULL | READY, PAYMENT_PENDING, COMPLETED, CANCELED |
 | 상품 총액 | total_product_amount | INT | NOT NULL | 주문 상품 합계                                                         |
 | 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 쿠폰 미 사용 시 0                                                      |
 | 최종 결제 금액 | payment_amount | INT | NOT NULL | 상품 총액 - 쿠폰 할인 금액                                                 |
@@ -362,8 +362,8 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 | --- | --- | --- |----------|-------------------------------------------|
 | 결제 ID | id | BIGINT | NOT NULL | PK                                        |
 | 주문 ID | order_id | BIGINT | NOT NULL | FK: orders.id, UNIQUE                     |
-| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NOT NULL | UNIQUE, 결제 승인 검증 시 저장 가능                  |
-| 결제 상태 | status | VARCHAR(30) | NOT NULL | PENDING, PAID, FAILED, CANCELED |
+| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NOT NULL | UNIQUE, 주문 생성 시 서버에서 생성                    |
+| 결제 상태 | status | VARCHAR(30) | NOT NULL | PENDING, PAID, FAILED, CANCEL_REQUESTED, CANCELED, REVIEW_REQUIRED |
 | 상품 총액 | total_product_amount | INT | NOT NULL | 서버 계산 값                                   |
 | 쿠폰 할인 금액 | used_coupon_amount | INT | NOT NULL | 서버 계산 값, 쿠폰 미 사용 시 0                      |
 | 최종 결제 금액 | payment_amount | INT | NOT NULL | PortOne 승인 금액과 비교                         |

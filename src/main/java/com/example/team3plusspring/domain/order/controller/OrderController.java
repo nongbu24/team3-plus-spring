@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.order.controller;
 
+import com.example.team3plusspring.domain.order.dto.CancelOrderResponse;
 import com.example.team3plusspring.domain.order.dto.CreateDirectOrderRequest;
 import com.example.team3plusspring.domain.order.dto.CreateOrderFromCartRequest;
 import com.example.team3plusspring.domain.order.dto.CreateOrderResponse;
@@ -72,6 +73,16 @@ public class OrderController {
         Page<GetOrderListResponse> orders = orderFacade.getOrderList(userDetails.getUserId(), status, page, size);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(orders)));
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<CancelOrderResponse>> cancelOrder(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long orderId
+    ) {
+        CancelOrderResponse response = orderFacade.cancel(userDetails.getUserId(), orderId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
 }

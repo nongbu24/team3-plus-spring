@@ -32,6 +32,8 @@ class PaymentCommandServiceTest {
 
     private static final Long PAYMENT_ID = 10L;
     private static final Long ORDER_ID = 20L;
+    private static final Long USER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
 
     @Mock
     PaymentService paymentService;
@@ -47,6 +49,60 @@ class PaymentCommandServiceTest {
 
     @InjectMocks
     PaymentCommandService paymentCommandService;
+
+    @Test
+    void 결제시작_준비상태주문과대기상태결제이면_주문을결제대기로변경한다() {
+        // given
+        Payment payment = payment();
+        Order order = readyOrder(USER_ID);
+
+        when(paymentService.findPaymentForUpdate(PAYMENT_ID)).thenReturn(payment);
+        when(orderService.findOrderForUpdate(ORDER_ID)).thenReturn(order);
+
+        // when
+        Payment result = paymentCommandService.startPayment(USER_ID, PAYMENT_ID);
+
+        // then
+        assertThat(result).isSameAs(payment);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+        verifyNoInteractions(productService, userCouponService);
+    }
+
+    @Test
+    void 결제시작_이미시작된결제이면_같은결제를반환한다() {
+        // given
+        Payment payment = payment();
+        Order order = order();
+
+        when(paymentService.findPaymentForUpdate(PAYMENT_ID)).thenReturn(payment);
+        when(orderService.findOrderForUpdate(ORDER_ID)).thenReturn(order);
+
+        // when
+        Payment result = paymentCommandService.startPayment(USER_ID, PAYMENT_ID);
+
+        // then
+        assertThat(result).isSameAs(payment);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+        verifyNoInteractions(productService, userCouponService);
+    }
+
+    @Test
+    void 결제시작_타인의주문이면_실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = readyOrder(OTHER_USER_ID);
+
+        when(paymentService.findPaymentForUpdate(PAYMENT_ID)).thenReturn(payment);
+        when(orderService.findOrderForUpdate(ORDER_ID)).thenReturn(order);
+
+        // when & then
+        assertThatThrownBy(() -> paymentCommandService.startPayment(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_ACCESS_DENIED));
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY);
+        verifyNoInteractions(productService, userCouponService);
+    }
 
     @Test
     void 결제완료_결제대기상태이면_결제와주문을완료한다() {
@@ -283,7 +339,14 @@ class PaymentCommandServiceTest {
     }
 
     private Order order() {
-        Order order = Order.create(1L, 10_000, 0);
+        Order order = readyOrder(USER_ID);
+        order.markAsPaymentPending();
+
+        return order;
+    }
+
+    private Order readyOrder(Long userId) {
+        Order order = Order.create(userId, 10_000, 0);
         ReflectionTestUtils.setField(order, "id", ORDER_ID);
         return order;
     }

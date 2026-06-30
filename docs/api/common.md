@@ -113,6 +113,7 @@ POST /api/payments/webhook
 
 | 값 | 설명 |
 | --- | --- |
+| `READY` | PG 결제 시작 전 주문 준비 상태 |
 | `PAYMENT_PENDING` | 결제 대기 |
 | `COMPLETED` | 주문 완료 |
 | `CANCELED` | 결제 전 주문 취소 |
@@ -194,6 +195,7 @@ POST /api/payments/webhook
 | `PAYMENT_ALREADY_PROCESSED` | 409 | 이미 처리된 결제 |
 | `PAYMENT_AMOUNT_MISMATCH` | 400 | 결제 승인 금액 불일치 |
 | `PAYMENT_STATUS_NOT_PAID` | 400 | 외부 결제 상태가 성공 상태가 아님 |
+| `PAYMENT_NOT_STARTED` | 409 | 결제 시작 API를 호출하지 않음 |
 | `PAYMENT_NOT_COMPLETED` | 409 | 외부 결제가 아직 완료되지 않음 |
 | `PAYMENT_CANCEL_PENDING` | 409 | PG 결제 취소 처리 중 |
 | `PAYMENT_REVIEW_REQUIRED` | 409 | PG 결제 취소 결과 확인 필요 |

@@ -3,6 +3,7 @@ package com.example.team3plusspring.domain.payment.service;
 import com.example.team3plusspring.domain.coupon.service.UserCouponService;
 import com.example.team3plusspring.domain.order.entity.Order;
 import com.example.team3plusspring.domain.order.entity.OrderItem;
+import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.service.OrderService;
 import com.example.team3plusspring.domain.payment.entity.Payment;
 import com.example.team3plusspring.domain.payment.entity.PaymentStatus;
@@ -23,6 +24,29 @@ public class PaymentCommandService {
     private final OrderService orderService;
     private final ProductService productService;
     private final UserCouponService userCouponService;
+
+    @Transactional
+    public Payment startPayment(Long userId, Long paymentId) {
+        Payment payment = paymentService.findPaymentForUpdate(paymentId);
+        Order order = orderService.findOrderForUpdate(payment.getOrderId());
+
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+
+        if (payment.getStatus() == PaymentStatus.PENDING
+                && order.getStatus() == OrderStatus.PAYMENT_PENDING) {
+            return payment;
+        }
+
+        if (payment.getStatus() != PaymentStatus.PENDING
+                || order.getStatus() != OrderStatus.READY) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+        }
+
+        order.markAsPaymentPending();
+        return payment;
+    }
 
     @Transactional
     public Payment completePayment(Long paymentId) {

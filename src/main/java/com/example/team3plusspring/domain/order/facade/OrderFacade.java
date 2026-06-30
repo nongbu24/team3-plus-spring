@@ -11,6 +11,7 @@ import com.example.team3plusspring.domain.order.entity.OrderItem;
 import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.service.OrderService;
 import com.example.team3plusspring.domain.payment.entity.Payment;
+import com.example.team3plusspring.domain.payment.entity.PaymentStatus;
 import com.example.team3plusspring.domain.payment.service.PaymentService;
 import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.service.ProductService;
@@ -187,5 +188,31 @@ public class OrderFacade {
     public Page<GetOrderListResponse> getOrderList(Long userId, OrderStatus status, int page, int size) {
         return orderService.findOrders(userId, status, page, size)
                 .map(GetOrderListResponse::from);
+    }
+
+    @Transactional
+    public CancelOrderResponse cancel(Long userId, Long orderId) {
+        Payment payment = paymentService.findPaymentForUpdateByOrderId(orderId);
+        Order order = orderService.findOrderForUpdate(orderId);
+
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        if (order.getStatus() != OrderStatus.READY
+                || payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ORDER_CANCEL_NOT_ALLOWED);
+        }
+
+        OrderStatus previousStatus = order.getStatus();
+        List<OrderItem> orderItems = orderService.findOrderItems(orderId);
+
+        productService.restoreStocks(orderItems);
+        userCouponService.restoreCouponByOrderId(orderId);
+
+        order.markAsCancelled();
+        payment.markAsCanceled();
+
+        return CancelOrderResponse.of(order, previousStatus);
     }
 }

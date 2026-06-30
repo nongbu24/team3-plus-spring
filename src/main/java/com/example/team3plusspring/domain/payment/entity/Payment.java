@@ -75,10 +75,6 @@ public class Payment extends BaseEntity {
         changeStatus(PaymentStatus.REVIEW_REQUIRED);
     }
 
-    public void markAsRefund() {
-        changeStatus(PaymentStatus.REFUNDED);
-    }
-
     private String generatePortOnePaymentId() {
         return "pay_" + UUID.randomUUID();
     }

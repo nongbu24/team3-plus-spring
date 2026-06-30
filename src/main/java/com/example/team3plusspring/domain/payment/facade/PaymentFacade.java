@@ -1,9 +1,11 @@
 package com.example.team3plusspring.domain.payment.facade;
 
 import com.example.team3plusspring.domain.order.entity.Order;
+import com.example.team3plusspring.domain.order.entity.OrderStatus;
 import com.example.team3plusspring.domain.order.service.OrderService;
 import com.example.team3plusspring.domain.payment.dto.ConfirmPaymentRequest;
 import com.example.team3plusspring.domain.payment.dto.ConfirmPaymentResponse;
+import com.example.team3plusspring.domain.payment.dto.StartPaymentResponse;
 import com.example.team3plusspring.domain.payment.entity.Payment;
 import com.example.team3plusspring.domain.payment.entity.PaymentStatus;
 import com.example.team3plusspring.domain.payment.port.PaymentCancellationResult;
@@ -28,6 +30,11 @@ public class PaymentFacade {
     private final PaymentCommandService paymentCommandService;
     private final PaymentGateway paymentGateway;
     private final OrderService orderService;
+
+    public StartPaymentResponse start(Long userId, Long paymentId) {
+        Payment payment = paymentCommandService.startPayment(userId, paymentId);
+        return StartPaymentResponse.from(payment);
+    }
 
     // 클라이언트 결제 완료 콜백 이후 서버에서 결제를 확정한다.
     public ConfirmPaymentResponse confirm(Long userId, @Valid ConfirmPaymentRequest request) {
@@ -55,7 +62,11 @@ public class PaymentFacade {
             throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
         }
 
-        // 결제 대기 상태가 아니면 결제 확정 처리가 불가능하다.
+        if (order.getStatus() == OrderStatus.READY) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_STARTED);
+        }
+
+        // 결제 진행 상태가 아니면 결제 확정 처리가 불가능하다.
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
         }
