@@ -6,7 +6,6 @@ Service는 유스케이스를 표현한다.
 
 ```java
 confirmPayment(userId, request)
-refundPayment(userId, portOnePaymentId, request)
 createOrder(userId, request)
 ```
 

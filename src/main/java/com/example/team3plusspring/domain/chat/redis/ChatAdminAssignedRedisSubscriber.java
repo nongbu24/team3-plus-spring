@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Profile("redis-chat")
 @RequiredArgsConstructor
 public class ChatAdminAssignedRedisSubscriber implements MessageListener {
+
     @Qualifier("chatAdminAssignedRedisSerializer")
     private final RedisSerializer<ChatAdminAssignedEvent> chatAdminAssignedRedisSerializer;
     private final ChatAdminSessionService chatAdminSessionService;

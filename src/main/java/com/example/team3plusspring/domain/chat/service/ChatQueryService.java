@@ -26,27 +26,27 @@ public class ChatQueryService {
     public List<ChatRoomMessagesResponse> getRecentMessagesGroupedByRoom(int size) {
         Map<Long, List<ChatMessageResponse>> messagesByRoom = new LinkedHashMap<>();
 
-        messageRepository.findRecentMessages(pageable(size))
+        messageRepository.findRecent(pageable(size))
                 .forEach(message -> messagesByRoom
                         .computeIfAbsent(message.getChatRoom().getId(), roomId -> new ArrayList<>())
                         .add(ChatMessageResponse.from(message)));
 
         return messagesByRoom.entrySet()
                 .stream()
-                .map(entry -> new ChatRoomMessagesResponse(entry.getKey(), entry.getValue()))
+                .map(entry -> ChatRoomMessagesResponse.of(entry.getKey(), entry.getValue()))
                 .toList();
     }
 
     public List<ChatMessageResponse> getMessagesBeforeByRoom(Long roomId, Long lastMessageId, User user, int size) {
         chatRoomService.validateRoomAccess(roomId, user);
 
-        return toResponses(messageRepository.findMessagesBeforeByRoom(roomId, lastMessageId, pageable(size)));
+        return toResponses(messageRepository.findBefore(roomId, lastMessageId, pageable(size)));
     }
 
     public List<ChatMessageResponse> getMessagesAfterByRoom(Long roomId, Long lastMessageId, User user, int size) {
         chatRoomService.validateRoomAccess(roomId, user);
 
-        return toResponses(messageRepository.findMessagesAfterByRoom(roomId, lastMessageId, pageable(size)));
+        return toResponses(messageRepository.findAfter(roomId, lastMessageId, pageable(size)));
     }
 
     public List<ChatMessageResponse> getRecentMessagesByRoom(Long roomId, User user, int size) {

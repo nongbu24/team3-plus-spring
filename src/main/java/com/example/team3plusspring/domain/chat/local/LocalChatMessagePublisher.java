@@ -1,6 +1,7 @@
-package com.example.team3plusspring.domain.chat.service;
+package com.example.team3plusspring.domain.chat.local;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

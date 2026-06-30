@@ -6,10 +6,10 @@ spring:
     driver-class-name: org.h2.Driver
 
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: create-drop
     show-sql: false
-    defer-datasource-initialization: true
 
   sql:
     init:

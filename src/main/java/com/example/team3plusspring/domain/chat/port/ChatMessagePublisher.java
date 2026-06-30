@@ -1,4 +1,4 @@
-package com.example.team3plusspring.domain.chat.service;
+package com.example.team3plusspring.domain.chat.port;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 

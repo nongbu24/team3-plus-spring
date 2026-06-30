@@ -58,7 +58,7 @@ public class ChatRoom extends BaseEntity {
         throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
     }
 
-    public void validateNotCompleted() {
+    public void validateOpen() {
         if (status == ChatStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_ALREADY_COMPLETED);
         }
@@ -90,8 +90,8 @@ public class ChatRoom extends BaseEntity {
         }
     }
 
-    public void changeStatus(ChatStatus nextStatus) {
-        if (!this.status.canChangeTo(nextStatus)) {
+    public void changeTo(ChatStatus nextStatus) {
+        if (!this.status.canChange(nextStatus)) {
             throw new BusinessException(ErrorCode.INVALID_CHAT_STATUS_TRANSITION);
         }
 
