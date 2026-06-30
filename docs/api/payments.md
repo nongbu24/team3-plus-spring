@@ -45,8 +45,7 @@
     "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
     "status": "PAID",
     "totalProductAmount": 78000,
-    "usedPointAmount": 5000,
-    "paymentAmount": 73000,
+    "paymentAmount": 78000,
     "approvedAt": "2026-06-22T18:35:00+09:00"
   }
 }
@@ -142,4 +141,3 @@ PortOne에서 전달하는 웹훅 payload를 그대로 받습니다.
 - 클라이언트 요청과 웹훅은 순서가 보장되지 않으므로 결제 처리는 멱등해야 합니다.
 - 결제 금액은 주문 생성 시 서버가 계산한 금액을 기준으로 검증합니다.
 - PortOne API Secret과 웹훅 Secret은 응답에 포함하지 않습니다.
-- 결제 완료 이후 취소는 환불 API인 `/api/refunds`에서 처리합니다.

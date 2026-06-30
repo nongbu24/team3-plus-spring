@@ -7,7 +7,6 @@ import com.example.team3plusspring.domain.auth.dto.SignupRequest;
 import com.example.team3plusspring.domain.auth.dto.SignupResponse;
 import com.example.team3plusspring.domain.auth.service.AuthService;
 import com.example.team3plusspring.domain.cart.service.CartService;
-import com.example.team3plusspring.domain.point.service.PointAccountService;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.service.UserService;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -22,7 +21,6 @@ public class AuthFacade {
     private final AuthService authService;
     private final UserService userService;
     private final CartService cartService;
-    private final PointAccountService pointAccountService;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -37,7 +35,6 @@ public class AuthFacade {
                 request.getPhone()
         );
         cartService.createCart(savedUser);
-        pointAccountService.createPointAccount(savedUser);
 
         return SignupResponse.from(savedUser);
     }

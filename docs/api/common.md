@@ -116,8 +116,6 @@ POST /api/payments/webhook
 | `PAYMENT_PENDING` | 결제 대기 |
 | `COMPLETED` | 주문 완료 |
 | `CANCELED` | 결제 전 주문 취소 |
-| `REFUND_REQUESTED` | 환불 요청 |
-| `REFUNDED` | 환불 완료 |
 
 ### PaymentStatus
 
@@ -127,27 +125,6 @@ POST /api/payments/webhook
 | `PAID` | 결제 완료 |
 | `FAILED` | 결제 실패 |
 | `CANCELED` | 결제 취소 |
-| `REFUNDED` | 환불 완료 |
-
-### PointHistoryType
-
-| 값         | 설명        |
-|-----------|-----------|
-| `EARN`    | 포인트 적립    |
-| `USE`     | 포인트 사용    |
-| `RESTORE` | 사용 포인트 복구 |
-| `REVOKE`  | 적립 포인트 회수 |
-
-
-### RefundStatus
-
-| 값 | 설명 |
-| --- | --- |
-| `REQUESTED` | 환불 요청 |
-| `APPROVED` | 환불 승인 |
-| `REJECTED` | 환불 거절 |
-| `COMPLETED` | 환불 완료 |
-| `FAILED` | 환불 실패 |
 
 ### WebhookStatus
 
@@ -207,12 +184,6 @@ POST /api/payments/webhook
 | `PAYMENT_AMOUNT_MISMATCH` | 400 | 결제 승인 금액 불일치 |
 | `PAYMENT_STATUS_NOT_PAID` | 400 | 외부 결제 상태가 성공 상태가 아님 |
 | `PAYMENT_WEBHOOK_INVALID` | 400 | 결제 웹훅 요청이 올바르지 않음 |
-| `REFUND_NOT_ALLOWED` | 409 | 환불 가능한 결제 상태가 아님 |
-| `REFUND_NOT_FOUND` | 404 | 환불 내역 없음 |
-| `REFUND_AMOUNT_INVALID` | 400 | 환불 금액 오류 |
-| `POINT_ACCOUNT_NOT_FOUND` | 404 | 포인트 계정 없음 |
-| `INSUFFICIENT_POINT` | 400 | 포인트 잔액 부족 |
-| `POINT_HISTORY_NOT_FOUND` | 404 | 포인트 이력 없음 |
 | `POPULAR_SEARCH_KEYWORD_NOT_FOUND` | 404 | 인기 검색어 없음 |
 | `WEBHOOK_SIGNATURE_INVALID` | 400 | 웹훅 서명 검증 실패 |
 | `WEBHOOK_PAYLOAD_INVALID` | 400 | 웹훅 본문 파싱 실패 |

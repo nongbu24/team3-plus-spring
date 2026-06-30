@@ -22,9 +22,7 @@
 ```java
 createOrder()
 confirmPayment()
-refundPayment()
 decreaseStock()
-restoreUsedPoint()
 refreshMembershipGrade()
 ```
 
@@ -54,7 +52,6 @@ handleWebhook()
 paymentAmount
 orderTotalAmount
 currentUserId
-usedPointAmount
 ```
 
 비권장:

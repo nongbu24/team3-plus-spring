@@ -26,12 +26,10 @@
 | 필드 | 타입 | 필수 | 설명 |
 | --- | --- | --- | --- |
 | `cartItemIds` | `Array<Long>` | Y | 주문할 장바구니 상품 ID 목록 |
-| `usedPointAmount` | `BigDecimal` | N | 사용할 포인트 금액. 사용하지 않으면 `0` |
 
 ```json
 {
-  "cartItemIds": [100, 101],
-  "usedPointAmount": 5000
+  "cartItemIds": [100, 101]
 }
 ```
 
@@ -48,8 +46,7 @@
     "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
     "status": "PAYMENT_PENDING",
     "totalProductAmount": 78000,
-    "usedPointAmount": 5000,
-    "paymentAmount": 73000,
+    "paymentAmount": 78000,
     "items": [
       {
         "orderItemId": 400,
@@ -87,7 +84,6 @@
 - `order_items`는 주문 생성 API 내부에서 함께 생성되며, 단독 생성 API를 만들지 않습니다.
 - 최종 주문 금액과 결제 금액은 클라이언트 요청값을 신뢰하지 않고 서버에서 다시 계산합니다.
 - 상품이 판매중이 아니거나 재고가 부족하면 주문을 생성하지 않습니다.
-- 포인트를 사용하는 경우 현재 포인트 잔액을 검증합니다.
 
 ### Errors
 
@@ -101,7 +97,6 @@
 | `PRODUCT_NOT_FOUND` | 404 | 상품 없음 |
 | `PRODUCT_NOT_ON_SALE` | 400 | 판매중 상품이 아님 |
 | `ORDER_STOCK_SHORTAGE` | 409 | 주문 생성 중 재고 부족 |
-| `INSUFFICIENT_POINT` | 400 | 포인트 잔액 부족 |
 
 ## GET `/api/orders`
 
@@ -131,8 +126,7 @@
         "orderNumber": "ORD-20260622-000001",
         "status": "PAYMENT_PENDING",
         "totalProductAmount": 78000,
-        "usedPointAmount": 5000,
-        "paymentAmount": 73000,
+        "paymentAmount": 78000,
         "orderedAt": "2026-06-22T18:30:00+09:00"
       }
     ],
@@ -182,8 +176,7 @@
     "orderNumber": "ORD-20260622-000001",
     "status": "PAYMENT_PENDING",
     "totalProductAmount": 78000,
-    "usedPointAmount": 5000,
-    "paymentAmount": 73000,
+    "paymentAmount": 78000,
     "items": [
       {
         "orderItemId": 400,
@@ -216,7 +209,7 @@
 
 ## POST `/api/orders/{orderId}/cancel`
 
-결제 전 주문을 취소합니다. 결제 완료 이후 취소는 환불 API에서 처리합니다.
+결제 전 주문을 취소합니다.
 
 - 인증: 필요
 - HTTP Status: `200 OK`
@@ -242,7 +235,6 @@
     "orderNumber": "ORD-20260622-000001",
     "previousStatus": "PAYMENT_PENDING",
     "currentStatus": "CANCELED",
-    "restoredPointAmount": 5000,
     "canceledAt": "2026-06-22T18:40:00+09:00"
   }
 }
@@ -253,8 +245,7 @@
 - 주문 소유자만 취소할 수 있습니다.
 - 주문 상태가 `PAYMENT_PENDING`인 결제 전 주문만 직접 취소할 수 있습니다.
 - 취소 시 주문 상태는 `CANCELED`로 변경합니다.
-- 주문 생성 시 차감하거나 예약한 재고와 포인트가 있다면 함께 복구합니다.
-- 결제 완료 이후 취소는 `/api/refunds`를 사용합니다.
+- 주문 생성 시 예약한 재고가 있다면 함께 복구합니다.
 
 ### Errors
 
@@ -268,7 +259,7 @@
 ## 설계 메모
 
 - 주문 생성 시 상품명과 상품 가격은 주문 당시 값으로 복사합니다.
-- 결제 전 취소는 주문 도메인에서 처리하고, 결제 후 취소는 환불 도메인에서 처리합니다.
+- 결제 전 취소는 주문 도메인에서 처리합니다.
 - 최종 결제 금액은 서버에서 다시 계산해야 합니다.
 - 주문 생성과 재고 차감은 하나의 트랜잭션으로 처리합니다.
 - 주문 생성 후 장바구니 상품 삭제 시점은 결제 흐름과 함께 팀 정책으로 정합니다.

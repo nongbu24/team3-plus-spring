@@ -1,7 +1,6 @@
 package com.example.team3plusspring.domain.auth;
 
 import com.example.team3plusspring.domain.cart.repository.CartRepository;
-import com.example.team3plusspring.domain.point.repository.PointAccountRepository;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.domain.user.repository.UserRepository;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -37,9 +36,6 @@ class AuthControllerTest {
 
     @Autowired
     CartRepository cartRepository;
-
-    @Autowired
-    PointAccountRepository pointAccountRepository;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -82,7 +78,6 @@ class AuthControllerTest {
         assertThat(user.getPassword()).isNotEqualTo(rawPassword);
         assertThat(passwordEncoder.matches(rawPassword, user.getPassword())).isTrue();
         assertThat(cartRepository.existsByUserId(user.getId())).isTrue();
-        assertThat(pointAccountRepository.existsByUserId(user.getId())).isTrue();
     }
 
     @Test
@@ -219,7 +214,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.name").value("홍길동"))
                 .andExpect(jsonPath("$.data.phone").value("010-1234-5678"))
                 .andExpect(jsonPath("$.data.role").value("USER"))
-                .andExpect(jsonPath("$.data.pointBalance").value(0))
                 .andExpect(jsonPath("$.data.password").doesNotExist());
     }
 

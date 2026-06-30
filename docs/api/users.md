@@ -30,8 +30,7 @@
     "email": "customer@example.com",
     "name": "홍길동",
     "phone": "010-1234-5678",
-    "role": "USER",
-    "pointBalance": 5000
+    "role": "USER"
   }
 }
 ```
@@ -45,7 +44,6 @@
 | `name` | `String` | 회원 이름 |
 | `phone` | `String` | 휴대폰 번호 |
 | `role` | `String` | 권한 |
-| `pointBalance` | `Long`   | 보유 포인트 |
 
 ### 처리 규칙
 

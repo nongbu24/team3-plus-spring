@@ -70,16 +70,6 @@ public enum ErrorCode {
     PAYMENT_STATUS_NOT_PAID(HttpStatus.BAD_REQUEST, "PortOne 결제 상태가 성공 상태가 아닙니다."),
     PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST, "결제 웹훅 요청이 올바르지 않습니다."),
 
-    // Refund
-    REFUND_NOT_ALLOWED(HttpStatus.CONFLICT, "환불 가능한 결제 상태가 아닙니다."),
-    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "환불 내역을 찾을 수 없습니다."),
-    REFUND_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "환불 금액이 올바르지 않습니다."),
-
-    // Point
-    POINT_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 계정을 찾을 수 없습니다."),
-    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "포인트 잔액이 부족합니다."),
-    POINT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 이력을 찾을 수 없습니다."),
-
     // Search
     POPULAR_SEARCH_KEYWORD_NOT_FOUND(HttpStatus.NOT_FOUND, "인기 검색어를 찾을 수 없습니다."),
 

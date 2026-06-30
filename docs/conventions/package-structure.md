@@ -4,44 +4,46 @@
 
 ```
 domain
- └─ payment
+ └─ {domain-name}
      ├─ controller
      ├─ service
      ├─ repository
      ├─ entity
      ├─ dto
-     └─ exception
+     └─ facade
 ```
+
+도메인 성격에 따라 필요한 하위 패키지만 생성한다.
 
 예시:
 
 ```
-com.example.payment
+com.example.team3plusspring
  ├─ global
  │   ├─ config
+ │   ├─ entity
  │   ├─ exception
  │   ├─ response
  │   └─ security
+ │       └─ jwt
  └─ domain
+     ├─ auth
+     ├─ cart
+     ├─ coupon
      ├─ user
-     ├─ product
-     ├─ order
-     ├─ payment
-     ├─ point
-     ├─ membership
-     └─ subscription
+     └─ product
 ```
 
 도메인별 내부 구조:
 
 ```
-domain/payment
+domain/{domain-name}
  ├─ controller
  ├─ service
  ├─ repository
  ├─ entity
  ├─ dto
- └─ client
+ └─ facade
 ```
 
 `global`에는 특정 도메인에 속하지 않는 공통 설정만 둔다.
