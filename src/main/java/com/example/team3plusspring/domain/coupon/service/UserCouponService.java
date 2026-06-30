@@ -69,4 +69,14 @@ public class UserCouponService {
         userCouponRepository.findByOrderIdForUpdate(orderId)
                 .ifPresent(UserCoupon::restore);
     }
+
+    public boolean existsByUserIdAndCouponEventId(Long userId, Long couponEventId) {
+        return userCouponRepository.existsByUserIdAndCouponEventId(userId, couponEventId);
+    }
+
+    @Transactional
+    public UserCoupon issue(Long userId, Long couponEventId, int validDays) {
+        UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId, validDays);
+        return userCouponRepository.save(userCoupon);
+    }
 }
