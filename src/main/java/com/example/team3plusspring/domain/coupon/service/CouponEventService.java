@@ -23,7 +23,6 @@ import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
-import com.example.team3plusspring.global.lock.RedisLock;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +33,7 @@ public class CouponEventService {
 	private final CouponEventRepository couponEventRepository;
 	private final UserCouponRepository userCouponRepository;
 	private final CouponEventCacheReader couponEventCacheReader;
+	private final CouponStockCounter couponStockCounter;
 
 	/**
 	 * 쿠폰 이벤트를 등록하는 메서드
@@ -67,6 +67,7 @@ public class CouponEventService {
 		);
 
 		CouponEvent savedCouponEvent = couponEventRepository.save(couponEvent);
+		couponStockCounter.initStock(savedCouponEvent.getId(), request.getTotalQuantity());
 
 		return CouponEventResponse.from(savedCouponEvent);
 	}
@@ -93,8 +94,8 @@ public class CouponEventService {
 	 * 쿠폰을 발급하는 메서드
 	 * 쿠폰 이벤트가 발급 가능 상태(OPEN, 발급 기간 내)인지, 이미 발급받은 적이 있는지 확인한 뒤
 	 * 발급 수량을 1 증가시키고 UserCoupon을 생성함
-	 * 동시에 여러 요청이 들어와도 재고를 초과해서 발급되지 않도록, 분산 락(@RedisLock)으로
-	 * 같은 쿠폰 이벤트에 대한 동시 접근을 한 번에 하나씩만 허용함
+	 * 동시에 여러 요청이 들어와도 재고를 초과해서 발급되지 않도록, Redis 원자적 카운터(couponStockCounter)로
+	 * 재고를 먼저 차감한 뒤에만 DB 반영을 진행함
 	 *
 	 * @param userId 쿠폰을 발급받는 사용자 ID
 	 * @param couponEventId 발급받을 쿠폰 이벤트 ID
@@ -103,7 +104,6 @@ public class CouponEventService {
 
 	@Transactional
 	@CacheEvict(value = "couponEvents", allEntries = true)
-	@RedisLock(key = "lock:coupon:", argIndex = 1)
 	public IssueCouponResponse issueCoupon(Long userId, Long couponEventId) {
 
 		CouponEvent couponEvent = couponEventRepository.findById(couponEventId)
@@ -115,6 +115,10 @@ public class CouponEventService {
 
 		if (userCouponRepository.existsByUserIdAndCouponEventId(userId, couponEventId)) {
 			throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
+		}
+
+		if (!couponStockCounter.decreaseStock(couponEventId)) {
+			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
 		}
 
 		long updatedRows = couponEventRepository.increaseIssuedQuantity(couponEventId);
