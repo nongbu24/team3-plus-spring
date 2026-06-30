@@ -10,6 +10,7 @@
 | --- | --- | --- | --- |
 | `POST` | `/api/coupon-events` | 쿠폰 이벤트 등록 | 필요 (관리자) |
 | `GET` | `/api/coupon-events` | 쿠폰 이벤트 목록 조회 | 불필요 |
+| `POST` | `/api/coupon-events/{couponEventId}/issue` | 쿠폰 발급 | 필요 |
 | `GET` | `/api/users/me/coupons` | 내 쿠폰 목록 조회 | 필요 |
 
 ## POST `/api/coupon-events`
@@ -101,8 +102,7 @@
         "issuedQuantity": 0,
         "status": "OPEN",
         "startsAt": "2026-06-23T00:00:00",
-        "endsAt": "2026-06-30T23:59:59",
-        "validDays": 30
+        "endsAt": "2026-06-30T23:59:59"
       }
     ],
     "totalElements": 1,
@@ -122,6 +122,44 @@
 | 코드 | HTTP | 발생 조건 |
 | --- | --- | --- |
 | VALIDATION_FAILED | 400 | `page`가 0 미만이거나, `size`가 1 미만 또는 100 초과인 경우 |
+
+## POST `/api/coupon-events/{couponEventId}/issue`
+
+로그인한 사용자가 특정 쿠폰 이벤트의 쿠폰을 발급받습니다.
+
+- 인증: 필요
+- HTTP Status: `201 Created`
+- 이미 발급받은 쿠폰이거나, 재고가 소진됐거나, 발급 기간이 아니면 발급할 수 없습니다.
+
+### Path Variable
+
+| 이름 | 타입 | 설명 |
+| --- | --- | --- |
+| `couponEventId` | `Long` | 발급받을 쿠폰 이벤트 ID |
+
+### Response Body
+```json
+{
+  "status": 201,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "id": 1,
+    "couponEventId": 1,
+    "status": "ISSUED",
+    "issuedAt": "2026-06-30T10:00:00"
+  }
+}
+```
+
+### Error
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| UNAUTHORIZED | 401 | 인증되지 않은 요청 |
+| COUPON_EVENT_NOT_FOUND | 404 | 쿠폰 이벤트가 존재하지 않는 경우 |
+| COUPON_EVENT_CLOSED | 409 | 발급 기간이 아니거나 종료된 쿠폰 이벤트인 경우 |
+| COUPON_ALREADY_ISSUED | 409 | 이미 발급받은 쿠폰인 경우 |
+| COUPON_STOCK_EXHAUSTED | 409 | 재고가 소진된 경우 |
 
 ## GET `/api/users/me/coupons`
 
