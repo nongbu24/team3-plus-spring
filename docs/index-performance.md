@@ -2,150 +2,156 @@
 
 ## 개요
 
-상품 테이블에 100만 건의 데이터를 삽입한 후, 인덱스 적용 전후의 성능을 EXPLAIN과 실행 시간으로 비교 분석했습니다.
+상품 테이블에 100만 건의 데이터를 삽입한 후, **실제 ProductRepository.findByCondition()이
+생성하는 SQL**을 기준으로 인덱스 적용 전후 성능을 분석했습니다.
 
 - 테스트 데이터: 1,000,000건
-- 분석 도구: MySQL EXPLAIN, SET profiling = 1
-- 테스트 쿼리 조건: 가격 범위(BETWEEN), 카테고리(=), 판매 상태(=), 상품명 검색(LIKE) — 총 4개 조건
 
 ---
 
-## 테스트 쿼리
+## 실제 API가 실행하는 SQL
+
+`GET /api/v1/products?categoryId=1&keyword=Galaxy&status=ON_SALE` 호출 시
+Hibernate가 생성한 실제 SQL입니다.
 
 ```sql
-SELECT p.id, p.name, p.price, p.status, c.name as category_name
-FROM products p
-LEFT JOIN categories c ON p.category_id = c.id
-WHERE p.price BETWEEN 100000 AND 500000
-AND p.category_id = 1
-AND p.status = 'ON_SALE'
-AND p.name LIKE '%Galaxy%';
+SELECT p1_0.id, p1_0.category_id, p1_0.created_at, p1_0.description,
+       p1_0.name, p1_0.price, p1_0.status, p1_0.stock, p1_0.updated_at
+FROM products p1_0
+WHERE (? IS NULL OR p1_0.category_id = ?)
+  AND (? IS NULL OR p1_0.name LIKE ? ESCAPE '')
+  AND (? IS NULL OR p1_0.status = ?)
+ORDER BY p1_0.created_at DESC
+LIMIT ?
 ```
 
-실제 상품 목록 API에서 사용 가능한 카테고리, 가격대, 판매 상태, 검색어 4가지 조건을 모두 포함했으며, 인덱스 컬럼 순서 비교(A/B/C)도 이 4개 조건 그대로 진행했습니다.
+ProductRepository의 @Query JPQL이 모든 조건을 `(:param IS NULL OR ...)` 형태로
+감싸고 있어, 파라미터 유무와 관계없이 SQL 구조가 동일하게 생성됩니다.
 
 ---
 
-## 카디널리티 분석
+## 1차 시행착오: 단순 쿼리로 분석했던 것의 문제
 
-| 컬럼 | 카디널리티 | 조건 타입 |
-|---|---|---|
-| status | 3 | 등호(=) |
-| category_id | 20 | 등호(=) |
-| price | 730,694 | 범위(BETWEEN) |
-| name | 거의 전체 고유값 | LIKE '%...%' (인덱스 활용 불가) |
-
----
-
-## 가설
-
-카디널리티가 높은 컬럼을 인덱스 앞에 두면 무조건 빠를 거라고 생각해서
-(price, category_id, status) 순서를 생각했고
-
-AI에게 "카디널리티만 보면 되는지, 조건 종류는 상관없는지" 물어봤고,
-"등호 조건은 인덱스로 정확히 하나의 값으로 좁혀지지만, 범위 조건은
-탐색 구간이 넓어 그 뒤 컬럼은 인덱스 효과를 못 받는다"는 답을 들었다
-
-세 가지 순서(A: category_id 우선, B: status 우선, C: price 우선)를
-모두 인덱스로 만들어서 EXPLAIN과 실행시간을 비교했다
-
-결과적으로 C(price를 맨 앞에 둔 경우)만 type=ALL로 돌아가고 65.7ms로
-느려진 것을 직접 확인했다
-
----
-
-## 인덱스 없을 때 실행 계획
-
-| 테이블 | type | key | rows | Extra |
-|---|---|---|---|---|
-| p (products) | ALL | 없음 | 976,537 | Using where |
-| c (categories) | const | PRIMARY | 1 | - |
-
-실행 시간: **226.0ms**
-
----
-
-## 복합 인덱스 순서 비교
-
-### 순서 A. (category_id, status, price) — 카디널리티 순서대로 배치
+리뷰 전, 다음과 같은 단순화된 쿼리로 인덱스 효과를 분석했습니다.
 
 ```sql
-CREATE INDEX idx_test_a ON products(category_id, status, price);
+SELECT * FROM products WHERE category_id = 1 AND status = 'ON_SALE';
 ```
 
-| type | key | rows | Extra | 실행 시간 |
-|---|---|---|---|---|
-| range | idx_test_a | 3,267 | Using index condition; Using where | 10.3ms |
+이 쿼리 기준으로는 `(status, category_id, price)` 인덱스가 가장 효율적이라는
+결론을 냈으나, 다음 두 가지가 실제 API와 달랐습니다.
 
-### 순서 B. (status, category_id, price) — 등호 조건 우선 배치
+1. price 조건은 실제 ProductRepository.findByCondition()에 존재하지 않음
+   (가격 필터링 기능 자체가 구현되어 있지 않음)
+2. ORDER BY created_at DESC 정렬이 분석에서 누락되어 있었음
 
-```sql
-CREATE INDEX idx_test_b ON products(status, category_id, price);
-```
-
-| type | key | rows | Extra | 실행 시간 |
-|---|---|---|---|---|
-| range | idx_test_b | 3,267 | Using index condition; Using where | 8.6ms |
-
-### 순서 C. (price, category_id, status) — 범위 조건을 맨 앞에 배치
-
-```sql
-CREATE INDEX idx_test_c ON products(price, category_id, status);
-```
-
-| type | key | rows | Extra | 실행 시간 |
-|---|---|---|---|---|
-| ALL | 없음 | 976,537 | Using where | 49.3ms |
-
-**검증:** 가설대로 price(범위 조건)를 맨 앞에 두자 인덱스를 전혀 타지 못하고
-type이 다시 ALL로 돌아갔다. A, B는 둘 다 range로 동일했지만 B가 더 빨랐다.
-
-**name 조건의 영향:** A, B, C 모두 `name LIKE '%Galaxy%'`는 인덱스에 없는
-컬럼이라 `Using where`가 공통으로 붙었다. 즉 name 조건은 인덱스 컬럼
-순서(A/B/C)의 우열에는 영향을 주지 않고, rows를 좁힌 이후 결과를
-한 번 더 거르는 별도의 비용으로 동작했다.
+이 차이 때문에 분석 결과가 실제 API 성능을 정확히 대변하지 못한다는
+리뷰를 받았고, 아래부터는 실제 SQL 기준으로 재분석한 내용입니다.
 
 ---
 
-## 최종 비교
+## 실제 SQL 기준 분석
 
-| 케이스 | type | rows | 실행 시간 |
-|---|---|---|---|
-| 인덱스 없음 (4조건) | ALL | 976,537 | 226.0ms |
-| A (category_id, status, price) | range | 3,267 | 10.3ms |
-| B (status, category_id, price) | range | 3,267 | 8.6ms |
-| C (price, category_id, status) | ALL | 976,537 | 49.3ms |
+### 인덱스 없을 때
+
+```sql
+EXPLAIN
+SELECT p1_0.id, p1_0.category_id, p1_0.created_at, p1_0.description,
+       p1_0.name, p1_0.price, p1_0.status, p1_0.stock, p1_0.updated_at
+FROM products p1_0
+WHERE (1 IS NULL OR p1_0.category_id = 1)
+  AND ('Galaxy' IS NULL OR p1_0.name LIKE '%Galaxy%')
+  AND ('ON_SALE' IS NULL OR p1_0.status = 'ON_SALE')
+ORDER BY p1_0.created_at DESC
+LIMIT 10;
+```
+
+| 항목 | 결과 |
+|---|---|
+| type | ALL |
+| key | 없음 |
+| rows | 953,029 |
+| Extra | Using where; **Using filesort** |
+| 실행 시간 | 447.8ms |
 
 ---
 
-## 결론
+### 시도 1. idx_product_best (status, category_id, price)
 
-**최적 인덱스: `(status, category_id, price)`**
+3개 조건(category_id, status 위주)으로 설계했던 기존 인덱스를 그대로 적용했습니다.
 
 ```sql
 CREATE INDEX idx_product_best ON products(status, category_id, price);
 ```
 
-1. 등호(=) 조건(status, category_id)을 먼저, 범위(BETWEEN) 조건(price)을 마지막에 배치
-2. price를 맨 앞에 두면 인덱스가 무력화됨을 직접 검증함(C 케이스)
-3. name LIKE '%keyword%' 조건은 어떤 인덱스 순서를 쓰든 인덱스로 해결되지 않으며
-   (B-Tree 인덱스는 앞부분 일치만 빠르게 찾을 수 있음), 인덱스로 좁힌 결과를
-   추가로 한 줄씩 검사하는 비용이 항상 발생함. 별도의 검색 전략(Full-Text Index,
-   검색엔진 연동 등)이 필요함
+| 항목 | 결과 |
+|---|---|
+| type | ref |
+| key | idx_product_best |
+| rows | 31,748 |
+| Extra | Using index condition; Using where; **Using filesort** |
+| 실행 시간 | **553.2ms (인덱스 없을 때보다 더 느려짐)** |
+
+**분석:** rows는 953,029 → 31,748로 크게 줄었지만, 인덱스에 created_at이
+없어서 정렬(filesort)을 별도로 수행해야 했습니다. 그 결과 실행 시간이
+오히려 더 느려졌습니다. rows가 줄어든 것과 실제 실행 시간이 빨라지는 것은
+별개라는 것을 확인했습니다.
 
 ---
 
-## 회고
+### 시도 2. idx_product_real (status, category_id, created_at)
 
-1. 범위 검색 조건은 인덱스 마지막에 배치해야 한다는 것을
-   테스트로 검증함 (price를 앞에 뒀을 때 type=ALL로 바뀜)
+정렬에 사용되는 created_at을 인덱스에 포함시켜 재시도했습니다.
 
-2. 카디널리티만 보고 세운 첫 가설은 틀렸고,
-   조건의 종류가 카디널리티보다 더 중요한 기준이라는 것을
-   AI 도움을 받아 이해하고 가설을 수정함
+```sql
+CREATE INDEX idx_product_real ON products(status, category_id, created_at);
+```
 
-3. LIKE '%keyword%' 검색은 인덱스로 해결할 수 없다는 한계를 직접 확인했고,
-   이런 경우 인덱스 설계만으로는 부족하며 다른 검색 기술이 필요하다는 것을 배움
+| 항목 | 결과 |
+|---|---|
+| type | ref |
+| key | idx_product_real |
+| rows | 33,274 |
+| Extra | Using where; **Backward index scan** |
+| 실행 시간 | **214.1ms** |
 
-4. 인덱스 설계는 카디널리티만으로 판단하지 말고
-   실제 EXPLAIN과 실행 시간으로 검증해야 한다는 것을 배움
+**분석:** `Using filesort`가 `Backward index scan`으로 바뀌었습니다.
+created_at이 인덱스에 포함되어 있어 별도 정렬 없이 인덱스를 역순으로
+읽는 것만으로 ORDER BY가 해결되었습니다. 인덱스 없을 때(447.8ms) 대비
+약 2.1배 빨라졌습니다.
+
+---
+
+## 최종 비교
+
+| 케이스 | type | rows | Extra | 실행 시간 |
+|---|---|---|---|---|
+| 인덱스 없음 | ALL | 953,029 | Using where; Using filesort | 447.8ms |
+| idx_product_best (status, category_id, price) | ref | 31,748 | Using where; Using filesort | 553.2ms (역효과) |
+| idx_product_real (status, category_id, created_at) | ref | 33,274 | Using where; Backward index scan | 214.1ms |
+
+---
+
+## 결론
+
+**최종 적용 인덱스: `(status, category_id, created_at)`**
+
+```sql
+CREATE INDEX idx_product_real ON products(status, category_id, created_at);
+CREATE INDEX idx_product_category_id ON products(category_id);
+```
+
+1. price는 실제 API에 없는 조건이라 인덱스에 포함시켜도 의미가 없었고,
+   오히려 정렬 컬럼(created_at)을 인덱스에서 빠뜨려 filesort가 발생해
+   인덱스 적용 전보다 더 느려지는 역효과가 있었습니다.
+2. 인덱스 설계는 WHERE 조건뿐 아니라 ORDER BY에 쓰이는 컬럼까지
+   포함해서 고려해야 한다는 것을 직접 확인했습니다.
+3. rows가 줄어드는 것(EXPLAIN 상 좋아 보이는 지표)과 실제 실행 시간이
+   빨라지는 것은 다를 수 있다는 것을 배웠습니다.
+4. 직접 작성한 단순 쿼리가 아니라, show-sql로 확인한 실제 SQL을
+   기준으로 분석해야 신뢰할 수 있는 결과가 나온다는 것을 배웠습니다.
+
+idx_product_category_id는 category_id 단독 조건(idx_product_real의 왼쪽
+컬럼이 아닌 단독 사용 시)에 필요해 별도로 유지했습니다. idx_product_status,
+idx_category_name은 각각 idx_product_real과 중복되거나 실제 코드에서
+사용되지 않아 제거했습니다.
