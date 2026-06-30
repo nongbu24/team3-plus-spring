@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -25,6 +27,22 @@ public class UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.POINT_ACCOUNT_NOT_FOUND));
 
         return UserMeResponse.from(user, pointAccount.getBalance());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    @Transactional
+    public User createUser(String email, String password, String name, String phone) {
+        User user = User.create(email, password, name, phone);
+        return userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findActiveUserByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email);
     }
 
     @Transactional
