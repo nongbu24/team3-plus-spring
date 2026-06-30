@@ -123,6 +123,7 @@ public class CouponEventService {
 
 		long updatedRows = couponEventRepository.increaseIssuedQuantity(couponEventId);
 		if (updatedRows == 0) {
+			couponStockCounter.restoreStock(couponEventId);
 			throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
 		}
 

@@ -39,6 +39,10 @@ public class CouponStockCounter {
 		return remaining != null && remaining >= 0;
 	}
 
+	public void restoreStock(Long couponEventId) {
+		redisTemplate.opsForValue().increment(key(couponEventId));
+	}
+
 	private String key(Long couponEventId) {
 		return KEY_PREFIX + couponEventId;
 	}
