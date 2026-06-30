@@ -21,6 +21,7 @@ import com.example.team3plusspring.domain.coupon.entity.DiscountType;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository;
 import com.example.team3plusspring.domain.coupon.service.CouponEventService;
+import com.example.team3plusspring.domain.coupon.service.CouponStockCounter;
 import com.example.team3plusspring.support.RedisTestSupport;
 
 @SpringBootTest
@@ -37,6 +38,9 @@ class CouponIssueConcurrencyTest extends RedisTestSupport {
 
 	@Autowired
 	RedissonClient redissonClient;
+
+	@Autowired
+	CouponStockCounter couponStockCounter;
 
 	@Test
 	void 동시에_쿠폰발급_요청하면_재고를_초과해서_발급되지_않는다() throws InterruptedException {
@@ -56,6 +60,7 @@ class CouponIssueConcurrencyTest extends RedisTestSupport {
 				30
 			)
 		);
+		couponStockCounter.initStock(couponEvent.getId(), totalQuantity);
 
 		ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 		CountDownLatch latch = new CountDownLatch(threadCount);
@@ -111,6 +116,7 @@ class CouponIssueConcurrencyTest extends RedisTestSupport {
 				30
 			)
 		);
+		couponStockCounter.initStock(couponEvent.getId(), totalQuantity);
 
 		String lockKey = "lock:coupon:" + couponEvent.getId();
 		RLock blocker = redissonClient.getFairLock(lockKey);
