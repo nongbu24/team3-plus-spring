@@ -10,6 +10,7 @@ import com.example.team3plusspring.domain.cart.repository.CartItemRepository;
 import com.example.team3plusspring.domain.cart.repository.CartRepository;
 import com.example.team3plusspring.domain.product.entity.Product;
 import com.example.team3plusspring.domain.product.repository.ProductRepository;
+import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
@@ -65,6 +66,11 @@ public class CartService {
         CartItem savedCartItem = cartItemRepository.save(cartItem);
 
         return AddCartItemResponse.of(savedCartItem, product);
+    }
+
+    @Transactional
+    public Cart createCart(User user) {
+        return cartRepository.save(Cart.create(user.getId()));
     }
 
     @Transactional(readOnly = true)

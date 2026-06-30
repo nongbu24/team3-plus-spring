@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -155,13 +154,13 @@ class AuthControllerTest extends RedisTestSupport {
     }
 
     @Test
-    void 로그인_정상자격증명_토큰과회원요약을반환한다() throws Exception {
+    void 로그인_정상자격증명_토큰을반환한다() throws Exception {
         // given
         String email = uniqueEmail();
         signup(email, "Password123");
 
         // when & then
-        mockMvc.perform(post("/api/auth/login")
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -173,11 +172,16 @@ class AuthControllerTest extends RedisTestSupport {
                 .andExpect(jsonPath("$.status").value(BODY_STATUS))
                 .andExpect(jsonPath("$.data.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.data.accessToken").isString())
-                .andExpect(jsonPath("$.data.expiresIn").isNumber())
-                .andExpect(jsonPath("$.data.user.userId").isNumber())
-                .andExpect(jsonPath("$.data.user.email").value(email))
-                .andExpect(jsonPath("$.data.user.name").value("홍길동"))
-                .andExpect(jsonPath("$.data.password").doesNotExist());
+                .andExpect(jsonPath("$.data.expiresIn").doesNotExist())
+                .andExpect(jsonPath("$.data.user").doesNotExist())
+                .andExpect(jsonPath("$.data.password").doesNotExist())
+                .andReturn();
+
+        assertResponseKeyOrder(
+                result,
+                "\"tokenType\"",
+                "\"accessToken\""
+        );
     }
 
     @Test
@@ -201,29 +205,24 @@ class AuthControllerTest extends RedisTestSupport {
     }
 
     @Test
-    void 내정보조회_유효한토큰_회원정보를반환한다() throws Exception {
+    void 로그아웃_유효한토큰_성공한다() throws Exception {
         // given
         String email = uniqueEmail();
         signup(email, "Password123");
         String accessToken = loginAccessToken(email, "Password123");
 
         // when & then
-        mockMvc.perform(get("/api/users/me")
+        mockMvc.perform(post("/api/auth/logout")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(BODY_STATUS))
-                .andExpect(jsonPath("$.data.userId").isNumber())
-                .andExpect(jsonPath("$.data.email").value(email))
-                .andExpect(jsonPath("$.data.name").value("홍길동"))
-                .andExpect(jsonPath("$.data.phone").value("010-1234-5678"))
-                .andExpect(jsonPath("$.data.role").value("USER"))
-                .andExpect(jsonPath("$.data.password").doesNotExist());
+                .andExpect(jsonPath("$.data.message").value("로그아웃이 완료되었습니다."));
     }
 
     @Test
-    void 인증필요API_토큰없음_실패한다() throws Exception {
+    void 로그아웃_토큰없음_실패한다() throws Exception {
         // when & then
-        MvcResult result = mockMvc.perform(get("/api/users/me"))
+        MvcResult result = mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(ErrorCode.UNAUTHORIZED.getHttpStatus().value()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.UNAUTHORIZED.name()))
@@ -235,55 +234,6 @@ class AuthControllerTest extends RedisTestSupport {
                 "\"code\"",
                 "\"message\""
         );
-    }
-
-    @Test
-    void 회원탈퇴_유효한토큰_deletedAt을저장하고기존토큰을거부한다() throws Exception {
-        // given
-        String email = uniqueEmail();
-        signup(email, "Password123");
-        String accessToken = loginAccessToken(email, "Password123");
-
-        // when & then
-        mockMvc.perform(post("/api/users/delete")
-                        .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(BODY_STATUS))
-                .andExpect(jsonPath("$.data.message").value("회원 탈퇴가 완료되었습니다."));
-
-        User deletedUser = userRepository.findByEmail(email).orElseThrow();
-        assertThat(deletedUser.getDeletedAt()).isNotNull();
-
-        mockMvc.perform(get("/api/users/me")
-                        .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(ErrorCode.INVALID_TOKEN.getHttpStatus().value()))
-                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_TOKEN.name()));
-    }
-
-    @Test
-    void 탈퇴회원_로그인_실패한다() throws Exception {
-        // given
-        String email = uniqueEmail();
-        signup(email, "Password123");
-        String accessToken = loginAccessToken(email, "Password123");
-
-        mockMvc.perform(post("/api/users/delete")
-                        .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isOk());
-
-        // when & then
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "%s",
-                                  "password": "Password123"
-                                }
-                                """.formatted(email)))
-                .andExpect(status().is(ErrorCode.INVALID_LOGIN_CREDENTIALS.getHttpStatus().value()))
-                .andExpect(jsonPath("$.status").value(ErrorCode.INVALID_LOGIN_CREDENTIALS.getHttpStatus().value()))
-                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_LOGIN_CREDENTIALS.name()));
     }
 
     private void signup(String email, String password) throws Exception {
