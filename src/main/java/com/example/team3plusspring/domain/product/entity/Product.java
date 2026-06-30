@@ -65,6 +65,14 @@ public class Product extends BaseEntity {
         return this.stock >= quantity;
     }
 
+    public void increaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+        }
+
+        this.stock += quantity;
+    }
+
     public void validateStatus() {
         if (this.status != ProductStatus.ON_SALE) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);

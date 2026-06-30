@@ -162,6 +162,9 @@ public class OrderFacade {
                 .map(OrderItemResponse::from)
                 .toList();
 
+        // 14. 주문에 사용한 장바구니 상품만 삭제
+        cartService.deleteOrderCartItems(cartItems);
+
         return CreateOrderResponse.of(order, items, payment);
     }
 }

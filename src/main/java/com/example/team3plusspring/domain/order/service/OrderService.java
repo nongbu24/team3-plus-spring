@@ -5,9 +5,13 @@ import com.example.team3plusspring.domain.order.entity.OrderItem;
 import com.example.team3plusspring.domain.order.repository.OrderItemRepository;
 import com.example.team3plusspring.domain.order.repository.OrderRepository;
 import com.example.team3plusspring.domain.product.entity.Product;
+import com.example.team3plusspring.global.exception.BusinessException;
+import com.example.team3plusspring.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,5 +37,22 @@ public class OrderService {
         );
 
         return orderItemRepository.save(orderItem);
+    }
+
+    @Transactional(readOnly = true)
+    public Order findOrder(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    @Transactional
+    public Order findOrderForUpdate(Long orderId) {
+        return orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderItem> findOrderItems(Long orderId) {
+        return orderItemRepository.findAllByOrderId(orderId);
     }
 }

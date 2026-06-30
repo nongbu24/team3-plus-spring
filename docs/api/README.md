@@ -48,6 +48,7 @@
 | 쿠폰 | 선착순 쿠폰 발급 요청 | POST | `/api/coupon-events/{eventId}/issue` | 필요 |
 | 쿠폰 | 내가 보유한 쿠폰 목록 조회 | GET | `/api/users/me/coupons` | 필요 |
 | 결제 | 결제 승인 검증 | POST | `/api/payments/confirm` | 필요 |
+| 결제 | PortOne 결제창 공개 설정 조회 | GET | `/api/config/portone` | 불필요 |
 | 결제 | PortOne 웹훅 수신 | POST | `/api/payments/webhook` | 웹훅 검증 |
 | 환불 | 결제 후 환불 요청 | POST | `/api/refunds` | 필요 |
 | 환불 | 내 환불 목록 조회 | GET | `/api/refunds` | 필요 |
