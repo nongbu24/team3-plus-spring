@@ -1,4 +1,4 @@
-package com.example.team3plusspring.domain.chat.service;
+package com.example.team3plusspring.domain.chat.port;
 
 import java.time.Duration;
 import java.util.Set;
@@ -18,8 +18,5 @@ public interface ChatActivityStore {
 
     default boolean isExpiredClaimStillValid(ActiveChatSession activeSession) {
         return true;
-    }
-
-    record ActiveChatSession(Long userId, Long roomId) {
     }
 }

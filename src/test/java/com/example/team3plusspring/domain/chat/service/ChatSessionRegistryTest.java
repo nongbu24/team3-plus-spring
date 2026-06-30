@@ -1,5 +1,9 @@
 package com.example.team3plusspring.domain.chat.service;
 
+import com.example.team3plusspring.domain.chat.port.ActiveChatSession;
+import com.example.team3plusspring.domain.chat.port.ChatActivityStore;
+import com.example.team3plusspring.domain.chat.port.InactiveChatSession;
+import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import org.junit.jupiter.api.Test;
 
@@ -87,7 +91,7 @@ class ChatSessionRegistryTest {
         chatSessionRegistry.enter("session-2", 1L, 10L);
 
         // when
-        chatSessionRegistry.leaveAll(1L, 10L);
+        chatSessionRegistry.removeLocalSessions(1L, 10L);
 
         // then
         assertThat(chatSessionRegistry.isEntered("session-1", 1L, 10L)).isFalse();
@@ -98,12 +102,12 @@ class ChatSessionRegistryTest {
     @Test
     void 명시적으로퇴장하면_같은사용자의같은방구독을무효화한다() {
         // given
-        chatSessionRegistry.subscribe("session-1", 1L, UserRole.USER, 10L);
-        chatSessionRegistry.subscribe("session-2", 1L, UserRole.USER, 10L);
-        chatSessionRegistry.subscribe("session-3", 2L, UserRole.USER, 10L);
+        chatSessionRegistry.subscribe("session-1", null, 1L, UserRole.USER, 10L);
+        chatSessionRegistry.subscribe("session-2", null, 1L, UserRole.USER, 10L);
+        chatSessionRegistry.subscribe("session-3", null, 2L, UserRole.USER, 10L);
 
         // when
-        chatSessionRegistry.leaveAll(1L, 10L);
+        chatSessionRegistry.removeLocalSessions(1L, 10L);
 
         // then
         assertThat(chatSessionRegistry.isSubscribed("session-1", 10L)).isFalse();
@@ -130,8 +134,8 @@ class ChatSessionRegistryTest {
         // given
         chatSessionRegistry.subscribe("assigned-admin", "sub-1", 1L, UserRole.ADMIN, 10L);
         chatSessionRegistry.subscribe("other-admin", "sub-2", 2L, UserRole.ADMIN, 10L);
-        chatSessionRegistry.subscribe("customer", 3L, UserRole.USER, 10L);
-        chatSessionRegistry.subscribe("other-room-admin", 2L, UserRole.ADMIN, 20L);
+        chatSessionRegistry.subscribe("customer", null, 3L, UserRole.USER, 10L);
+        chatSessionRegistry.subscribe("other-room-admin", null, 2L, UserRole.ADMIN, 20L);
         chatSessionRegistry.enter("other-admin", 2L, 10L);
         chatSessionRegistry.enter("other-admin", 2L, 20L);
 
@@ -140,7 +144,7 @@ class ChatSessionRegistryTest {
 
         // then
         assertThat(removedSubscriptions)
-                .containsExactly(new ChatSessionRegistry.RemovedAdminSubscription("other-admin", "sub-2"));
+                .containsExactly(new RemovedAdminSubscription("other-admin", "sub-2"));
         assertThat(chatSessionRegistry.isSubscribed("assigned-admin", 10L)).isTrue();
         assertThat(chatSessionRegistry.isSubscribed("other-admin", 10L)).isFalse();
         assertThat(chatSessionRegistry.isSubscribed("customer", 10L)).isTrue();
@@ -152,7 +156,7 @@ class ChatSessionRegistryTest {
     @Test
     void 메시지는_같은세션이_구독과입장을모두완료한방에만_보낼수있다() {
         // given
-        chatSessionRegistry.subscribe("session-1", 1L, UserRole.USER, 10L);
+        chatSessionRegistry.subscribe("session-1", null, 1L, UserRole.USER, 10L);
 
         // when & then
         assertThat(chatSessionRegistry.canSend("session-1", 1L, 10L)).isFalse();
@@ -213,9 +217,9 @@ class ChatSessionRegistryTest {
         // given
         ChatActivityStore chatActivityStore = mock(ChatActivityStore.class);
         ChatSessionRegistry registry = new ChatSessionRegistry(chatActivityStore);
-        registry.subscribe("session-1", 1L, UserRole.USER, 10L);
+        registry.subscribe("session-1", null, 1L, UserRole.USER, 10L);
         registry.enter("session-1", 1L, 10L);
-        registry.subscribe("session-2", 2L, UserRole.USER, 10L);
+        registry.subscribe("session-2", null, 2L, UserRole.USER, 10L);
         registry.enter("session-2", 2L, 10L);
 
         // when
@@ -231,9 +235,9 @@ class ChatSessionRegistryTest {
         // given
         ChatActivityStore chatActivityStore = mock(ChatActivityStore.class);
         ChatSessionRegistry registry = new ChatSessionRegistry(chatActivityStore);
-        ChatActivityStore.ActiveChatSession activeSession = new ChatActivityStore.ActiveChatSession(1L, 10L);
+        ActiveChatSession activeSession = new ActiveChatSession(1L, 10L);
 
-        registry.subscribe("session-1", 1L, UserRole.USER, 10L);
+        registry.subscribe("session-1", null, 1L, UserRole.USER, 10L);
         registry.enter("session-1", 1L, 10L);
 
         when(chatActivityStore.findAndClaimExpiredSessions(any(), eq(Duration.ofMinutes(5))))
@@ -241,7 +245,7 @@ class ChatSessionRegistryTest {
         when(chatActivityStore.isExpiredClaimStillValid(activeSession)).thenReturn(false);
 
         // when
-        Set<ChatSessionRegistry.InactiveChatSession> expiredSessions =
+        Set<InactiveChatSession> expiredSessions =
                 registry.expireInactiveSessions(Duration.ofMinutes(5));
 
         // then

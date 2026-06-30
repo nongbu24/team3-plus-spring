@@ -1,5 +1,10 @@
 package com.example.team3plusspring.domain.chat.service;
 
+import com.example.team3plusspring.domain.chat.local.InMemoryChatActivityStore;
+import com.example.team3plusspring.domain.chat.port.ActiveChatSession;
+import com.example.team3plusspring.domain.chat.port.ChatActivityStore;
+import com.example.team3plusspring.domain.chat.port.InactiveChatSession;
+import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -36,10 +41,6 @@ public class ChatSessionRegistry {
         this(new InMemoryChatActivityStore());
     }
 
-    public synchronized void subscribe(String sessionId, Long userId, UserRole role, Long roomId) {
-        subscribe(sessionId, null, userId, role, roomId);
-    }
-
     public synchronized void subscribe(String sessionId, String subscriptionId, Long userId, UserRole role, Long roomId) {
         SessionSubscription subscription = new SessionSubscription(subscriptionId, userId, role, roomId);
         sessionSubscriptions.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet())
@@ -50,7 +51,7 @@ public class ChatSessionRegistry {
         Set<SessionSubscription> subscriptions = sessionSubscriptions.get(sessionId);
 
         return subscriptions != null && subscriptions.stream()
-                .anyMatch(subscription -> subscription.roomId().equals(roomId));
+                .anyMatch(subscription -> subscription.getRoomId().equals(roomId));
     }
 
     public synchronized void unsubscribe(String sessionId, String subscriptionId) {
@@ -128,13 +129,8 @@ public class ChatSessionRegistry {
         return chatActivityStore.findAndClaimExpiredSessions(activeSessions(), timeout)
                 .stream()
                 .filter(chatActivityStore::isExpiredClaimStillValid)
-                .map(activeSession -> expire(new SessionRoom(activeSession.userId(), activeSession.roomId())))
+                .map(activeSession -> expire(new SessionRoom(activeSession.getUserId(), activeSession.getRoomId())))
                 .collect(Collectors.toSet());
-    }
-
-    // 사용자가 직접 퇴장한 경우에는 같은 사용자/방 조합의 모든 세션을 정리한다.
-    public synchronized void leaveAll(Long userId, Long roomId) {
-        removeLocalSessions(userId, roomId);
     }
 
     public synchronized void removeLocalSessions(Long userId, Long roomId) {
@@ -165,7 +161,7 @@ public class ChatSessionRegistry {
 
             if (!targetSubscriptions.isEmpty()) {
                 targetSubscriptions.forEach(subscription ->
-                        removedSubscriptions.add(new RemovedAdminSubscription(sessionId, subscription.subscriptionId()))
+                        removedSubscriptions.add(new RemovedAdminSubscription(sessionId, subscription.getSubscriptionId()))
                 );
                 subscriptions.removeAll(targetSubscriptions);
                 removeEnteredRoom(sessionId, roomId);
@@ -203,7 +199,7 @@ public class ChatSessionRegistry {
         }
 
         Set<SessionRoom> targetRooms = new HashSet<>(rooms);
-        targetRooms.removeIf(room -> !room.roomId().equals(roomId));
+        targetRooms.removeIf(room -> !room.getRoomId().equals(roomId));
 
         for (SessionRoom room : targetRooms) {
             rooms.remove(room);
@@ -220,7 +216,7 @@ public class ChatSessionRegistry {
 
         if (remainingCount <= 0) {
             activeSessionCounts.remove(room);
-            removeRoomActivityIfNoActiveSession(room.roomId());
+            removeRoomActivityIfNoActiveSession(room.getRoomId());
         }
     }
 
@@ -239,49 +235,27 @@ public class ChatSessionRegistry {
     private boolean hasActiveSession(Long roomId) {
         return activeSessionCounts.keySet()
                 .stream()
-                .anyMatch(room -> room.roomId().equals(roomId));
+                .anyMatch(room -> room.getRoomId().equals(roomId));
     }
 
     private InactiveChatSession expire(SessionRoom sessionRoom) {
-        leaveAll(sessionRoom.userId(), sessionRoom.roomId());
+        removeLocalSessions(sessionRoom.getUserId(), sessionRoom.getRoomId());
 
-        return new InactiveChatSession(sessionRoom.userId(), sessionRoom.roomId());
+        return new InactiveChatSession(sessionRoom.getUserId(), sessionRoom.getRoomId());
     }
 
     private Set<Long> activeRoomIds() {
         return activeSessionCounts.keySet()
                 .stream()
-                .map(SessionRoom::roomId)
+                .map(SessionRoom::getRoomId)
                 .collect(Collectors.toSet());
     }
 
-    private Set<ChatActivityStore.ActiveChatSession> activeSessions() {
+    private Set<ActiveChatSession> activeSessions() {
         return activeSessionCounts.keySet()
                 .stream()
-                .map(sessionRoom -> new ChatActivityStore.ActiveChatSession(sessionRoom.userId(), sessionRoom.roomId()))
+                .map(sessionRoom -> new ActiveChatSession(sessionRoom.getUserId(), sessionRoom.getRoomId()))
                 .collect(Collectors.toSet());
     }
 
-    public record InactiveChatSession(Long userId, Long roomId) {
-    }
-
-    public record RemovedAdminSubscription(String sessionId, String subscriptionId) {
-    }
-
-    private record SessionRoom(Long userId, Long roomId) {
-    }
-
-    private record SessionSubscription(String subscriptionId, Long userId, UserRole role, Long roomId) {
-        private boolean isSameSubscription(String targetSubscriptionId) {
-            return subscriptionId != null && subscriptionId.equals(targetSubscriptionId);
-        }
-
-        private boolean isSameUserRoom(Long targetUserId, Long targetRoomId) {
-            return userId.equals(targetUserId) && roomId.equals(targetRoomId);
-        }
-
-        private boolean isOtherAdmin(Long targetRoomId, Long assignedAdminId) {
-            return role == UserRole.ADMIN && roomId.equals(targetRoomId) && !userId.equals(assignedAdminId);
-        }
-    }
 }

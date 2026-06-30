@@ -117,8 +117,6 @@ POST /api/payments/webhook
 | `PAYMENT_PENDING` | 결제 대기 |
 | `COMPLETED` | 주문 완료 |
 | `CANCELED` | 결제 전 주문 취소 |
-| `REFUND_REQUESTED` | 환불 요청 |
-| `REFUNDED` | 환불 완료 |
 
 ### PaymentStatus
 
@@ -130,17 +128,6 @@ POST /api/payments/webhook
 | `CANCEL_REQUESTED` | PG 결제 취소 처리 중 |
 | `CANCELED` | 결제 취소 |
 | `REVIEW_REQUIRED` | PG 결제 취소 결과 확인 필요 |
-| `REFUNDED` | 환불 완료 |
-
-### RefundStatus
-
-| 값 | 설명 |
-| --- | --- |
-| `REQUESTED` | 환불 요청 |
-| `APPROVED` | 환불 승인 |
-| `REJECTED` | 환불 거절 |
-| `COMPLETED` | 환불 완료 |
-| `FAILED` | 환불 실패 |
 
 ### WebhookStatus
 
@@ -214,9 +201,6 @@ POST /api/payments/webhook
 | `PAYMENT_REVIEW_REQUIRED` | 409 | PG 결제 취소 결과 확인 필요 |
 | `PAYMENT_STATUS_INVALID` | 409 | 허용되지 않는 결제 상태 변경 |
 | `PAYMENT_WEBHOOK_INVALID` | 400 | 결제 웹훅 요청이 올바르지 않음 |
-| `REFUND_NOT_ALLOWED` | 409 | 환불 가능한 결제 상태가 아님 |
-| `REFUND_NOT_FOUND` | 404 | 환불 내역 없음 |
-| `REFUND_AMOUNT_INVALID` | 400 | 환불 금액 오류 |
 | `CHAT_ROOM_NOT_FOUND` | 404 | 채팅방 없음 |
 | `CHAT_ROOM_ACCESS_DENIED` | 403 | 접근 권한이 없는 채팅방 |
 | `CHAT_ROOM_ALREADY_COMPLETED` | 409 | 이미 완료된 채팅방 |

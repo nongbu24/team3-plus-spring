@@ -47,14 +47,7 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory,
             @Qualifier("chatMessageRedisSerializer") RedisSerializer<ChatMessageResponse> chatMessageRedisSerializer
     ) {
-        RedisTemplate<String, ChatMessageResponse> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(connectionFactory);
-        redisTemplate.setKeySerializer(StringRedisSerializer.UTF_8);
-        redisTemplate.setValueSerializer(chatMessageRedisSerializer);
-        redisTemplate.setHashKeySerializer(StringRedisSerializer.UTF_8);
-        redisTemplate.setHashValueSerializer(chatMessageRedisSerializer);
-
-        return redisTemplate;
+        return createRedisTemplate(connectionFactory, chatMessageRedisSerializer);
     }
 
     @Bean
@@ -62,14 +55,7 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory,
             @Qualifier("chatAdminAssignedRedisSerializer") RedisSerializer<ChatAdminAssignedEvent> chatAdminAssignedRedisSerializer
     ) {
-        RedisTemplate<String, ChatAdminAssignedEvent> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(connectionFactory);
-        redisTemplate.setKeySerializer(StringRedisSerializer.UTF_8);
-        redisTemplate.setValueSerializer(chatAdminAssignedRedisSerializer);
-        redisTemplate.setHashKeySerializer(StringRedisSerializer.UTF_8);
-        redisTemplate.setHashValueSerializer(chatAdminAssignedRedisSerializer);
-
-        return redisTemplate;
+        return createRedisTemplate(connectionFactory, chatAdminAssignedRedisSerializer);
     }
 
     @Bean
@@ -77,14 +63,7 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory,
             @Qualifier("chatSessionExpiredRedisSerializer") RedisSerializer<ChatSessionExpiredEvent> chatSessionExpiredRedisSerializer
     ) {
-        RedisTemplate<String, ChatSessionExpiredEvent> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(connectionFactory);
-        redisTemplate.setKeySerializer(StringRedisSerializer.UTF_8);
-        redisTemplate.setValueSerializer(chatSessionExpiredRedisSerializer);
-        redisTemplate.setHashKeySerializer(StringRedisSerializer.UTF_8);
-        redisTemplate.setHashValueSerializer(chatSessionExpiredRedisSerializer);
-
-        return redisTemplate;
+        return createRedisTemplate(connectionFactory, chatSessionExpiredRedisSerializer);
     }
 
     @Bean
@@ -107,5 +86,19 @@ public class RedisConfig {
         );
 
         return container;
+    }
+
+    private <T> RedisTemplate<String, T> createRedisTemplate(
+            RedisConnectionFactory connectionFactory,
+            RedisSerializer<T> valueSerializer
+    ) {
+        RedisTemplate<String, T> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(connectionFactory);
+        redisTemplate.setKeySerializer(StringRedisSerializer.UTF_8);
+        redisTemplate.setValueSerializer(valueSerializer);
+        redisTemplate.setHashKeySerializer(StringRedisSerializer.UTF_8);
+        redisTemplate.setHashValueSerializer(valueSerializer);
+
+        return redisTemplate;
     }
 }

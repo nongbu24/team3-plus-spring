@@ -1,5 +1,6 @@
 package com.example.team3plusspring.domain.chat.service;
 
+import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.messaging.Message;
@@ -23,8 +24,7 @@ class ChatStompSubscriptionManagerTest {
     @Test
     void 제거된구독은_세션을닫지않고_UNSUBSCRIBE_프레임으로해제한다() {
         // given
-        ChatSessionRegistry.RemovedAdminSubscription subscription =
-                new ChatSessionRegistry.RemovedAdminSubscription("session-1", "sub-1");
+        RemovedAdminSubscription subscription = new RemovedAdminSubscription("session-1", "sub-1");
 
         // when
         manager.unsubscribeAll(Set.of(subscription));
@@ -42,8 +42,7 @@ class ChatStompSubscriptionManagerTest {
     @Test
     void 구독아이디가없으면_브로커에해제프레임을보내지않는다() {
         // given
-        ChatSessionRegistry.RemovedAdminSubscription subscription =
-                new ChatSessionRegistry.RemovedAdminSubscription("session-1", null);
+        RemovedAdminSubscription subscription = new RemovedAdminSubscription("session-1", null);
 
         // when
         manager.unsubscribeAll(Set.of(subscription));

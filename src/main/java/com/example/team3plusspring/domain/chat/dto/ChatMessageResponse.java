@@ -2,6 +2,8 @@ package com.example.team3plusspring.domain.chat.dto;
 
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
 import com.example.team3plusspring.domain.chat.entity.ChatMessageType;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ChatMessageResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -21,26 +24,6 @@ public class ChatMessageResponse implements Serializable {
     private String senderName;
     private ChatMessageType messageType;
     private LocalDateTime createdAt;
-
-    public ChatMessageResponse(Long messageId, String content, Long senderId, String senderName, LocalDateTime createdAt) {
-        this(messageId, content, senderId, senderName, ChatMessageType.CHAT, createdAt);
-    }
-
-    public ChatMessageResponse(
-            Long messageId,
-            String content,
-            Long senderId,
-            String senderName,
-            ChatMessageType messageType,
-            LocalDateTime createdAt
-    ) {
-        this.messageId = messageId;
-        this.content = content;
-        this.senderId = senderId;
-        this.senderName = senderName;
-        this.messageType = messageType;
-        this.createdAt = createdAt;
-    }
 
     private ChatMessageResponse(ChatMessage message) {
         this.messageId = message.getId();
@@ -53,6 +36,27 @@ public class ChatMessageResponse implements Serializable {
 
     public static ChatMessageResponse from(ChatMessage message) {
         return new ChatMessageResponse(message);
+    }
+
+    public static ChatMessageResponse of(
+            Long messageId,
+            String content,
+            Long senderId,
+            String senderName,
+            LocalDateTime createdAt
+    ) {
+        return new ChatMessageResponse(messageId, content, senderId, senderName, ChatMessageType.CHAT, createdAt);
+    }
+
+    public static ChatMessageResponse of(
+            Long messageId,
+            String content,
+            Long senderId,
+            String senderName,
+            ChatMessageType messageType,
+            LocalDateTime createdAt
+    ) {
+        return new ChatMessageResponse(messageId, content, senderId, senderName, messageType, createdAt);
     }
 
     public static ChatMessageResponse system(String content) {

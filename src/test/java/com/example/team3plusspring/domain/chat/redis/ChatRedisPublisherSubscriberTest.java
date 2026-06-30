@@ -171,7 +171,7 @@ class ChatRedisPublisherSubscriberTest {
     }
 
     private ChatMessageResponse response() {
-        return new ChatMessageResponse(
+        return ChatMessageResponse.of(
                 1L,
                 "안녕하세요",
                 10L,

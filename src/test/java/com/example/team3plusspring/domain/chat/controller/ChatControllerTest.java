@@ -4,9 +4,8 @@ import com.example.team3plusspring.domain.chat.dto.ChatMessageRequest;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.dto.ChatRoomEventRequest;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
-import com.example.team3plusspring.domain.chat.facade.ChatSendResult;
-import com.example.team3plusspring.domain.chat.service.ChatMessagePublisher;
-import com.example.team3plusspring.domain.chat.service.ChatSessionExpiredEventPublisher;
+import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
+import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
@@ -53,11 +52,11 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatMessageRequest request = new ChatMessageRequest(1L, "안녕하세요");
+        ChatMessageRequest request = ChatMessageRequest.of(1L, "안녕하세요");
         ChatMessageResponse response = response(10L, "안녕하세요");
 
         when(chatSessionRegistry.canSend("session-1", user.getId(), 1L)).thenReturn(true);
-        when(chatFacade.sendMessage(request, user)).thenReturn(new ChatSendResult(response, null));
+        when(chatFacade.sendMessage(request, user)).thenReturn(response);
 
         // when
         chatController.send(request, "session-1", authentication);
@@ -74,11 +73,11 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatMessageRequest request = new ChatMessageRequest(1L, "확인해보겠습니다");
+        ChatMessageRequest request = ChatMessageRequest.of(1L, "확인해보겠습니다");
         ChatMessageResponse response = response(10L, "확인해보겠습니다");
 
         when(chatSessionRegistry.canSend("session-1", user.getId(), 1L)).thenReturn(true);
-        when(chatFacade.sendMessage(request, user)).thenReturn(new ChatSendResult(response, user.getId()));
+        when(chatFacade.sendMessage(request, user)).thenReturn(response);
 
         // when
         chatController.send(request, "session-1", authentication);
@@ -92,7 +91,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
         ChatMessageResponse response = response(11L, "홍길동님이 입장했습니다");
 
         when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(true);
@@ -115,7 +114,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
 
         when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(false);
 
@@ -132,7 +131,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
 
         when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(true);
         when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(false);
@@ -151,7 +150,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
 
         when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(true);
         when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(true);
@@ -174,7 +173,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatMessageRequest request = new ChatMessageRequest(1L, "안녕하세요");
+        ChatMessageRequest request = ChatMessageRequest.of(1L, "안녕하세요");
 
         when(chatSessionRegistry.canSend("session-1", user.getId(), 1L)).thenReturn(false);
 
@@ -189,7 +188,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
         ChatMessageResponse response = response(12L, "홍길동님이 퇴장했습니다");
 
         when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(true);
@@ -201,7 +200,7 @@ class ChatControllerTest {
         // then
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verify(chatFacade).leaveRoom(1L, user);
-        verify(chatSessionRegistry).leaveAll(user.getId(), 1L);
+        verify(chatSessionRegistry).removeLocalSessions(user.getId(), 1L);
         verify(chatSessionExpiredEventPublisher).publish(1L, user.getId());
         verify(chatMessagePublisher).publish(1L, response);
     }
@@ -211,7 +210,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
 
         when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(true);
         when(chatFacade.leaveRoom(1L, user)).thenThrow(new BusinessException(ErrorCode.CHAT_ROOM_ALREADY_COMPLETED));
@@ -222,7 +221,7 @@ class ChatControllerTest {
         // then
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verify(chatFacade).leaveRoom(1L, user);
-        verify(chatSessionRegistry).leaveAll(user.getId(), 1L);
+        verify(chatSessionRegistry).removeLocalSessions(user.getId(), 1L);
         verify(chatSessionExpiredEventPublisher).publish(1L, user.getId());
         verifyNoInteractions(chatMessagePublisher);
     }
@@ -232,7 +231,7 @@ class ChatControllerTest {
         // given
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
-        ChatRoomEventRequest request = new ChatRoomEventRequest(1L);
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
 
         when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(false);
 
@@ -267,7 +266,7 @@ class ChatControllerTest {
     @Test
     void 메시지전송_인증정보가없으면_실패한다() {
         // given
-        ChatMessageRequest request = new ChatMessageRequest(1L, "안녕하세요");
+        ChatMessageRequest request = ChatMessageRequest.of(1L, "안녕하세요");
 
         // when & then
         assertThatThrownBy(() -> chatController.send(request, "session-1", null))
@@ -283,7 +282,7 @@ class ChatControllerTest {
     }
 
     private ChatMessageResponse response(Long messageId, String content) {
-        return new ChatMessageResponse(
+        return ChatMessageResponse.of(
                 messageId,
                 content,
                 1L,
