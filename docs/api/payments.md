@@ -10,6 +10,7 @@
 | Method | Path | 설명 | 인증 |
 | --- | --- | --- | --- |
 | `GET` | `/api/config/portone` | PortOne 결제창 공개 설정 조회 | 불필요 |
+| `POST` | `/api/payments/{paymentId}/start` | PG 결제 시작 | 필요 |
 | `POST` | `/api/payments/confirm` | 결제 승인 검증 | 필요 |
 | `POST` | `/api/payments/webhook` | PortOne 웹훅 수신 | 웹훅 검증 |
 
@@ -42,6 +43,56 @@
 - PortOne 결제창 초기화에 필요한 `storeId`, `channelKey`만 반환합니다.
 - `apiSecret`은 PortOne 서버 API 인증에만 사용하며 응답에 포함하지 않습니다.
 - 공개 API이므로 JWT 인증 없이 호출할 수 있습니다.
+
+## POST `/api/payments/{paymentId}/start`
+
+PG 결제창을 호출하기 전에 주문을 결제 대기 상태로 전환하고, 주문 생성 시 만들어진 PortOne 결제 ID를 반환합니다.
+
+- 인증: 필요
+- HTTP Status: `200 OK`
+
+### Path Variables
+
+| 이름 | 타입 | 설명 |
+| --- | --- | --- |
+| `paymentId` | `Long` | 주문 생성 응답에 포함된 결제 ID |
+
+### Request Body
+
+없음
+
+### Response Body
+
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "paymentId": 300,
+    "orderId": 200,
+    "portOnePaymentId": "pay_9381dde4-49d5-4079-af45-2ea490dbcc6d",
+    "status": "PENDING",
+    "paymentAmount": 68000
+  }
+}
+```
+
+### 처리 규칙
+
+- 인증된 회원 본인의 결제만 시작할 수 있습니다.
+- 결제 상태가 `PENDING`이고 주문 상태가 `READY`인 경우 주문 상태를 `PAYMENT_PENDING`으로 변경합니다.
+- 동일한 결제 시작 요청이 다시 들어오면 기존 PortOne 결제 ID를 반환합니다.
+- 결제 시작 응답의 `portOnePaymentId`를 PortOne 결제창 호출에 사용합니다.
+- 결제 시작 전 주문 취소와 동시에 요청되면 먼저 획득한 비관적 락을 기준으로 한 작업만 성공합니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | 토큰 누락 또는 인증 실패 |
+| `PAYMENT_NOT_FOUND` | 404 | 결제 없음 |
+| `PAYMENT_ACCESS_DENIED` | 403 | 타인의 결제 시작 요청 |
+| `PAYMENT_ALREADY_PROCESSED` | 409 | 결제를 시작할 수 없는 주문 또는 결제 상태 |
 
 ## POST `/api/payments/confirm`
 
@@ -109,6 +160,7 @@
 | `PAYMENT_ALREADY_PROCESSED` | 409 | 이미 처리된 결제 |
 | `PAYMENT_AMOUNT_MISMATCH` | 400 | PortOne 승인 금액과 서버 결제 금액 불일치 |
 | `PAYMENT_STATUS_NOT_PAID` | 400 | PortOne 결제 상태가 성공 상태가 아님 |
+| `PAYMENT_NOT_STARTED` | 409 | 결제 시작 API를 호출하지 않음 |
 | `PAYMENT_NOT_COMPLETED` | 409 | PortOne 결제가 아직 완료되지 않음 |
 | `PAYMENT_CANCEL_PENDING` | 409 | PortOne 결제 취소 처리 중 |
 | `PAYMENT_REVIEW_REQUIRED` | 409 | PortOne 결제 취소 결과 확인 필요 |
