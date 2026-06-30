@@ -6,6 +6,20 @@
 @roomId = 1
 @lastMessageId = 0
 @wsUrl = ws://localhost:8080/ws/000/chat-http/websocket
+@chatbotSessionId = 550e8400-e29b-41d4-a716-446655440000
+
+### AI 챗봇 질문 - 상품 DB 검색 결과를 함께 전달하는 상담 답변
+POST {{baseUrl}}/api/chatbot
+Content-Type: application/json
+
+{
+  "sessionId": "{{chatbotSessionId}}",
+  "topic": "PRODUCT_COMPARISON",
+  "message": "Logitech MX Keys S랑 Logitech MX Master 3S 차이가 뭐야?"
+}
+
+### AI 챗봇 대화 기록 초기화
+DELETE {{baseUrl}}/api/chatbot/{{chatbotSessionId}}
 
 ### 1. 관리자 로그인 - 관리자 전용 API 호출용 토큰 저장
 POST {{baseUrl}}/api/auth/login

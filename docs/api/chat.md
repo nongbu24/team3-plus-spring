@@ -1,6 +1,6 @@
 # 채팅 API
 
-고객의 1:1 문의 채팅방 생성, 채팅방 목록 조회, 문의 상태 변경, 채팅 메시지 조회, 실시간 채팅 송수신을 담당합니다.
+AI 챗봇 질문, 고객의 1:1 문의 채팅방 생성, 채팅방 목록 조회, 문의 상태 변경, 채팅 메시지 조회, 실시간 채팅 송수신을 담당합니다.
 채팅은 REST API와 STOMP WebSocket을 함께 사용합니다.
 
 성공/실패 응답은 REST API에서 모두 [공통 응답 wrapper](./common.md#공통-응답)를 사용합니다.
@@ -10,6 +10,8 @@
 
 | Method | Path | 설명 | 인증 |
 | --- | --- | --- | --- |
+| `POST` | `/api/chatbot` | AI 챗봇 질문 | 불필요 |
+| `DELETE` | `/api/chatbot/{sessionId}` | AI 챗봇 대화 기록 초기화 | 불필요 |
 | `POST` | `/api/chat/rooms/me` | 내 1:1 문의 채팅방 생성 | 필요 |
 | `GET` | `/api/chat/rooms` | 채팅방 목록 조회 | 필요 |
 | `GET` | `/api/chat/rooms/{roomId}` | 채팅방 단건 조회 | 필요 |
@@ -28,6 +30,85 @@
 | Publish | `/pub/chat.enter` | 채팅방 입장 이벤트 발행 | 필요 |
 | Publish | `/pub/chat.send` | 채팅 메시지 발행 | 필요 |
 | Publish | `/pub/chat.leave` | 채팅방 퇴장 이벤트 발행 | 필요 |
+
+## POST `/api/chatbot`
+
+사용자 질문과 상품 DB 검색 결과를 Claude API로 전달하고 AI 상담 답변을 반환합니다.
+상품 DB에서 관련 상품을 찾지 못하면 실제 상품명, 재고, 가격, 배송일을 단정하지 않고 일반적인 쇼핑 상담 기준을 안내합니다.
+
+- 인증: 불필요
+- HTTP Status: `200 OK`
+
+### Request Body
+
+| 필드 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| `sessionId` | `String` | Y | 대화 기록을 구분하는 클라이언트 세션 ID. UUID 형식 |
+| `topic` | `String` | Y | 상담 유형. `PRODUCT_RECOMMENDATION`, `PRODUCT_SUMMARY`, `PRE_CART_QUESTION`, `PRODUCT_COMPARISON` |
+| `message` | `String` | Y | 사용자 질문. 최대 1000자 |
+
+```json
+{
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "topic": "PRODUCT_COMPARISON",
+  "message": "Logitech MX Keys S랑 Logitech MX Master 3S 차이가 뭐야?"
+}
+```
+
+### Response Body
+
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+    "message": "Logitech MX Keys S는 조용한 타건감과 멀티 디바이스 연결을 지원하는 키보드입니다.\nLogitech MX Master 3S는 정밀한 스크롤과 편안한 그립감을 제공하는 무선 마우스입니다.\n문서 작성이나 입력 작업이 많으면 MX Keys S가, 커서 제어와 생산성 작업이 많으면 MX Master 3S가 더 적합합니다."
+  }
+}
+```
+
+### 처리 규칙
+
+- `sessionId`별로 최근 대화 메시지를 메모리에 보관합니다.
+- `sessionId`는 UUID 형식만 허용합니다. 프론트엔드는 `crypto.randomUUID()`로 세션 ID를 생성합니다.
+- 챗봇 대화 기록은 마지막 접근 후 30분이 지나면 만료되며, 서버는 최대 10,000개 세션까지만 보관합니다.
+- 챗봇은 선택된 상담 유형 안에서만 답변합니다.
+- 서버 재시작 시 메모리에 저장된 챗봇 대화 기록은 사라집니다.
+- Claude가 DB를 직접 조회하지 않습니다.
+- 백엔드가 사용자 질문에서 상품 검색용 키워드 후보를 만든 뒤 상품 DB에서 관련 상품을 검색합니다.
+- 키워드 후보 검색 결과가 없으면 정리된 전체 질문을 검색어처럼 사용해 다시 검색합니다.
+- 관련 상품이 있으면 상품명, 설명, 가격, 재고, 카테고리 정보를 사용자 질문과 함께 Claude에게 전달합니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `VALIDATION_FAILED` | 400 | 요청 본문 형식 오류 또는 필수 값 누락, 세션 ID 형식 오류, 메시지 길이 초과 |
+| `INVALID_ENUM_VALUE` | 400 | 허용하지 않는 상담 유형 |
+| `EXTERNAL_API_FAILED` | 502 | Claude API 호출 실패 또는 빈 응답 |
+
+## DELETE `/api/chatbot/{sessionId}`
+
+특정 챗봇 세션의 대화 기록을 초기화합니다.
+
+- 인증: 불필요
+- HTTP Status: `200 OK`
+
+### Path Variables
+
+| 이름 | 타입 | 설명 |
+| --- | --- | --- |
+| `sessionId` | `String` | 초기화할 챗봇 세션 ID. UUID 형식 |
+
+### Response Body
+
+```json
+{
+  "status": 200,
+  "message": "요청이 성공했습니다."
+}
+```
 
 ## POST `/api/chat/rooms/me`
 
