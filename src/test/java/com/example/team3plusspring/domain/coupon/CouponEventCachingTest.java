@@ -20,6 +20,7 @@ import com.example.team3plusspring.domain.coupon.entity.CouponEvent;
 import com.example.team3plusspring.domain.coupon.entity.DiscountType;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
 import com.example.team3plusspring.domain.coupon.service.CouponEventService;
+import com.example.team3plusspring.domain.coupon.service.CouponStockCounter;
 import com.example.team3plusspring.support.RedisTestSupport;
 
 import jakarta.persistence.EntityManagerFactory;
@@ -38,6 +39,9 @@ public class CouponEventCachingTest extends RedisTestSupport {
 
 	@Autowired
 	private CacheManager cacheManager;
+
+	@Autowired
+	private CouponStockCounter couponStockCounter;
 
 	@BeforeEach
 	void clearCache() {
@@ -81,6 +85,7 @@ public class CouponEventCachingTest extends RedisTestSupport {
 				7
 				)
 		);
+		couponStockCounter.initStock(couponEvent.getId(), 10);
 
 		Page<GetCouponEventListResponse> before = couponEventService.getCouponEvents(0, 10);
 		int issuedQuantityBeforeIssue = before.getContent().stream()
@@ -115,6 +120,7 @@ public class CouponEventCachingTest extends RedisTestSupport {
 				7
 			)
 		);
+		couponStockCounter.initStock(couponEvent.getId(), 1000);
 
 		Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
 		statistics.setStatisticsEnabled(true);
