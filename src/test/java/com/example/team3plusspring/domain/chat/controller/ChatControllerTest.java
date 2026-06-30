@@ -59,7 +59,7 @@ class ChatControllerTest {
         when(chatFacade.sendMessage(request, user)).thenReturn(response);
 
         // when
-        chatController.send(request, "session-1", authentication);
+        chatController.sendMessage(request, "session-1", authentication);
 
         // then
         verify(chatSessionRegistry).canSend("session-1", user.getId(), 1L);
@@ -80,7 +80,7 @@ class ChatControllerTest {
         when(chatFacade.sendMessage(request, user)).thenReturn(response);
 
         // when
-        chatController.send(request, "session-1", authentication);
+        chatController.sendMessage(request, "session-1", authentication);
 
         // then
         verify(chatMessagePublisher).publish(1L, response);
@@ -99,7 +99,7 @@ class ChatControllerTest {
         when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(true);
 
         // when
-        chatController.enter(request, "session-1", authentication);
+        chatController.enterRoom(request, "session-1", authentication);
 
         // then
         var inOrder = inOrder(chatSessionRegistry, chatFacade, chatMessagePublisher);
@@ -119,7 +119,7 @@ class ChatControllerTest {
         when(chatSessionRegistry.isSubscribed("session-1", 1L)).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> chatController.enter(request, "session-1", authentication))
+        assertThatThrownBy(() -> chatController.enterRoom(request, "session-1", authentication))
                 .isInstanceOf(BusinessException.class);
         verify(chatSessionRegistry).isSubscribed("session-1", 1L);
         verify(chatSessionRegistry, never()).enter("session-1", user.getId(), 1L);
@@ -137,7 +137,7 @@ class ChatControllerTest {
         when(chatSessionRegistry.enter("session-1", user.getId(), 1L)).thenReturn(false);
 
         // when
-        chatController.enter(request, "session-1", authentication);
+        chatController.enterRoom(request, "session-1", authentication);
 
         // then
         verify(chatSessionRegistry).isSubscribed("session-1", 1L);
@@ -157,7 +157,7 @@ class ChatControllerTest {
         when(chatFacade.enterRoom(1L, user)).thenThrow(new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED));
 
         // when & then
-        assertThatThrownBy(() -> chatController.enter(request, "session-1", authentication))
+        assertThatThrownBy(() -> chatController.enterRoom(request, "session-1", authentication))
                 .isInstanceOf(BusinessException.class);
 
         var inOrder = inOrder(chatSessionRegistry, chatFacade);
@@ -178,7 +178,7 @@ class ChatControllerTest {
         when(chatSessionRegistry.canSend("session-1", user.getId(), 1L)).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> chatController.send(request, "session-1", authentication))
+        assertThatThrownBy(() -> chatController.sendMessage(request, "session-1", authentication))
                 .isInstanceOf(BusinessException.class);
         verifyNoInteractions(chatFacade, chatMessagePublisher);
     }
@@ -195,7 +195,7 @@ class ChatControllerTest {
         when(chatFacade.leaveRoom(1L, user)).thenReturn(response);
 
         // when
-        chatController.leave(request, "session-1", authentication);
+        chatController.leaveRoom(request, "session-1", authentication);
 
         // then
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
@@ -216,7 +216,7 @@ class ChatControllerTest {
         when(chatFacade.leaveRoom(1L, user)).thenThrow(new BusinessException(ErrorCode.CHAT_ROOM_ALREADY_COMPLETED));
 
         // when
-        chatController.leave(request, "session-1", authentication);
+        chatController.leaveRoom(request, "session-1", authentication);
 
         // then
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
@@ -236,7 +236,7 @@ class ChatControllerTest {
         when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> chatController.leave(request, "session-1", authentication))
+        assertThatThrownBy(() -> chatController.leaveRoom(request, "session-1", authentication))
                 .isInstanceOf(BusinessException.class);
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verifyNoInteractions(chatFacade, chatMessagePublisher);
@@ -269,7 +269,7 @@ class ChatControllerTest {
         ChatMessageRequest request = ChatMessageRequest.of(1L, "안녕하세요");
 
         // when & then
-        assertThatThrownBy(() -> chatController.send(request, "session-1", null))
+        assertThatThrownBy(() -> chatController.sendMessage(request, "session-1", null))
                 .isInstanceOf(BusinessException.class);
     }
 

@@ -36,7 +36,7 @@ public class ChatQueryController {
      */
     @GetMapping("/messages")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<ChatRoomMessagesResponse>>> getRecentMessagesForAdmin(
+    public ResponseEntity<ApiResponse<List<ChatRoomMessagesResponse>>> getAdminMessages(
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size
     ) {
         List<ChatRoomMessagesResponse> response = chatQueryService.getRecentMessagesGroupedByRoom(size);
@@ -55,7 +55,7 @@ public class ChatQueryController {
      * @return 기준 메시지보다 오래된 채팅 메시지 목록
      */
     @GetMapping("/rooms/{roomId}/messages/before/{lastMessageId}")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesBeforeByRoom(
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesBefore(
             @PathVariable Long roomId,
             @PathVariable Long lastMessageId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -82,7 +82,7 @@ public class ChatQueryController {
      * @return 기준 메시지보다 나중에 생성된 채팅 메시지 목록
      */
     @GetMapping("/rooms/{roomId}/messages/after/{lastMessageId}")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesAfterByRoom(
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesAfter(
             @PathVariable Long roomId,
             @PathVariable Long lastMessageId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -108,7 +108,7 @@ public class ChatQueryController {
      * @return 해당 채팅방의 최근 채팅 메시지 목록
      */
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getRecentMessagesByRoom(
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getRecentMessages(
             @PathVariable Long roomId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size
