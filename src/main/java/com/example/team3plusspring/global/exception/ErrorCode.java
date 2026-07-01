@@ -66,6 +66,7 @@ public enum ErrorCode {
     INVALID_COUPON_EVENT_PERIOD(HttpStatus.BAD_REQUEST, "발급 시작일시는 종료일시보다 빠르거나 같아야 합니다."),
     COUPON_EVENT_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 쿠폰 이벤트 이름입니다."),
     COUPON_ISSUE_LOCK_FAILED(HttpStatus.CONFLICT, "쿠폰 발급이 몰리고 있습니다. 잠시 후 다시 시도해주세요."),
+    COUPON_STOCK_NOT_INITIALIZED(HttpStatus.INTERNAL_SERVER_ERROR, "쿠폰 재고가 초기화되지 않았습니다."),
 
     // Payment
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제를 찾을 수 없습니다."),

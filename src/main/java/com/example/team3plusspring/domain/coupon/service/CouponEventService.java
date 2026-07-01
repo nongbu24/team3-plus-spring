@@ -3,6 +3,7 @@ package com.example.team3plusspring.domain.coupon.service;
 import java.time.LocalDateTime;
 
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -19,7 +20,6 @@ import com.example.team3plusspring.domain.coupon.entity.CouponEvent;
 import com.example.team3plusspring.domain.coupon.entity.CouponEventStatus;
 import com.example.team3plusspring.domain.coupon.entity.UserCoupon;
 import com.example.team3plusspring.domain.coupon.repository.CouponEventRepository;
-import com.example.team3plusspring.domain.coupon.repository.UserCouponRepository;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -31,9 +31,9 @@ import lombok.RequiredArgsConstructor;
 public class CouponEventService {
 
 	private final CouponEventRepository couponEventRepository;
-	private final UserCouponRepository userCouponRepository;
 	private final CouponEventCacheReader couponEventCacheReader;
 	private final CouponStockCounter couponStockCounter;
+	private final UserCouponService userCouponService;
 
 	/**
 	 * 쿠폰 이벤트를 등록하는 메서드
@@ -113,7 +113,7 @@ public class CouponEventService {
 			throw new BusinessException(ErrorCode.COUPON_EVENT_CLOSED);
 		}
 
-		if (userCouponRepository.existsByUserIdAndCouponEventId(userId, couponEventId)) {
+		if (userCouponService.existsByUserIdAndCouponEventId(userId, couponEventId)) {
 			throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
 		}
 
@@ -128,12 +128,14 @@ public class CouponEventService {
 				throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
 			}
 
-			UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId, couponEvent.getValidDays());
-			UserCoupon savedUserCoupon = userCouponRepository.save(userCoupon);
+			UserCoupon savedUserCoupon = userCouponService.issue(userId, couponEventId, couponEvent.getValidDays());
 
 			return IssueCouponResponse.from(savedUserCoupon);
 		} catch (BusinessException e) {
 			throw e;
+		} catch (DataIntegrityViolationException e) {
+			couponStockCounter.restoreStock(couponEventId);
+			throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
 		} catch (Exception e) {
 			couponStockCounter.restoreStock(couponEventId);
 			throw e;

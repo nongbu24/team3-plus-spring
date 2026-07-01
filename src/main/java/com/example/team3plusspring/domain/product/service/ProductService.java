@@ -32,9 +32,16 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
 
     // 상품 상세 조회
+    @Transactional
     public GetOneProductResponse getProduct(Long productId) {
+
+        // 조회수 증가
+        productRepository.incrementViewCount(productId);
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+
         Category category = categoryRepository.findById(product.getCategoryId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         return GetOneProductResponse.of(product, category);
@@ -159,5 +166,34 @@ public class ProductService {
         quantitiesByProductId.forEach((productId, quantity) ->
                 productsById.get(productId).increaseStock(quantity)
         );
+    }
+
+
+    // 인기 상품 조회
+    public List<GetProductsResponse> getPopularProducts(int limit) {
+        if (limit <= 0 || limit > 100) {
+            throw new BusinessException(ErrorCode.INVALID_PAGINATION);
+        }
+
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Product> products = productRepository.findPopularProducts(
+                List.of(ProductStatus.ON_SALE, ProductStatus.SOLD_OUT),
+                pageable
+        );
+
+        //  가져온 상품들의 categoryId를 추출하여 카테고리를 한 번에 조회
+        List<Long> categoryIds = products.stream()
+                .map(Product::getCategoryId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Category> categoryMap = categoryRepository.findAllById(categoryIds)
+                .stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
+
+        //  DTO 변환 시 categoryMap에서 카테고리 객체를 꺼내 전달
+        return products.stream()
+                .map(product -> GetProductsResponse.of(product, categoryMap.get(product.getCategoryId())))
+                .collect(Collectors.toList());
     }
 }
