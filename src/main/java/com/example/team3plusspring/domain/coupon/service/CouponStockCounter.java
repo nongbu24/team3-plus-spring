@@ -7,12 +7,15 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CouponStockCounter {
 
 	private static final String KEY_PREFIX = "coupon:stock:";
+	private static final long STOCK_NOT_INITIALIZED = -2L;
 
 	private static final RedisScript<Long> DECREASE_SCRIPT = RedisScript.of(
 	"""
@@ -35,8 +38,14 @@ public class CouponStockCounter {
 	}
 
 	public boolean decreaseStock(Long couponEventId) {
-		Long remaining = redisTemplate.execute(DECREASE_SCRIPT, List.of(key(couponEventId)));
-		return remaining != null && remaining >= 0;
+		Long result = redisTemplate.execute(DECREASE_SCRIPT, List.of(key(couponEventId)));
+
+		if (result == null || result == STOCK_NOT_INITIALIZED) {
+			log.warn("쿠폰 재고 키가 Redis에 존재하지 않음. couponEventId={}", couponEventId);
+			return false;
+		}
+
+		return result >= 0;
 	}
 
 	public void restoreStock(Long couponEventId) {
