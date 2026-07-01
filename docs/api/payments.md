@@ -11,6 +11,7 @@
 | --- | --- | --- | --- |
 | `GET` | `/api/config/portone` | PortOne 결제창 공개 설정 조회 | 불필요 |
 | `POST` | `/api/payments/{paymentId}/start` | PG 결제 시작 | 필요 |
+| `POST` | `/api/payments/{paymentId}/abort` | 진행 중인 결제 중단 | 필요 |
 | `POST` | `/api/payments/confirm` | 결제 승인 검증 | 필요 |
 | `POST` | `/api/payments/webhook` | PortOne 웹훅 수신 | 웹훅 검증 |
 
@@ -93,6 +94,54 @@ PG 결제창을 호출하기 전에 주문을 결제 대기 상태로 전환하�
 | `PAYMENT_NOT_FOUND` | 404 | 결제 없음 |
 | `PAYMENT_ACCESS_DENIED` | 403 | 타인의 결제 시작 요청 |
 | `PAYMENT_ALREADY_PROCESSED` | 409 | 결제를 시작할 수 없는 주문 또는 결제 상태 |
+
+## POST `/api/payments/{paymentId}/abort`
+
+결제창에서 결제를 완료하지 않고 이탈했을 때 진행 중인 주문과 결제를 종료합니다.
+
+- 인증: 필요
+- HTTP Status: `200 OK`
+
+### Path Variables
+
+| 이름 | 타입 | 설명 |
+| --- | --- | --- |
+| `paymentId` | `Long` | 중단할 결제 ID |
+
+### Request Body
+
+없음
+
+### Response Body
+
+```json
+{
+  "status": 200,
+  "message": "결제가 중단되었습니다."
+}
+```
+
+### 처리 규칙
+
+- 인증된 회원 본인의 결제만 중단할 수 있습니다.
+- 주문이 `PAYMENT_PENDING`, 결제가 `PENDING`인 경우에만 PortOne 상태를 조회합니다.
+- PortOne 상태가 `READY`이면 결제와 주문을 취소하고 재고와 쿠폰을 복구합니다.
+- PortOne 상태가 `FAILED`이면 결제 실패와 주문 취소를 반영하고 재고와 쿠폰을 복구합니다.
+- PortOne 상태가 `PENDING`이면 처리 중인 결제로 판단하고 내부 상태를 변경하지 않습니다.
+- 그 밖의 PortOne 상태는 중단할 수 없는 상태로 판단하고 내부 상태를 변경하지 않습니다.
+- 이미 중단된 요청은 재고와 쿠폰을 중복 복구하지 않고 성공 응답을 반환합니다.
+
+### Errors
+
+| 코드 | HTTP | 발생 조건 |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | 토큰 누락 또는 인증 실패 |
+| `PAYMENT_NOT_FOUND` | 404 | 결제 없음 |
+| `PAYMENT_ACCESS_DENIED` | 403 | 타인의 결제 중단 요청 |
+| `PAYMENT_NOT_STARTED` | 409 | 결제 시작 API를 호출하지 않음 |
+| `PAYMENT_NOT_COMPLETED` | 409 | PortOne 결제가 처리 중임 |
+| `PAYMENT_ALREADY_PROCESSED` | 409 | 이미 완료됐거나 중단할 수 없는 결제 |
+| `EXTERNAL_API_FAILED` | 502 | PortOne API 호출 실패 |
 
 ## POST `/api/payments/confirm`
 
