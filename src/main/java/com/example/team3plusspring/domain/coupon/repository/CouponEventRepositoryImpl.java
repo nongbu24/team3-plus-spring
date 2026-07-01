@@ -23,6 +23,18 @@ public class CouponEventRepositoryImpl implements CouponEventRepositoryCustom {
 	private final JPAQueryFactory queryFactory;
 
 	@Override
+	public boolean existsByNameAndStatus(String name, CouponEventStatus status) {
+		return queryFactory
+			.selectOne()
+			.from(couponEvent)
+			.where(
+				couponEvent.name.eq(name),
+				couponEvent.status.eq(status)
+			)
+			.fetchFirst() != null;
+	}
+
+	@Override
 	public long increaseIssuedQuantity(Long id) {
 		return queryFactory.update(couponEvent)
 			.set(couponEvent.issuedQuantity, couponEvent.issuedQuantity.add(1))
