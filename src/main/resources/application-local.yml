@@ -19,7 +19,7 @@ spring:
   sql:
     init:
       mode: always
-      data-locations: classpath:data-local.sql
+      data-locations: classpath:data.sql,classpath:data-local.sql
 
 jwt:
   secret: ${JWT_SECRET}
