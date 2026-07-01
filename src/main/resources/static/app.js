@@ -1128,7 +1128,7 @@ async function loadCart() {
     const cart = await request("/api/carts");
     renderCart(cart.items || [], cart.totalAmount || 0);
   } catch (error) {
-    $("#cartList").innerHTML = `<div class="empty">${error.message}</div>`;
+    $("#cartList").innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
   }
 }
 

@@ -66,34 +66,38 @@ public class ChatbotService {
                 key -> Collections.synchronizedList(new ArrayList<>())
         );
 
+        String prompt = createPrompt(topic, userMessage);
+
+        List<Message> historySnapshot;
         synchronized (history) {
-            String prompt = createPrompt(topic, userMessage);
-            List<Message> historySnapshot = new ArrayList<>(history);
+            historySnapshot = new ArrayList<>(history);
+        }
 
-            String response;
+        String response;
 
-            try {
-                response = chatClient.prompt()
-                        .messages(historySnapshot)
-                        .user(prompt)
-                        .call()
-                        .content();
-            } catch (RuntimeException e) {
-                throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
-            }
+        try {
+            response = chatClient.prompt()
+                    .messages(historySnapshot)
+                    .user(prompt)
+                    .call()
+                    .content();
+        } catch (RuntimeException e) {
+            throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
+        }
 
-            if (response == null || response.isBlank()) {
-                throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
-            }
+        if (response == null || response.isBlank()) {
+            throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
+        }
 
-            String normalizedResponse = normalizeResponse(response);
+        String normalizedResponse = normalizeResponse(response);
 
+        synchronized (history) {
             history.add(new UserMessage(userMessage));
             history.add(new AssistantMessage(normalizedResponse));
             trimHistory(history);
-
-            return normalizedResponse;
         }
+
+        return normalizedResponse;
     }
 
     private void trimHistory(List<Message> history) {
