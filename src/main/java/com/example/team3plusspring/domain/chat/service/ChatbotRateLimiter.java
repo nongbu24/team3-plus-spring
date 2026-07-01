@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class ChatbotRateLimiter {
-    private static final int MAX_REQUESTS_PER_MINUTE = 10;
+    private static final int MAX_IP_REQUESTS_PER_MINUTE = 10;
+    private static final int MAX_SESSION_REQUESTS_PER_MINUTE = 10;
     private static final int MAX_RATE_LIMIT_KEYS = 20_000;
     private static final Duration WINDOW = Duration.ofMinutes(1);
 
@@ -22,27 +23,21 @@ public class ChatbotRateLimiter {
             .build();
 
     public void checkAllowed(String sessionId, HttpServletRequest request) {
-        String key = clientIp(request) + ":" + sessionId;
+        String ip = clientIp(request);
+
+        checkLimit("ip:" + ip, MAX_IP_REQUESTS_PER_MINUTE);
+        checkLimit("session:" + ip + ":" + sessionId, MAX_SESSION_REQUESTS_PER_MINUTE);
+    }
+
+    private void checkLimit(String key, int maxRequests) {
         AtomicInteger count = requestCounts.get(key, ignored -> new AtomicInteger());
 
-        if (count.incrementAndGet() > MAX_REQUESTS_PER_MINUTE) {
+        if (count.incrementAndGet() > maxRequests) {
             throw new BusinessException(ErrorCode.CHATBOT_RATE_LIMIT_EXCEEDED);
         }
     }
 
     private String clientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-
-        String realIp = request.getHeader("X-Real-IP");
-
-        if (realIp != null && !realIp.isBlank()) {
-            return realIp.trim();
-        }
-
         return request.getRemoteAddr();
     }
 }

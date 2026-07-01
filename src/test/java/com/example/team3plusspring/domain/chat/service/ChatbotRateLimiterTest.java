@@ -45,4 +45,49 @@ class ChatbotRateLimiterTest {
         // when & then
         chatbotRateLimiter.checkAllowed("550e8400-e29b-41d4-a716-446655440000", secondRequest);
     }
+
+    @Test
+    void 같은IP에서_세션을_바꿔도_분당10회를_초과하면_예외가_발생한다() {
+        // given
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("127.0.0.1");
+
+        for (int i = 0; i < 10; i++) {
+            chatbotRateLimiter.checkAllowed("550e8400-e29b-41d4-a716-44665544000" + i, request);
+        }
+
+        // when & then
+        assertThatThrownBy(() -> chatbotRateLimiter.checkAllowed("550e8400-e29b-41d4-a716-446655440010", request))
+                .isInstanceOfSatisfying(BusinessException.class, exception ->
+                        org.assertj.core.api.Assertions.assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.CHATBOT_RATE_LIMIT_EXCEEDED)
+                );
+    }
+
+    @Test
+    void 헤더IP를_바꿔도_remoteAddr_기준으로_분당10회를_초과하면_예외가_발생한다() {
+        // given
+        String remoteAddr = "127.0.0.1";
+
+        for (int i = 0; i < 10; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.setRemoteAddr(remoteAddr);
+            request.addHeader("X-Forwarded-For", "10.0.0." + i);
+            request.addHeader("X-Real-IP", "172.16.0." + i);
+
+            chatbotRateLimiter.checkAllowed("550e8400-e29b-41d4-a716-44665544000" + i, request);
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr(remoteAddr);
+        request.addHeader("X-Forwarded-For", "10.0.0.10");
+        request.addHeader("X-Real-IP", "172.16.0.10");
+
+        // when & then
+        assertThatThrownBy(() -> chatbotRateLimiter.checkAllowed("550e8400-e29b-41d4-a716-446655440010", request))
+                .isInstanceOfSatisfying(BusinessException.class, exception ->
+                        org.assertj.core.api.Assertions.assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.CHATBOT_RATE_LIMIT_EXCEEDED)
+                );
+    }
 }
