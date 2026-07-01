@@ -165,6 +165,7 @@ public class OrderFacade {
                 .map(GetOrderListResponse::from);
     }
 
+    @Transactional
     public CancelOrderResponse cancel(Long userId, Long orderId) {
         Payment payment = paymentService.findPaymentForUpdateByOrderId(orderId);
         Order order = orderService.findOrderForUpdate(orderId);
