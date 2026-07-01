@@ -31,6 +31,7 @@ public class ChatbotService {
     private static final int MAX_HISTORY_SESSIONS = 10_000;
     private static final Duration HISTORY_EXPIRE_AFTER_ACCESS = Duration.ofMinutes(30);
     private static final int MAX_RELATED_PRODUCTS = 3;
+    private static final int MAX_KEYWORD_CANDIDATES = 5;
     private static final int MAX_KEYWORD_LENGTH = 100;
     private static final Set<String> KEYWORD_STOP_WORDS = Set.of(
             "추천", "추천해줘", "추천해주세요", "알려줘", "알려주세요", "있나요", "있어", "상품",
@@ -190,7 +191,9 @@ public class ChatbotService {
 
         candidates.add(limitKeywordLength(normalized));
 
-        return List.copyOf(candidates);
+        return candidates.stream()
+                .limit(MAX_KEYWORD_CANDIDATES)
+                .toList();
     }
 
     private String normalizeKeyword(String userMessage) {

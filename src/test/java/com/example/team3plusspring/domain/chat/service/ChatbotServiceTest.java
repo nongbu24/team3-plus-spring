@@ -57,4 +57,15 @@ class ChatbotServiceTest {
         // then
         assertThat(keywords).containsSubsequence("Galaxy S25", "iPhone 16");
     }
+
+    @Test
+    void 키워드후보생성_후보개수는_최대5개까지만_반환한다() {
+        // when
+        List<String> keywords = chatbotService.createKeywordCandidates(
+                "갤럭시 s25 아이폰 16 맥북 에어팟 노트북 태블릿 모니터 키보드 마우스 비교해줘"
+        );
+
+        // then
+        assertThat(keywords).hasSizeLessThanOrEqualTo(5);
+    }
 }

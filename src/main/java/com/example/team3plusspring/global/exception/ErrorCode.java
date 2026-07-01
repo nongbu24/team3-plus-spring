@@ -88,6 +88,7 @@ public enum ErrorCode {
     CHAT_ROOM_ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 채팅방입니다."),
     INVALID_CHAT_STATUS_TRANSITION(HttpStatus.CONFLICT, "변경할 수 없는 문의 상태입니다."),
     ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "관리자를 찾을 수 없습니다."),
+    CHATBOT_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "챗봇 요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
 
     // Search
     POPULAR_SEARCH_KEYWORD_NOT_FOUND(HttpStatus.NOT_FOUND, "인기 검색어를 찾을 수 없습니다."),
