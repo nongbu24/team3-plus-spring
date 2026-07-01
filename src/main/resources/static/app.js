@@ -1031,9 +1031,9 @@ async function loadSearchResults(keyword, sort = state.searchSort, categoryId = 
 async function loadBestProducts() {
   const sampleProducts = getSampleProducts("", "PRICE_DESC", "").slice(0, 10);
   try {
-    const query = new URLSearchParams({ page: "0", size: "10", sort: "PRICE_DESC" });
-    const data = await request(`/api/v1/products?${query.toString()}`);
-    state.bestProducts = (data.content || []).length ? data.content : sampleProducts;
+    const query = new URLSearchParams({ limit: "10" });
+    const data = await request(`/api/products/popular?${query.toString()}`);
+    state.bestProducts = data.length ? data : sampleProducts;
   } catch (error) {
     state.bestProducts = sampleProducts;
   }
