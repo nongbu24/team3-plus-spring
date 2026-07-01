@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -37,4 +38,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // 조회수가 높은 순서대로 가져오기
     @Query("SELECT p FROM Product p ORDER BY p.viewCount DESC")
     List<Product> findPopularProducts(Pageable pageable);
+
+    // 조회수 증가를 위한 직접 업데이트 쿼리
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Product p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
+    void incrementViewCount(@Param("id") Long id);
 }

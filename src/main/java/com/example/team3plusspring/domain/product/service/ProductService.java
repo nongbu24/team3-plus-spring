@@ -32,12 +32,15 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
 
     // 상품 상세 조회
+    @Transactional
     public GetOneProductResponse getProduct(Long productId) {
+
+        // 조회수 증가
+        productRepository.incrementViewCount(productId);
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 조회수 증가
-        product.increaseViewCount();
 
         Category category = categoryRepository.findById(product.getCategoryId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
@@ -141,6 +144,10 @@ public class ProductService {
 
     // 인기 상품 조회
     public List<GetProductsResponse> getPopularProducts(int limit) {
+        if (limit <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_PAGINATION);
+        }
+
         Pageable pageable = PageRequest.of(0, limit);
         List<Product> products = productRepository.findPopularProducts(pageable);
 
