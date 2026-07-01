@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>삼전전자</title>
+  <title>삼조전자</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <div class="topbar">
       <button class="brand" data-view="home" aria-label="홈으로 이동">
         <span class="mark"></span>
-        <span>삼전전자</span>
+        <span>삼조전자</span>
       </button>
       <form class="search" id="searchForm">
         <button class="search-button" type="submit" aria-label="검색">⌕</button>
@@ -66,7 +66,6 @@
           <button class="sort-chip active" data-product-sort="LATEST" type="button">등록일 순</button>
           <button class="sort-chip" data-product-sort="PRICE_DESC" type="button">높은 가격순</button>
           <button class="sort-chip" data-product-sort="PRICE_ASC" type="button">낮은 가격순</button>
-          <button class="text-link" id="reloadProducts" type="button">새로고침</button>
         </div>
       </div>
       <section class="product-grid" id="productGrid" aria-live="polite"></section>
@@ -179,6 +178,7 @@
           <h2>주문 내역</h2>
         </div>
         <div class="order-list" id="orderList"></div>
+        <div class="pagination" id="orderPagination"></div>
       </section>
     </section>
 
@@ -204,21 +204,40 @@
       <h1>주문 미리보기</h1>
       <div class="checkout-list" id="checkoutList"></div>
       <div class="payment-box">
-        <div class="pay-row"><span>보유 포인트</span><b>12,450P</b></div>
-        <div class="pay-row"><span>사용 포인트</span><b>0P</b></div>
-        <div class="pay-row"><span>배송비</span><b>무료</b></div>
+        <label class="coupon-select-field" for="checkoutCouponSelect">
+          <span>보유 쿠폰</span>
+          <select id="checkoutCouponSelect">
+            <option value="">사용 가능한 쿠폰을 불러오는 중입니다.</option>
+          </select>
+        </label>
+        <div class="pay-row"><span>총 금액</span><b id="checkoutSubtotal">0원</b></div>
+        <div class="pay-row"><span>할인 금액</span><b id="checkoutDiscount">-0원</b></div>
         <div class="pay-row total"><span>총 결제 금액</span><b id="checkoutTotal">0원</b></div>
-        <button class="dark" id="paymentButton">결제 준비 완료</button>
+        <div class="checkout-actions">
+          <button class="secondary" id="backToCartButton" type="button">장바구니로 돌아가기</button>
+          <button class="dark" id="paymentButton" type="button">결제</button>
+        </div>
       </div>
     </section>
   </main>
 
-  <aside class="chat-widget" id="chatWidget" aria-label="삼전전자 상담">
+  <div class="cart-confirm hidden" id="cartConfirm" role="dialog" aria-modal="true" aria-labelledby="cartConfirmTitle">
+    <div class="cart-confirm-panel">
+      <h2 id="cartConfirmTitle">상품을 장바구니에 담았습니다.</h2>
+      <p>장바구니로 이동할까요?</p>
+      <div class="cart-confirm-actions">
+        <button class="dark" id="cartConfirmGoButton" type="button">장바구니로 이동</button>
+        <button class="secondary" id="cartConfirmCloseButton" type="button">계속 쇼핑하기</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="chat-widget" id="chatWidget" aria-label="삼조전자 상담">
     <button class="chat-fab" id="chatToggleButton" type="button" aria-expanded="false" aria-controls="chatPanel">상담</button>
     <section class="chat-panel hidden" id="chatPanel">
       <div class="chat-head">
         <div>
-          <strong>삼전전자 상담</strong>
+          <strong>삼조전자 상담</strong>
           <span id="chatStatusText">AI 상담 또는 1:1 문의를 선택해주세요.</span>
         </div>
         <button class="icon-close" id="chatCloseButton" type="button" aria-label="상담창 닫기">×</button>
@@ -245,6 +264,7 @@
   <aside class="toast" id="toast" aria-live="polite"></aside>
   <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

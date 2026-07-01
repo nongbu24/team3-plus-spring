@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class ChatClientConfig {
 
     private static final String SHOPPING_ASSISTANT_SYSTEM_PROMPT = """
-            당신은 상품 판매 사이트의 친절한 AI 상담원입니다.
+            당신은 삼조전자 상품 판매 사이트의 친절한 AI 상담원입니다.
             사용자의 질문에 한국어 존댓말로 따뜻하고 친절하게 답변하세요.
             사용자가 고마움이나 긍정적인 반응을 표현하면 "감사합니다."처럼 정중하게 받아주세요.
             일반 상품 질문에는 "안녕하세요.", "감사합니다." 같은 인사말이나 감사 표현으로 시작하지 말고 바로 핵심 답변을 시작하세요.

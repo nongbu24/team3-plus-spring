@@ -32,6 +32,9 @@ const state = {
   productPage: 0,
   productTotalPages: 0,
   productTotalElements: 0,
+  orderPage: 0,
+  orderTotalPages: 0,
+  orderTotalElements: 0,
   searchKeyword: "",
   searchCategoryId: "",
   searchLabel: "",
@@ -58,7 +61,12 @@ const state = {
   stompClient: null,
   lastLiveMessageId: 0,
   quantity: 1,
-  checkoutItems: []
+  checkoutItems: [],
+  checkoutOrder: null,
+  checkoutSource: null,
+  checkoutCartItemIds: [],
+  selectedUserCouponId: null,
+  checkoutAmount: 0
 };
 localStorage.setItem("chatSessionId", state.chatSessionId);
 
@@ -174,8 +182,12 @@ function expireLogin(message = "로그인이 만료되었습니다. 다시 로�
   state.liveChatListMode = false;
   state.liveChatExited = false;
   localStorage.removeItem("accessToken");
+  state.orderPage = 0;
+  state.orderTotalPages = 0;
+  state.orderTotalElements = 0;
   updateAuthButton();
   $("#orderList").innerHTML = "";
+  $("#orderPagination").innerHTML = "";
   $("#cartList").innerHTML = "";
   clearOrderDetailPanel();
   showToast(message);
@@ -289,15 +301,12 @@ function renderChatMessages() {
 
 function renderLiveChatRoomList() {
   const messages = $("#chatMessages");
-  const createButton = isAdminUser()
-    ? ""
-    : `<button class="chat-room-create" type="button" id="chatRoomCreateButton" ${state.liveChatCreating ? "disabled" : ""}>새 문의</button>`;
   if (!state.liveChatRooms.length) {
-    messages.innerHTML = createButton + `<div class="chat-empty">${isAdminUser() ? "담당 가능한 채팅이 없습니다." : "채팅 기록이 없습니다."}</div>`;
+    messages.innerHTML = `<div class="chat-empty">${isAdminUser() ? "담당 가능한 채팅이 없습니다." : "채팅 기록이 없습니다."}</div>`;
     return;
   }
 
-  messages.innerHTML = createButton + state.liveChatRooms.map((room) => {
+  messages.innerHTML = state.liveChatRooms.map((room) => {
     const exited = isExitedLiveChatRoom(room);
     return `
     <button class="chat-room-item ${getChatRoomItemClass(room)}" type="button" data-chat-room-id="${room.roomId}">
@@ -393,10 +402,6 @@ function setChatOpen(isOpen) {
   $("#chatPanel").classList.toggle("hidden", !isOpen);
   $("#chatToggleButton").classList.toggle("hidden", isOpen);
   $("#chatToggleButton").setAttribute("aria-expanded", String(isOpen));
-  if (isOpen && state.token) {
-    openLiveChatByRole();
-    return;
-  }
   if (isOpen && state.chatMode === "ai" && !state.chatMessages.length) {
     addChatMessage("bot", "상담 유형을 선택한 뒤 질문해주세요.\n상품 추천, 상품 설명 요약, 장바구니 담기 전 질문, 특정 상품 비교만 도와드릴 수 있습니다.");
   }
@@ -486,7 +491,7 @@ function setChatMode(mode) {
 
 function getLiveChatStatusText() {
   if (!state.token) return "로그인한 회원만 1:1 문의를 이용할 수 있습니다.";
-  if (canStartFirstLiveChatFromInput()) return "문의할 내용을 입력해주세요.";
+  if (isEmptyCustomerLiveChatList()) return "새 문의를 시작할 수 있습니다.";
   if (state.liveChatListMode) return isAdminUser() ? "담당할 문의방을 선택해주세요." : "문의방을 선택해주세요.";
   if (state.liveChatExited) return "문의방에서 나갔습니다.";
   if (state.liveChatConnected) return "상담방에 연결되었습니다.";
@@ -498,18 +503,28 @@ function updateLiveChatControls() {
   const isLiveMode = state.chatMode === "live";
   const isCustomer = state.liveChatRoom?.customerId === getCurrentUserId();
   const shouldShowLeaveButton = isLiveMode && isCustomer && !state.liveChatExited;
-  const canStartFirstChat = canStartFirstLiveChatFromInput();
+  const canCreateChatFromForm = canCreateLiveChatFromForm();
+  const shouldShowNewInquirySubmit = isCustomerLiveChatList();
+  $("#chatForm").classList.toggle("new-inquiry-mode", shouldShowNewInquirySubmit);
   $("#chatLeaveButton").classList.toggle("hidden", !shouldShowLeaveButton);
   $("#chatLeaveButton").disabled = !shouldShowLeaveButton || !state.liveChatConnected || state.liveChatConnecting || state.liveChatExited;
-  $("#chatInput").disabled = isLiveMode && (state.liveChatCreating || (!canStartFirstChat && (state.liveChatListMode || state.liveChatExited)));
-  $("#chatSendButton").disabled = isLiveMode && (state.liveChatCreating || (!canStartFirstChat && (state.liveChatConnecting || state.liveChatListMode || state.liveChatExited)));
+  $("#chatInput").disabled = shouldShowNewInquirySubmit || (isLiveMode && (state.liveChatCreating || (!canCreateChatFromForm && (state.liveChatListMode || state.liveChatExited))));
+  $("#chatSendButton").textContent = shouldShowNewInquirySubmit ? "새 문의" : "전송";
+  $("#chatSendButton").disabled = isLiveMode && (state.liveChatCreating || (!canCreateChatFromForm && (state.liveChatConnecting || state.liveChatListMode || state.liveChatExited)));
 }
 
-function canStartFirstLiveChatFromInput() {
+function isCustomerLiveChatList() {
   return state.chatMode === "live"
     && state.liveChatListMode
-    && !isAdminUser()
-    && !state.liveChatRooms.length
+    && !isAdminUser();
+}
+
+function isEmptyCustomerLiveChatList() {
+  return isCustomerLiveChatList() && !state.liveChatRooms.length;
+}
+
+function canCreateLiveChatFromForm() {
+  return isCustomerLiveChatList()
     && !state.liveChatCreating
     && !state.liveChatConnecting;
 }
@@ -678,7 +693,7 @@ function connectLiveChat() {
 
 function sendLiveChatMessage(message) {
   if (state.liveChatListMode) {
-    if (canStartFirstLiveChatFromInput()) {
+    if (canCreateLiveChatFromForm()) {
       $("#chatInput").value = "";
       createLiveChatRoom(message);
       return;
@@ -714,8 +729,7 @@ function leaveLiveChatRoom() {
   $("#chatStatusText").textContent = "문의방에서 나가는 중입니다.";
 
   state.stompClient.send("/pub/chat.leave", {}, JSON.stringify({ roomId }));
-  window.setTimeout(() => {
-    const name = state.currentUser?.name || "회원";
+  window.setTimeout(async () => {
     rememberExitedLiveChatRoom(state.liveChatRoom);
     if (state.liveChatRoom) {
       state.liveChatRoom.status = "COMPLETED";
@@ -724,18 +738,19 @@ function leaveLiveChatRoom() {
       String(room.roomId) === String(roomId) ? { ...room, status: "COMPLETED" } : room
     ));
     disconnectLiveChat();
-    state.liveChatExited = true;
-    addLiveMessage({
-      content: `${name}님이 퇴장하셨습니다.`,
-      senderId: getCurrentUserId(),
-      senderName: name,
-      messageType: "SYSTEM",
-      createdAt: new Date().toISOString(),
-      local: true
-    });
+    state.liveChatRoom = null;
+    state.liveChatExited = false;
+    state.liveChatListMode = true;
+    state.liveChatMessages = [];
+    renderChatMessages();
     $("#chatStatusText").textContent = getLiveChatStatusText();
     updateLiveChatControls();
     showToast("1:1 문의방에서 나갔습니다.");
+    try {
+      await loadLiveChatRooms();
+    } catch (error) {
+      showToast(error.message);
+    }
   }, 300);
 }
 
@@ -1053,6 +1068,22 @@ function renderDetail() {
   $("#totalPrice").textContent = money(product.price * state.quantity);
 }
 
+function openCartConfirm() {
+  $("#cartConfirm").classList.remove("hidden");
+  $("#cartConfirmGoButton").focus();
+}
+
+function closeCartConfirm() {
+  $("#cartConfirm").classList.add("hidden");
+  $("#addCartButton").focus();
+}
+
+function goCartFromConfirm() {
+  closeCartConfirm();
+  showView("cart");
+  loadCart();
+}
+
 async function addCart() {
   if (!state.token) {
     showToast("로그인 후 장바구니에 담을 수 있습니다.");
@@ -1064,7 +1095,7 @@ async function addCart() {
       method: "POST",
       body: JSON.stringify({ productId: state.currentProduct.id, quantity: state.quantity })
     });
-    showToast("장바구니에 담았습니다.");
+    openCartConfirm();
   } catch (error) {
     showToast(error.message);
   }
@@ -1079,7 +1110,12 @@ function prepareDirectCheckout() {
     unitPrice: product.price,
     lineAmount: product.price * state.quantity
   }];
+  state.checkoutOrder = null;
+  state.checkoutSource = "direct";
+  state.checkoutCartItemIds = [];
+  state.selectedUserCouponId = null;
   renderCheckout();
+  loadCheckoutCoupons();
   showView("checkout");
 }
 
@@ -1128,12 +1164,13 @@ async function orderCart() {
       showToast("주문할 장바구니 상품이 없습니다.");
       return;
     }
-    const order = await request("/api/orders/carts", {
-      method: "POST",
-      body: JSON.stringify({ cartItemIds: ids })
-    });
-    state.checkoutItems = order.items || [];
-    renderCheckout(order.paymentAmount);
+    state.checkoutItems = cart.items || [];
+    state.checkoutCartItemIds = ids;
+    state.checkoutOrder = null;
+    state.checkoutSource = "cart";
+    state.selectedUserCouponId = null;
+    renderCheckout(cart.totalAmount || 0);
+    loadCheckoutCoupons();
     showView("checkout");
   } catch (error) {
     showToast(error.message);
@@ -1142,7 +1179,10 @@ async function orderCart() {
 
 function renderCheckout(total) {
   const items = state.checkoutItems;
-  const amount = total ?? items.reduce((sum, item) => sum + (item.lineAmount || 0), 0);
+  const subtotal = total ?? items.reduce((sum, item) => sum + (item.lineAmount || 0), 0);
+  const discountAmount = calculateSelectedCouponDiscount($("#checkoutCouponSelect")?.selectedOptions[0], subtotal);
+  const paymentAmount = Math.max(subtotal - discountAmount, 0);
+  state.checkoutAmount = subtotal;
   $("#checkoutList").innerHTML = items.map((item) => `
     <article class="checkout-item">
       <div class="mini-thumb"></div>
@@ -1153,7 +1193,245 @@ function renderCheckout(total) {
       <strong>${money(item.lineAmount)}</strong>
     </article>
   `).join("") || `<div class="empty">주문할 상품이 없습니다.</div>`;
-  $("#checkoutTotal").textContent = money(amount);
+  renderCheckoutSummary(subtotal, discountAmount, paymentAmount);
+}
+
+function renderCheckoutSummary(subtotal, discountAmount, paymentAmount) {
+  $("#checkoutSubtotal").textContent = money(subtotal);
+  $("#checkoutDiscount").textContent = `-${money(discountAmount)}`;
+  $("#checkoutTotal").textContent = money(paymentAmount);
+}
+
+async function loadCheckoutCoupons() {
+  const select = $("#checkoutCouponSelect");
+  if (!select) return;
+
+  if (!state.token) {
+    select.innerHTML = `<option value="">로그인 후 쿠폰을 선택할 수 있습니다.</option>`;
+    select.disabled = true;
+    return;
+  }
+
+  select.disabled = true;
+  select.innerHTML = `<option value="">쿠폰을 불러오는 중입니다.</option>`;
+
+  try {
+    const page = await request("/api/users/me/coupons?page=0&size=20");
+    const coupons = page.content || [];
+    const eventMap = await loadCouponEventsById();
+    select.innerHTML = [
+      `<option value="">쿠폰 사용 안 함</option>`,
+      ...coupons.map((coupon) => {
+        const event = eventMap.get(coupon.couponEventId);
+        const label = event
+          ? `${event.name} (${formatDiscount(event)}, 만료 ${formatDate(coupon.expiredAt)})`
+          : `쿠폰 #${coupon.id} (만료 ${formatDate(coupon.expiredAt)})`;
+        return `
+          <option
+            value="${coupon.id}"
+            data-discount-type="${escapeHtml(event?.discountType || "")}"
+            data-discount-amount="${event?.discountAmount ?? 0}"
+          >${escapeHtml(label)}</option>
+        `;
+      })
+    ].join("");
+    select.value = state.selectedUserCouponId ? String(state.selectedUserCouponId) : "";
+    select.disabled = false;
+    renderCheckout();
+  } catch (error) {
+    select.innerHTML = `<option value="">${escapeHtml(error.message)}</option>`;
+    select.disabled = true;
+  }
+}
+
+function selectCheckoutCoupon(event) {
+  const select = event.currentTarget;
+  const selectedOption = select.selectedOptions[0];
+  const discountAmount = calculateSelectedCouponDiscount(selectedOption, state.checkoutAmount);
+  if (discountAmount > state.checkoutAmount) {
+    showToast("상품 금액보다 큰 쿠폰은 적용할 수 없습니다.");
+    select.value = "";
+    state.selectedUserCouponId = null;
+    state.checkoutOrder = null;
+    renderCheckout();
+    return;
+  }
+
+  state.selectedUserCouponId = select.value ? Number(select.value) : null;
+  state.checkoutOrder = null;
+  renderCheckout();
+}
+
+function calculateSelectedCouponDiscount(option, baseAmount = state.checkoutAmount) {
+  if (!option?.value) return 0;
+  const discountAmount = Number(option.dataset.discountAmount || 0);
+  if (option.dataset.discountType === "PERCENT") {
+    return Math.floor(baseAmount * discountAmount / 100);
+  }
+  return discountAmount;
+}
+
+function backToCart() {
+  state.checkoutOrder = null;
+  state.checkoutSource = null;
+  state.checkoutCartItemIds = [];
+  state.selectedUserCouponId = null;
+  showView("cart");
+  loadCart();
+}
+
+async function createCheckoutOrderIfNeeded() {
+  if (state.checkoutOrder?.paymentId) {
+    return state.checkoutOrder;
+  }
+
+  if (state.checkoutSource === "cart") {
+    if (!state.checkoutCartItemIds.length) {
+      throw new Error("주문할 장바구니 상품이 없습니다.");
+    }
+
+    const order = await request("/api/orders/carts", {
+      method: "POST",
+      body: JSON.stringify({
+        cartItemIds: state.checkoutCartItemIds,
+        userCouponId: state.selectedUserCouponId
+      })
+    });
+    state.checkoutOrder = order;
+    state.checkoutItems = order.items || state.checkoutItems;
+    renderCheckoutSummary(order.totalProductAmount, order.usedCouponAmount, order.paymentAmount);
+    return order;
+  }
+
+  const item = state.checkoutItems[0];
+  if (!item) {
+    throw new Error("주문할 상품이 없습니다.");
+  }
+
+  const order = await request("/api/orders/direct", {
+    method: "POST",
+    body: JSON.stringify({
+      productId: item.productId,
+      quantity: item.quantity,
+      userCouponId: state.selectedUserCouponId
+    })
+  });
+  state.checkoutOrder = order;
+  state.checkoutItems = order.items || state.checkoutItems;
+  renderCheckoutSummary(order.totalProductAmount, order.usedCouponAmount, order.paymentAmount);
+  return order;
+}
+
+function getCheckoutOrderName(order) {
+  const items = order.items || state.checkoutItems;
+  if (!items.length) return order.orderNumber || "삼조전자 주문";
+  if (items.length === 1) return items[0].productName;
+  return `${items[0].productName} 외 ${items.length - 1}개`;
+}
+
+function isFreeAmount(amount) {
+  return Number(amount) === 0;
+}
+
+async function finishCheckoutPayment() {
+  showToast("결제가 완료되었습니다.");
+  state.checkoutOrder = null;
+  state.checkoutSource = null;
+  state.checkoutCartItemIds = [];
+  state.selectedUserCouponId = null;
+  await loadOrders(0);
+  showView("account");
+}
+
+async function processPayment() {
+  if (!state.token) {
+    showToast("로그인 후 결제할 수 있습니다.");
+    showView("auth");
+    return;
+  }
+
+  const paymentButton = $("#paymentButton");
+  const originalText = paymentButton.textContent;
+  paymentButton.disabled = true;
+  paymentButton.textContent = "결제창 준비 중";
+
+  try {
+    const order = await createCheckoutOrderIfNeeded();
+    if (!order.paymentId) {
+      throw new Error("결제 ID를 확인하지 못했습니다. 주문을 다시 생성해주세요.");
+    }
+
+    if (isFreeAmount(order.paymentAmount)) {
+      paymentButton.textContent = "결제 완료 처리 중";
+      await request(`/api/payments/${order.paymentId}/free-complete`, { method: "POST" });
+      await finishCheckoutPayment();
+      return;
+    }
+
+    const payment = await request(`/api/payments/${order.paymentId}/start`, { method: "POST" });
+
+    if (isFreeAmount(payment.paymentAmount)) {
+      paymentButton.textContent = "결제 완료 처리 중";
+      await request(`/api/payments/${order.paymentId}/free-complete`, { method: "POST" });
+      await finishCheckoutPayment();
+      return;
+    }
+
+    if (!window.PortOne?.requestPayment) {
+      throw new Error("포트원 결제 SDK를 불러오지 못했습니다.");
+    }
+
+    const config = await request("/api/config/portone");
+
+    if (!config.storeId || !config.channelKey) {
+      throw new Error("포트원 공개 설정이 비어 있습니다.");
+    }
+    if (!payment.portOnePaymentId) {
+      throw new Error("포트원 결제 ID를 확인하지 못했습니다. 주문을 다시 생성해주세요.");
+    }
+
+    const user = await ensureCurrentUser();
+    const customerId = user?.userId ?? getCurrentUserId();
+    if (!customerId) {
+      throw new Error("회원 ID를 확인하지 못했습니다. 다시 로그인한 뒤 결제해주세요.");
+    }
+
+    const paymentResult = await window.PortOne.requestPayment({
+      storeId: config.storeId,
+      channelKey: config.channelKey,
+      paymentId: payment.portOnePaymentId,
+      orderName: getCheckoutOrderName(order),
+      totalAmount: payment.paymentAmount,
+      currency: "CURRENCY_KRW",
+      payMethod: "CARD",
+      customer: {
+        customerId: String(customerId),
+        fullName: user.name,
+        email: user.email,
+        phoneNumber: user.phone
+      }
+    });
+
+    if (paymentResult?.code) {
+      showToast(paymentResult.message || "결제가 취소되었습니다.");
+      return;
+    }
+
+    await request("/api/payments/confirm", {
+      method: "POST",
+      body: JSON.stringify({
+        paymentId: payment.paymentId,
+        portOnePaymentId: paymentResult?.paymentId || payment.portOnePaymentId
+      })
+    });
+
+    await finishCheckoutPayment();
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    paymentButton.disabled = false;
+    paymentButton.textContent = originalText;
+  }
 }
 
 async function submitAuth(event) {
@@ -1222,6 +1500,7 @@ async function loadProfile() {
     $("#profileContact").innerHTML = `<span>로그인하면 내 정보를 확인할 수 있습니다.</span>`;
     $("#couponCount").textContent = "0장";
     $("#orderList").innerHTML = `<div class="empty">로그인이 필요합니다.</div>`;
+    $("#orderPagination").innerHTML = "";
     return;
   }
   try {
@@ -1283,17 +1562,21 @@ async function loadCouponEventsById() {
   }
 }
 
-async function loadOrders() {
+async function loadOrders(pageNumber = state.orderPage) {
   clearOrderDetailPanel();
   if (!state.token) {
     $("#orderList").innerHTML = `<div class="empty">로그인하면 주문 내역을 확인할 수 있습니다.</div>`;
+    $("#orderPagination").innerHTML = "";
     return;
   }
   try {
-    const page = await request("/api/orders?page=0&size=10");
+    const page = await request(`/api/orders?page=${pageNumber}&size=10`);
     const orders = page.content || [];
     const orderSummaries = await Promise.all(orders.map(loadOrderSummary));
-    $("#orderCount").textContent = `${page.totalElements || orders.length}건`;
+    state.orderPage = page.page || 0;
+    state.orderTotalPages = page.totalPages || 0;
+    state.orderTotalElements = page.totalElements || orders.length;
+    $("#orderCount").textContent = `${state.orderTotalElements}건`;
     $("#orderList").innerHTML = orderSummaries.map((order) => `
       <button class="order-item" type="button" data-order-id="${order.orderId}">
         <div class="mini-thumb"></div>
@@ -1304,8 +1587,17 @@ async function loadOrders() {
         <span class="badge">${formatOrderStatus(order.status)}</span>
       </button>
     `).join("") || `<div class="empty">주문 내역이 없습니다.</div>`;
+    renderPagination(
+      "#orderPagination",
+      state.orderPage,
+      state.orderTotalPages,
+      state.orderTotalElements,
+      "orders-prev",
+      "orders-next"
+    );
   } catch (error) {
-    $("#orderList").innerHTML = `<div class="empty">${error.message}</div>`;
+    $("#orderList").innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    $("#orderPagination").innerHTML = "";
   }
 }
 
@@ -1386,7 +1678,7 @@ function renderOrderDetail(order) {
     </div>
     <div class="order-detail-total">
       <div class="pay-row"><span>상품 금액</span><b>${money(order.totalProductAmount)}</b></div>
-      <div class="pay-row"><span>쿠폰 할인</span><b>-${money(order.usedCouponAmount)}</b></div>
+      <div class="pay-row"><span>할인 금액</span><b>-${money(order.usedCouponAmount)}</b></div>
       <div class="pay-row total"><span>결제 금액</span><b>${money(order.paymentAmount)}</b></div>
     </div>
     ${canCancel
@@ -1414,6 +1706,9 @@ function logout() {
   state.liveChatMessages = [];
   state.liveChatRooms = [];
   state.liveChatListMode = false;
+  state.orderPage = 0;
+  state.orderTotalPages = 0;
+  state.orderTotalElements = 0;
   localStorage.removeItem("accessToken");
   updateAuthButton();
   if (state.chatMode === "live") {
@@ -1435,7 +1730,7 @@ document.addEventListener("click", (event) => {
     if (view === "cart") loadCart();
     if (view === "account") {
       loadProfile();
-      loadOrders();
+      loadOrders(0);
     }
   }
 
@@ -1465,6 +1760,12 @@ document.addEventListener("click", (event) => {
     if (action === "search-next") {
       loadSearchResults(state.searchKeyword, state.searchSort, state.searchCategoryId, state.searchLabel, state.searchPage + 1);
     }
+    if (action === "orders-prev") {
+      loadOrders(Math.max(0, state.orderPage - 1));
+    }
+    if (action === "orders-next") {
+      loadOrders(state.orderPage + 1);
+    }
   }
 
   const orderButton = event.target.closest("[data-order-id]");
@@ -1480,11 +1781,6 @@ document.addEventListener("click", (event) => {
   const chatRoomButton = event.target.closest("[data-chat-room-id]");
   if (chatRoomButton) {
     openLiveChatRoom(chatRoomButton.dataset.chatRoomId);
-  }
-
-  const chatRoomCreateButton = event.target.closest("#chatRoomCreateButton");
-  if (chatRoomCreateButton) {
-    createLiveChatRoom();
   }
 
   if (!event.target.closest("#couponTile")) {
@@ -1547,7 +1843,6 @@ $("#decreaseQty").addEventListener("click", () => {
   renderDetail();
 });
 
-$("#reloadProducts").addEventListener("click", () => loadProducts());
 $("#bestToggleButton").addEventListener("click", () => {
   state.bestExpanded = !state.bestExpanded;
   renderBestProducts(state.bestProducts);
@@ -1557,16 +1852,32 @@ $("#directOrderButton").addEventListener("click", prepareDirectCheckout);
 $("#authForm").addEventListener("submit", submitAuth);
 $("#loadCartButton").addEventListener("click", loadCart);
 $("#cartOrderButton").addEventListener("click", orderCart);
+$("#cartConfirmGoButton").addEventListener("click", goCartFromConfirm);
+$("#cartConfirmCloseButton").addEventListener("click", closeCartConfirm);
+$("#cartConfirm").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) {
+    closeCartConfirm();
+  }
+});
 $("#logoutButton").addEventListener("click", logout);
-$("#paymentButton").addEventListener("click", () => showToast("결제 API 연결 전 단계까지 준비되었습니다."));
+$("#checkoutCouponSelect").addEventListener("change", selectCheckoutCoupon);
+$("#backToCartButton").addEventListener("click", backToCart);
+$("#paymentButton").addEventListener("click", processPayment);
 $("#chatToggleButton").addEventListener("click", () => {
   const isOpen = !$("#chatPanel").classList.contains("hidden");
+  if (!isOpen) {
+    setChatMode("ai");
+  }
   setChatOpen(!isOpen);
 });
 $("#chatCloseButton").addEventListener("click", () => setChatOpen(false));
 $("#chatLeaveButton").addEventListener("click", leaveLiveChatRoom);
 $("#chatForm").addEventListener("submit", (event) => {
   event.preventDefault();
+  if (state.chatMode === "live" && canCreateLiveChatFromForm()) {
+    createLiveChatRoom();
+    return;
+  }
   const message = $("#chatInput").value.trim();
   if (!message) return;
   if (state.chatMode === "live") {

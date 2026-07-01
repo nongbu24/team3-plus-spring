@@ -1048,6 +1048,43 @@ main {
   display: none !important;
 }
 
+.cart-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.cart-confirm-panel {
+  width: min(420px, 100%);
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.cart-confirm-panel h2 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.cart-confirm-panel p {
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.cart-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .profile,
 .cart,
 .checkout {
@@ -1320,6 +1357,33 @@ main {
   font-weight: 900;
 }
 
+.coupon-select-field {
+  display: grid;
+  gap: 8px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.coupon-select-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+}
+
+.checkout-actions {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(120px, 180px);
+  justify-content: end;
+  gap: 10px;
+}
+
 .toast {
   position: fixed;
   right: 20px;
@@ -1535,23 +1599,6 @@ main {
   text-align: left;
 }
 
-.chat-room-create {
-  justify-self: end;
-  min-height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #111827;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.chat-room-create:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-
 .chat-room-item.waiting {
   border-color: #bfdbfe;
   background: #eff6ff;
@@ -1624,6 +1671,10 @@ main {
   border: 1px solid var(--line);
   border-radius: 8px;
   outline: 0;
+}
+
+.chat-form.new-inquiry-mode input {
+  visibility: hidden;
 }
 
 .chat-form button {
@@ -1701,7 +1752,9 @@ main {
   .product-grid,
   .summary-grid,
   .specs,
-  .button-row {
+  .button-row,
+  .cart-confirm-actions,
+  .checkout-actions {
     grid-template-columns: 1fr;
   }
 
