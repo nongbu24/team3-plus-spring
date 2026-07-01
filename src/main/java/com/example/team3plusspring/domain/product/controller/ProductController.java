@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -35,6 +37,16 @@ public class ProductController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 productService.getProducts(categoryId, keyword, status, sort, page, size)
+        ));
+    }
+
+    // 인기 상품 조회 API (조회수 순)
+    @GetMapping("/products/popular")
+    public ResponseEntity<ApiResponse<List<GetProductsResponse>>> getPopularProducts(
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                productService.getPopularProducts(limit)
         ));
     }
 }

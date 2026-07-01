@@ -32,4 +32,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Product p where p.id in :productIds order by p.id")
     List<Product> findAllByIdInForUpdate(@Param("productIds") List<Long> productIds);
+
+    // 인기 상품 조회
+    // 조회수가 높은 순서대로 가져오기
+    @Query("SELECT p FROM Product p ORDER BY p.viewCount DESC")
+    List<Product> findPopularProducts(Pageable pageable);
 }

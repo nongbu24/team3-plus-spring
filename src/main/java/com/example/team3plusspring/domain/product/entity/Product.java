@@ -30,6 +30,9 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private int stock;
 
+    @Column(nullable = false)
+    private int viewCount = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private ProductStatus status;
@@ -77,5 +80,10 @@ public class Product extends BaseEntity {
         if (this.status != ProductStatus.ON_SALE) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
         }
+    }
+
+    // 조회수 증가
+    public void increaseViewCount() {
+        this.viewCount++;
     }
 }
