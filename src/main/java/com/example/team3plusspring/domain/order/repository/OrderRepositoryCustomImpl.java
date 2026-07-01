@@ -10,7 +10,7 @@ import java.util.Optional;
 import static com.example.team3plusspring.domain.order.entity.QOrder.order;
 
 @RequiredArgsConstructor
-public class OrderRepositoryCustomImpl implements OrderRepositoryCustom{
+public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
