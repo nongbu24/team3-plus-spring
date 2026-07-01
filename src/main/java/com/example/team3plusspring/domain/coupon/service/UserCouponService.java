@@ -47,6 +47,7 @@ public class UserCouponService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
     public int calculateDiscountAmount(UserCoupon userCoupon, int totalProductAmount) {
         userCoupon.validateUsablePeriod(LocalDateTime.now());
 
@@ -67,5 +68,15 @@ public class UserCouponService {
     public void restoreCouponByOrderId(Long orderId) {
         userCouponRepository.findByOrderIdForUpdate(orderId)
                 .ifPresent(UserCoupon::restore);
+    }
+
+    public boolean existsByUserIdAndCouponEventId(Long userId, Long couponEventId) {
+        return userCouponRepository.existsByUserIdAndCouponEventId(userId, couponEventId);
+    }
+
+    @Transactional
+    public UserCoupon issue(Long userId, Long couponEventId, int validDays) {
+        UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId, validDays);
+        return userCouponRepository.saveAndFlush(userCoupon);
     }
 }

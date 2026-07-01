@@ -310,13 +310,14 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 상품 목록 조회, 상품 상세 조회, 상품 검색의 기준 테이블입니다.
 
 | 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- |---|---| --- |
+|---| --- |---|---| --- |
 | 상품 ID | id | BIGINT | NOT NULL | PK |
 | 카테고리 ID | category_id | BIGINT | NULL | FK: categories.id |
 | 상품명 | name | VARCHAR(100) | NOT NULL |  |
 | 상품 설명 | description | TEXT | NOT NULL |  |
 | 판매가 | price | INT | NOT NULL | 원화 정수 |
 | 재고 수량 | stock | INT | NOT NULL | 0 이상 |
+| 조회수 | view_count | INT | NOT NULL | 0 이상, 기본값 0 |
 | 판매 상태 | status | VARCHAR(30)  | NOT NULL | ON_SALE, SOLD_OUT, DISCONTINUED |
 | 생성일시 | created_at | DATETIME | NOT NULL |  |
 | 수정일시 | updated_at | DATETIME | NULL |  |
