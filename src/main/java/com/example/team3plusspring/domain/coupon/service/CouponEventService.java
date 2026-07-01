@@ -128,7 +128,7 @@ public class CouponEventService {
 				throw new BusinessException(ErrorCode.COUPON_STOCK_EXHAUSTED);
 			}
 
-			UserCoupon savedUserCoupon = userCouponService.issue(userId, couponEventId,couponEvent.getValidDays());
+			UserCoupon savedUserCoupon = userCouponService.issue(userId, couponEventId, couponEvent.getValidDays());
 
 			return IssueCouponResponse.from(savedUserCoupon);
 		} catch (BusinessException e) {

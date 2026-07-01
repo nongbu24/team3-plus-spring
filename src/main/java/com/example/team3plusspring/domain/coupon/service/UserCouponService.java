@@ -77,6 +77,6 @@ public class UserCouponService {
     @Transactional
     public UserCoupon issue(Long userId, Long couponEventId, int validDays) {
         UserCoupon userCoupon = UserCoupon.issue(userId, couponEventId, validDays);
-        return userCouponRepository.save(userCoupon);
+        return userCouponRepository.saveAndFlush(userCoupon);
     }
 }
