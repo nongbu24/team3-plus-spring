@@ -159,7 +159,7 @@ public class PaymentFacade {
             throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
         }
 
-        handleAmountMismatchCancellation(payment, cancellation.status());
+        handleAmountMismatchCancellation(payment, cancellation.getStatus());
     }
 
     private void handleAmountMismatchCancellation(
