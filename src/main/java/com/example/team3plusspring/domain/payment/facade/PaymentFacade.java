@@ -43,45 +43,36 @@ public class PaymentFacade {
         Order order = orderService.findOrder(payment.getOrderId());
 
         // 본인 주문/결제인지 소유권 검증
-        if (!order.getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
-        }
+        validatePaymentOwner(order, userId);
 
         // 이미 결제 완료된 요청은 중복 확정 요청으로 보고 멱등하게 성공 응답을 반환한다.
         if (payment.getStatus() == PaymentStatus.PAID) {
             return ConfirmPaymentResponse.from(payment);
         }
 
-        // 취소가 이미 접수된 결제는 PortOne 취소 API를 다시 호출하지 않고 기존 처리 결과를 반환한다.
-        if (payment.getStatus() == PaymentStatus.CANCEL_REQUESTED) {
-            throw new BusinessException(ErrorCode.PAYMENT_CANCEL_PENDING);
-        }
-
-        // 취소 결과를 자동으로 확정할 수 없는 결제는 중복 요청을 막고 수동 확인 대상으로 유지한다.
-        if (payment.getStatus() == PaymentStatus.REVIEW_REQUIRED) {
-            throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
-        }
-
-        if (order.getStatus() == OrderStatus.READY) {
-            throw new BusinessException(ErrorCode.PAYMENT_NOT_STARTED);
-        }
-
-        // 결제 진행 상태가 아니면 결제 확정 처리가 불가능하다.
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
-        }
+        validateConfirmableState(order, payment);
 
         // 클라이언트가 보낸 portOnePaymentId와 서버에 저장된 portOnePaymentId가 일치하는지 검증한다.
-        String portonePaymentId = payment.getPortonePaymentId();
-        if (!portonePaymentId.equals(request.getPortOnePaymentId())) {
-            log.warn("결제 승인 거부 - portonePaymentId 불일치 : DB={}, 요청={}", portonePaymentId, request.getPortOnePaymentId());
-            throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
-        }
+        validateRequestedPaymentId(payment, request);
 
         // PortOne API로 실제 결제 정보를 조회한다. 클라이언트가 보낸 결제 결과는 그대로 신뢰하지 않는다.
-        PaymentGatewayResponse pgPayment = paymentGateway.getPayment(portonePaymentId);
+        PaymentGatewayResponse pgPayment = paymentGateway.getPayment(payment.getPortonePaymentId());
+        validateGatewayPaymentId(payment.getPortonePaymentId(), pgPayment);
 
         return confirmByGatewayStatus(payment, pgPayment);
+    }
+
+    private void validateGatewayPaymentId(
+            String expectedPaymentId,
+            PaymentGatewayResponse pgPayment
+    ) {
+        if (expectedPaymentId.equals(pgPayment.getId())) {
+            return;
+        }
+
+        log.error("PortOne 결제 조회 응답 ID 불일치: expected={}, actual={}",
+                expectedPaymentId, pgPayment.getId());
+        throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
     }
 
     private ConfirmPaymentResponse confirmByGatewayStatus(
@@ -109,7 +100,9 @@ public class PaymentFacade {
             Payment payment,
             PaymentGatewayResponse pgPayment
     ) {
-        validatePaymentAmount(payment, pgPayment);
+        if (!isPaymentAmountMatched(payment, pgPayment)) {
+            cancelAmountMismatchPayment(payment, pgPayment);
+        }
 
         Payment confirmedPayment = paymentCommandService.completePayment(payment.getId());
         return ConfirmPaymentResponse.from(confirmedPayment);
@@ -125,14 +118,17 @@ public class PaymentFacade {
         throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
     }
 
-    private void validatePaymentAmount(
+    private boolean isPaymentAmountMatched(
             Payment payment,
             PaymentGatewayResponse pgPayment
     ) {
-        if (payment.getPaymentAmount() == pgPayment.getTotalAmount()) {
-            return;
-        }
+        return payment.getPaymentAmount() == pgPayment.getTotalAmount();
+    }
 
+    private void cancelAmountMismatchPayment(
+            Payment payment,
+            PaymentGatewayResponse pgPayment
+    ) {
         log.error("결제 승인 실패 - 금액 불일치: paymentId={}, DB금액={}, PG금액={}",
                 payment.getId(), payment.getPaymentAmount(), pgPayment.getTotalAmount());
 
@@ -171,6 +167,40 @@ public class PaymentFacade {
                 paymentCommandService.markPaymentForReview(payment.getId());
                 throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
             }
+        }
+    }
+
+    private void validatePaymentOwner(Order order, Long userId) {
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+    }
+
+    private void validateConfirmableState(Order order, Payment payment) {
+        // 취소가 이미 접수된 결제는 PortOne 취소 API를 다시 호출하지 않고 기존 처리 결과를 반환한다.
+        if (payment.getStatus() == PaymentStatus.CANCEL_REQUESTED) {
+            throw new BusinessException(ErrorCode.PAYMENT_CANCEL_PENDING);
+        }
+
+        // 취소 결과를 자동으로 확정할 수 없는 결제는 중복 요청을 막고 수동 확인 대상으로 유지한다.
+        if (payment.getStatus() == PaymentStatus.REVIEW_REQUIRED) {
+            throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
+        }
+
+        if (order.getStatus() == OrderStatus.READY) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_STARTED);
+        }
+
+        // 결제 진행 상태가 아니면 결제 확정 처리가 불가능하다.
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+        }
+    }
+
+    private void validateRequestedPaymentId(Payment payment, ConfirmPaymentRequest request) {
+        if (!payment.getPortonePaymentId().equals(request.getPortOnePaymentId())) {
+            log.warn("결제 승인 거부 - portonePaymentId 불일치 : DB={}, 요청={}", payment.getPortonePaymentId(), request.getPortOnePaymentId());
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
         }
     }
 }
