@@ -142,14 +142,18 @@ public class ProductService {
         );
     }
 
+
     // 인기 상품 조회
     public List<GetProductsResponse> getPopularProducts(int limit) {
-        if (limit <= 0) {
+        if (limit <= 0 || limit > 100) {
             throw new BusinessException(ErrorCode.INVALID_PAGINATION);
         }
 
         Pageable pageable = PageRequest.of(0, limit);
-        List<Product> products = productRepository.findPopularProducts(pageable);
+        List<Product> products = productRepository.findPopularProducts(
+                List.of(ProductStatus.ON_SALE, ProductStatus.SOLD_OUT),
+                pageable
+        );
 
         //  가져온 상품들의 categoryId를 추출하여 카테고리를 한 번에 조회
         List<Long> categoryIds = products.stream()

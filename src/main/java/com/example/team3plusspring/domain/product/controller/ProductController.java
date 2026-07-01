@@ -46,8 +46,7 @@ public class ProductController {
     // 인기 상품 조회 API (조회수 순)
     @GetMapping("/products/popular")
     public ResponseEntity<ApiResponse<List<GetProductsResponse>>> getPopularProducts(
-            @RequestParam(defaultValue = "10")
-            @Max(100) int limit
+            @RequestParam(defaultValue = "10") int limit
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 productService.getPopularProducts(limit)

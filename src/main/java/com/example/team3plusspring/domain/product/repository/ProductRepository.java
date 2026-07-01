@@ -35,9 +35,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAllByIdInForUpdate(@Param("productIds") List<Long> productIds);
 
     // 인기 상품 조회
-    // 조회수가 높은 순서대로 가져오기
-    @Query("SELECT p FROM Product p ORDER BY p.viewCount DESC")
-    List<Product> findPopularProducts(Pageable pageable);
+// 조회수가 높은 순서대로 가져오기 (판매중/품절 상태만 노출, 단종 상품 제외)
+    @Query("SELECT p FROM Product p WHERE p.status IN :statuses ORDER BY p.viewCount DESC")
+    List<Product> findPopularProducts(@Param("statuses") List<ProductStatus> statuses, Pageable pageable);
 
     // 조회수 증가를 위한 직접 업데이트 쿼리
     @Modifying(clearAutomatically = true)
