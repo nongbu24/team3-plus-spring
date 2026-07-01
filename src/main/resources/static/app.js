@@ -447,7 +447,7 @@ async function sendChatMessage(message) {
     });
     addChatMessage("bot", response.message || "답변을 받지 못했습니다.");
   } catch (error) {
-    addChatMessage("bot", error.message);
+    addChatMessage("bot", escapeHtml(error.message));
   } finally {
     state.chatLoading = false;
     $("#chatSendButton").disabled = false;
@@ -555,7 +555,7 @@ async function startLiveChat() {
     await loadLiveChatMessages();
     await connectLiveChat();
   } catch (error) {
-    addLiveMessage({ content: error.message, messageType: "SYSTEM" });
+    addLiveMessage({ content: escapeHtml(error.message), messageType: "SYSTEM" });
   } finally {
     state.liveChatConnecting = false;
     $("#chatStatusText").textContent = getLiveChatStatusText();
