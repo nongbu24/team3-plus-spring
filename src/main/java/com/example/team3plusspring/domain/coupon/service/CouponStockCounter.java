@@ -6,6 +6,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
+import com.example.team3plusspring.global.exception.BusinessException;
+import com.example.team3plusspring.global.exception.ErrorCode;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +45,7 @@ public class CouponStockCounter {
 
 		if (result == null || result == STOCK_NOT_INITIALIZED) {
 			log.warn("쿠폰 재고 키가 Redis에 존재하지 않음. couponEventId={}", couponEventId);
-			return false;
+			throw new BusinessException(ErrorCode.COUPON_STOCK_NOT_INITIALIZED);
 		}
 
 		return result >= 0;
