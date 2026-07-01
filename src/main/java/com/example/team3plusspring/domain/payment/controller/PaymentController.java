@@ -8,7 +8,6 @@ import com.example.team3plusspring.global.response.ApiResponse;
 import com.example.team3plusspring.global.security.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +41,16 @@ public class PaymentController {
         ConfirmPaymentResponse response = paymentFacade.completeFree(userDetails.getUserId(), paymentId);
 
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{paymentId}/abort")
+    public ResponseEntity<ApiResponse<Void>> abortPayment(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long paymentId
+    ) {
+        paymentFacade.abort(userDetails.getUserId(), paymentId);
+
+        return ResponseEntity.ok(ApiResponse.success("결제가 중단되었습니다.", (Void) null));
     }
 
     @PostMapping("/confirm")

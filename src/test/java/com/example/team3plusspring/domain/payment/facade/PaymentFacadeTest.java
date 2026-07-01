@@ -92,6 +92,150 @@ class PaymentFacadeTest {
     }
 
     @Test
+    void 결제중단_PG결제가준비상태이면_결제와주문을취소한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "READY", PAYMENT_AMOUNT));
+
+        // when
+        paymentFacade.abort(USER_ID, PAYMENT_ID);
+
+        // then
+        verify(paymentCommandService).cancelPayment(PAYMENT_ID);
+        verify(paymentCommandService, never()).failPayment(PAYMENT_ID);
+        verify(paymentCommandService, never()).completePayment(PAYMENT_ID);
+    }
+
+    @Test
+    void 결제중단_PG결제가실패상태이면_결제와주문을실패처리한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "FAILED", PAYMENT_AMOUNT));
+
+        // when
+        paymentFacade.abort(USER_ID, PAYMENT_ID);
+
+        // then
+        verify(paymentCommandService).failPayment(PAYMENT_ID);
+        verify(paymentCommandService, never()).cancelPayment(PAYMENT_ID);
+        verify(paymentCommandService, never()).completePayment(PAYMENT_ID);
+    }
+
+    @Test
+    void 결제중단_PG결제가완료상태이면_내부상태를변경하지않고실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "PAID", PAYMENT_AMOUNT));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.abort(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.PAYMENT_ALREADY_PROCESSED));
+        verifyNoInteractions(paymentCommandService);
+    }
+
+    @Test
+    void 결제중단_PG결제가처리중이면_내부상태를변경하지않는다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "PENDING", PAYMENT_AMOUNT));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.abort(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.PAYMENT_NOT_COMPLETED));
+        verifyNoInteractions(paymentCommandService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"CANCELLED", "VIRTUAL_ACCOUNT_ISSUED", "PARTIAL_CANCELLED"})
+    void 결제중단_지원하지않는PG상태이면_내부상태를변경하지않고실패한다(String pgStatus) {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, pgStatus, PAYMENT_AMOUNT));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.abort(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.PAYMENT_ALREADY_PROCESSED));
+        verifyNoInteractions(paymentCommandService);
+    }
+
+    @Test
+    void 결제중단_PG상태를해석할수없으면_외부API오류로실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "UNKNOWN", PAYMENT_AMOUNT));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.abort(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.EXTERNAL_API_FAILED));
+        verifyNoInteractions(paymentCommandService);
+    }
+
+    @Test
+    void 결제중단_타인의결제이면_PG를조회하지않고실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(999L);
+
+        givenPaymentAndOrder(payment, order);
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.abort(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.PAYMENT_ACCESS_DENIED));
+        verifyNoInteractions(paymentGateway, paymentCommandService);
+    }
+
+    @Test
+    void 결제중단_이미중단된결제이면_중단처리를반복하지않는다() {
+        // given
+        Payment payment = payment();
+        payment.markAsCanceled();
+        Order order = order(USER_ID);
+        order.markAsCancelled();
+
+        givenPaymentAndOrder(payment, order);
+
+        // when
+        paymentFacade.abort(USER_ID, PAYMENT_ID);
+
+        // then
+        verifyNoInteractions(paymentGateway, paymentCommandService);
+    }
+
+    @Test
     void 결제확정_주문이준비상태이면_PG를조회하지않고실패한다() {
         // given
         Payment payment = payment();
@@ -217,6 +361,24 @@ class PaymentFacadeTest {
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_NOT_FOUND));
         verifyNoInteractions(paymentGateway, paymentCommandService);
+    }
+
+    @Test
+    void 결제확정_PortOne조회응답아이디가다르면_실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+        ConfirmPaymentRequest request = request(payment.getPortonePaymentId());
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(PaymentGatewayResponse.of("different-portone-payment-id", "PAID", PAYMENT_AMOUNT));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.EXTERNAL_API_FAILED));
+        verifyNoInteractions(paymentCommandService);
     }
 
     @ParameterizedTest
