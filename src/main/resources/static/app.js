@@ -158,7 +158,6 @@ function formatOrderStatus(status) {
 
 function getOrderCancelMessage(status) {
   const messages = {
-    PAYMENT_PENDING: "결제 대기 상태일 때는 주문을 취소할 수 없습니다. 상담사에게 문의 주세요.",
     COMPLETED: "결제가 완료되었다면 주문을 취소할 수 없습니다. 상담사에게 문의 주세요."
   };
   return messages[status] || "";
@@ -1141,7 +1140,7 @@ function renderCart(items, totalAmount) {
         <div class="mini-thumb"></div>
         <div>
           <div class="item-title">${escapeHtml(item.productName)}</div>
-          <div class="item-meta">수량 ${item.quantity} · 재고 ${item.stock ?? "-"}개</div>
+          <div class="item-meta">수량 ${item.quantity}</div>
         </div>
         <strong>${money(item.lineAmount)}</strong>
       </article>
@@ -1656,6 +1655,7 @@ function renderOrderDetail(order) {
   const panel = $("#orderDetailPanel");
   if (!panel) return;
   const canCancel = order.status === "READY";
+  const canAbortPayment = order.status === "PAYMENT_PENDING" && order.paymentId;
   const cancelMessage = getOrderCancelMessage(order.status);
   panel.innerHTML = `
     <div class="order-detail-head">
@@ -1683,6 +1683,8 @@ function renderOrderDetail(order) {
     </div>
     ${canCancel
       ? `<button class="secondary" id="cancelOrderButton" data-cancel-order-id="${order.orderId}">주문 취소</button>`
+      : canAbortPayment
+        ? `<button class="secondary" id="abortPaymentButton" data-abort-payment-id="${order.paymentId}" data-abort-order-id="${order.orderId}">주문 취소</button>`
       : cancelMessage ? `<div class="order-cancel-note">${escapeHtml(cancelMessage)}</div>` : ""}
   `;
 }
@@ -1691,6 +1693,17 @@ async function cancelOrder(orderId) {
   try {
     await request(`/api/orders/${orderId}/cancel`, { method: "POST" });
     showToast("주문이 취소되었습니다.");
+    await loadOrders();
+    await openOrderDetail(orderId);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function abortPayment(paymentId, orderId) {
+  try {
+    await request(`/api/payments/${paymentId}/abort`, { method: "POST" });
+    showToast("결제가 중단되었습니다.");
     await loadOrders();
     await openOrderDetail(orderId);
   } catch (error) {
@@ -1776,6 +1789,11 @@ document.addEventListener("click", (event) => {
   const cancelButton = event.target.closest("[data-cancel-order-id]");
   if (cancelButton) {
     cancelOrder(cancelButton.dataset.cancelOrderId);
+  }
+
+  const abortPaymentButton = event.target.closest("[data-abort-payment-id]");
+  if (abortPaymentButton) {
+    abortPayment(abortPaymentButton.dataset.abortPaymentId, abortPaymentButton.dataset.abortOrderId);
   }
 
   const chatRoomButton = event.target.closest("[data-chat-room-id]");

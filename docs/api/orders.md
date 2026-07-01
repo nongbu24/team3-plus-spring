@@ -245,6 +245,7 @@
   "message": "요청이 성공했습니다.",
   "data": {
     "orderId": 200,
+    "paymentId": 300,
     "orderNumber": "order_550e8400-e29b-41d4-a716-446655440000",
     "status": "PAYMENT_PENDING",
     "totalProductAmount": 78000,
@@ -270,7 +271,7 @@
 
 - 주문 소유자만 상세 조회할 수 있습니다.
 - 주문 상품의 `productName`, `unitPrice`는 주문 생성 시점에 저장된 스냅샷 값입니다.
-- 주문 생성 응답의 `paymentId`로 결제 시작 API를 호출한 뒤 반환된 `portOnePaymentId`를 PortOne 결제창과 결제 확정 요청에 사용합니다.
+- 주문 생성/상세 응답의 `paymentId`로 결제 시작 또는 결제 중단 API를 호출합니다.
 
 ### Errors
 

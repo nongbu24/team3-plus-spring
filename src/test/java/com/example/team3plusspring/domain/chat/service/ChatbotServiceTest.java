@@ -59,6 +59,24 @@ class ChatbotServiceTest {
     }
 
     @Test
+    void 키워드후보생성_카테고리별칭을_검색후보에_포함한다() {
+        // when
+        List<String> keywords = chatbotService.createKeywordCandidates("핸드폰 추천해줘!");
+
+        // then
+        assertThat(keywords).containsSubsequence("핸드폰", "스마트폰");
+    }
+
+    @Test
+    void 키워드후보생성_카테고리명과_다른_유사어를_검색후보에_포함한다() {
+        // when
+        List<String> keywords = chatbotService.createKeywordCandidates("헤드셋 추천해줘!");
+
+        // then
+        assertThat(keywords).containsSubsequence("헤드셋", "이어폰/헤드폰");
+    }
+
+    @Test
     void 키워드후보생성_후보개수는_최대5개까지만_반환한다() {
         // when
         List<String> keywords = chatbotService.createKeywordCandidates(

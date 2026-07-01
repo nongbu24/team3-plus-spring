@@ -531,15 +531,18 @@ main {
   background: linear-gradient(#dbeafe, #fff 56%, #99f6e4);
 }
 
-.gadget.watch {
+.gadget.watch,
+.big-device.watch {
   width: 58px;
   height: 58px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #111827, #2563eb);
+  background: linear-gradient(135deg, #dbeafe, #fff 54%, #99f6e4);
 }
 
 .gadget.watch::before,
-.gadget.watch::after {
+.gadget.watch::after,
+.big-device.watch::before,
+.big-device.watch::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -550,24 +553,29 @@ main {
   transform: translateX(-50%);
 }
 
-.gadget.watch::before {
+.gadget.watch::before,
+.big-device.watch::before {
   top: -14px;
 }
 
-.gadget.watch::after {
+.gadget.watch::after,
+.big-device.watch::after {
   bottom: -14px;
 }
 
-.gadget.audio {
+.gadget.audio,
+.big-device.audio {
   width: 76px;
   height: 46px;
   border-radius: 24px;
   border-width: 4px;
-  background: #fff;
+  background: linear-gradient(135deg, #dbeafe, #fff 58%, #99f6e4);
 }
 
 .gadget.audio::before,
-.gadget.audio::after {
+.gadget.audio::after,
+.big-device.audio::before,
+.big-device.audio::after {
   content: "";
   position: absolute;
   top: 12px;
@@ -577,19 +585,22 @@ main {
   background: #14b8a6;
 }
 
-.gadget.audio::before {
+.gadget.audio::before,
+.big-device.audio::before {
   left: 12px;
 }
 
-.gadget.audio::after {
+.gadget.audio::after,
+.big-device.audio::after {
   right: 12px;
 }
 
-.gadget.tablet {
+.gadget.tablet,
+.big-device.tablet {
   width: 82px;
   height: 64px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #fef3c7, #bfdbfe);
+  background: linear-gradient(135deg, #dbeafe, #fff 56%, #99f6e4);
 }
 
 .gadget,
@@ -603,7 +614,7 @@ main {
   height: 54px;
   border-width: 4px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #bfdbfe, #14b8a6);
+  background: linear-gradient(135deg, #dbeafe, #fff 52%, #99f6e4);
 }
 
 .gadget.laptop-icon::after,
@@ -626,7 +637,7 @@ main {
   height: 58px;
   border-width: 4px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #dbeafe, #a7f3d0);
+  background: linear-gradient(135deg, #dbeafe, #fff 52%, #99f6e4);
 }
 
 .gadget.desktop::after,
@@ -651,7 +662,32 @@ main {
   border-radius: 10px;
   background:
     repeating-linear-gradient(90deg, transparent 0 8px, rgba(17, 24, 39, 0.16) 8px 10px),
-    #fff;
+    linear-gradient(135deg, #dbeafe, #fff 58%, #99f6e4);
+}
+
+.gadget.input::before,
+.big-device.input::before {
+  content: "";
+  position: absolute;
+  right: -22px;
+  bottom: -8px;
+  width: 28px;
+  height: 38px;
+  border: 4px solid #111827;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #ccfbf1);
+}
+
+.gadget.input::after,
+.big-device.input::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: 12px;
+  width: 4px;
+  height: 8px;
+  border-radius: 999px;
+  background: #14b8a6;
 }
 
 .gadget.speaker,
@@ -660,7 +696,7 @@ main {
   height: 74px;
   border-width: 4px;
   border-radius: 14px;
-  background: radial-gradient(circle at 50% 25%, #14b8a6 0 10px, transparent 11px), radial-gradient(circle at 50% 68%, #2563eb 0 16px, transparent 17px), #fff;
+  background: radial-gradient(circle at 50% 25%, #14b8a6 0 10px, transparent 11px), radial-gradient(circle at 50% 68%, #2563eb 0 16px, transparent 17px), linear-gradient(180deg, #fff, #dbeafe);
 }
 
 .gadget.camera,
@@ -669,7 +705,7 @@ main {
   height: 54px;
   border-width: 4px;
   border-radius: 12px;
-  background: radial-gradient(circle at 58% 54%, #fff 0 12px, #111827 13px 20px, transparent 21px), linear-gradient(135deg, #fef3c7, #f59e0b);
+  background: radial-gradient(circle at 58% 54%, #fff 0 12px, #111827 13px 20px, transparent 21px), linear-gradient(135deg, #dbeafe, #99f6e4);
 }
 
 .gadget.camera::before,
@@ -686,11 +722,28 @@ main {
 
 .gadget.console,
 .big-device.console {
-  width: 86px;
-  height: 48px;
+  width: 88px;
+  height: 52px;
   border-width: 4px;
-  border-radius: 24px;
-  background: radial-gradient(circle at 28% 50%, #111827 0 8px, transparent 9px), radial-gradient(circle at 72% 50%, #14b8a6 0 7px, transparent 8px), #fff;
+  border-radius: 26px 26px 20px 20px;
+  background:
+    radial-gradient(circle at 28% 50%, #111827 0 8px, transparent 9px),
+    radial-gradient(circle at 70% 42%, #14b8a6 0 5px, transparent 6px),
+    radial-gradient(circle at 78% 58%, #2563eb 0 5px, transparent 6px),
+    linear-gradient(135deg, #dbeafe, #fff 58%, #99f6e4);
+}
+
+.gadget.console::before,
+.big-device.console::before {
+  content: "";
+  position: absolute;
+  left: 36px;
+  top: 15px;
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: #111827;
+  box-shadow: 0 8px 0 #111827;
 }
 
 .gadget.storage,
@@ -699,7 +752,7 @@ main {
   height: 72px;
   border-width: 4px;
   border-radius: 10px;
-  background: linear-gradient(180deg, #e2e8f0 0 64%, #2563eb 65%);
+  background: linear-gradient(180deg, #fff 0 64%, #99f6e4 65%);
 }
 
 .gadget.network,
@@ -708,7 +761,7 @@ main {
   height: 46px;
   border-width: 4px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ccfbf1, #bfdbfe);
+  background: linear-gradient(135deg, #dbeafe, #fff 54%, #99f6e4);
 }
 
 .gadget.network::before,
@@ -731,7 +784,7 @@ main {
   height: 66px;
   border-width: 4px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #fff, #fde68a);
+  background: linear-gradient(135deg, #dbeafe, #fff 55%, #99f6e4);
 }
 
 .gadget.charger::before,
@@ -752,7 +805,7 @@ main {
   height: 66px;
   border-width: 4px;
   border-radius: 10px;
-  background: repeating-linear-gradient(45deg, #dbeafe 0 8px, #a7f3d0 8px 16px);
+  background: repeating-linear-gradient(45deg, #dbeafe 0 8px, #99f6e4 8px 16px);
 }
 
 .gadget.home-appliance,
@@ -770,12 +823,12 @@ main {
 
 .gadget.kitchen,
 .big-device.kitchen {
-  background: linear-gradient(180deg, #fff, #fed7aa);
+  background: linear-gradient(180deg, #dbeafe, #fff 50%, #99f6e4);
 }
 
 .gadget.seasonal,
 .big-device.seasonal {
-  background: linear-gradient(180deg, #e0f2fe, #bfdbfe);
+  background: linear-gradient(180deg, #dbeafe, #fff 50%, #99f6e4);
 }
 
 .gadget.accessory,
@@ -786,7 +839,7 @@ main {
   height: 64px;
   border-width: 4px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #fce7f3, #dbeafe);
+  background: linear-gradient(135deg, #dbeafe, #fff 54%, #99f6e4);
 }
 
 .product button {

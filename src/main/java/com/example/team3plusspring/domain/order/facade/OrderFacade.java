@@ -151,12 +151,13 @@ public class OrderFacade {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
         }
 
+        Payment payment = paymentService.findPaymentByOrderId(orderId);
         List<OrderItem> orderItems = orderService.findOrderItems(order.getId());
 
         List<OrderItemResponse> items = orderItems.stream()
                 .map(OrderItemResponse::from)
                 .toList();
-        return GetOneOrderResponse.of(order, items);
+        return GetOneOrderResponse.of(order, payment.getId(), items);
     }
 
     @Transactional(readOnly = true)

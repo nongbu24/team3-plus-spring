@@ -38,15 +38,44 @@ public class ChatbotService {
             "제품", "가격", "얼마", "비교", "비교해줘", "비교해주세요", "설명", "요약", "요약해서",
             "판매", "판매하는", "판매하고", "있는", "좋은", "괜찮은", "찾아줘", "찾아주세요", "스펙"
     );
-    private static final Map<String, List<String>> PRODUCT_KEYWORD_ALIASES = Map.of(
-            "갤럭시", List.of("Galaxy"),
-            "galaxy", List.of("갤럭시"),
-            "아이폰", List.of("iPhone"),
-            "iphone", List.of("아이폰"),
-            "맥북", List.of("MacBook"),
-            "macbook", List.of("맥북"),
-            "에어팟", List.of("AirPods"),
-            "airpods", List.of("에어팟")
+    private static final Map<String, List<String>> PRODUCT_KEYWORD_ALIASES = Map.ofEntries(
+            Map.entry("갤럭시", List.of("Galaxy")),
+            Map.entry("galaxy", List.of("갤럭시")),
+            Map.entry("아이폰", List.of("iPhone")),
+            Map.entry("iphone", List.of("아이폰")),
+            Map.entry("맥북", List.of("MacBook")),
+            Map.entry("macbook", List.of("맥북")),
+            Map.entry("에어팟", List.of("AirPods")),
+            Map.entry("airpods", List.of("에어팟")),
+            Map.entry("핸드폰", List.of("스마트폰")),
+            Map.entry("휴대폰", List.of("스마트폰")),
+            Map.entry("폰", List.of("스마트폰")),
+            Map.entry("패드", List.of("태블릿")),
+            Map.entry("탭", List.of("태블릿")),
+            Map.entry("컴퓨터", List.of("데스크탑", "노트북")),
+            Map.entry("pc", List.of("데스크탑", "PC 부품")),
+            Map.entry("모니터링", List.of("모니터")),
+            Map.entry("키보드", List.of("키보드/마우스")),
+            Map.entry("마우스", List.of("키보드/마우스")),
+            Map.entry("이어셋", List.of("이어폰/헤드폰")),
+            Map.entry("헤드셋", List.of("이어폰/헤드폰")),
+            Map.entry("무선이어폰", List.of("이어폰/헤드폰")),
+            Map.entry("워치", List.of("스마트워치")),
+            Map.entry("시계", List.of("스마트워치")),
+            Map.entry("게임기", List.of("게임기/콘솔")),
+            Map.entry("콘솔", List.of("게임기/콘솔")),
+            Map.entry("게임패드", List.of("게임기/콘솔")),
+            Map.entry("외장하드", List.of("저장장치")),
+            Map.entry("ssd", List.of("저장장치")),
+            Map.entry("usb", List.of("저장장치")),
+            Map.entry("공유기", List.of("네트워크 장비")),
+            Map.entry("와이파이", List.of("네트워크 장비")),
+            Map.entry("케이블", List.of("충전기/케이블")),
+            Map.entry("충전", List.of("충전기/케이블")),
+            Map.entry("가전", List.of("생활가전")),
+            Map.entry("주방", List.of("주방가전")),
+            Map.entry("선풍기", List.of("계절가전")),
+            Map.entry("케이스", List.of("액세서리"))
     );
 
     private final ChatClient chatClient;

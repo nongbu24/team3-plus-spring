@@ -136,6 +136,7 @@ class OrderFacadeTest {
         OrderItem secondItem = orderItem(101L, 1001L, "두 번째 상품", 5_000, 1);
 
         when(orderService.findOrder(ORDER_ID)).thenReturn(order);
+        when(paymentService.findPaymentByOrderId(ORDER_ID)).thenReturn(payment());
         when(orderService.findOrderItems(ORDER_ID)).thenReturn(List.of(firstItem, secondItem));
 
         // when
@@ -143,6 +144,7 @@ class OrderFacadeTest {
 
         // then
         assertThat(response.getOrderId()).isEqualTo(ORDER_ID);
+        assertThat(response.getPaymentId()).isEqualTo(PAYMENT_ID);
         assertThat(response.getOrderNumber()).isEqualTo("order-number");
         assertThat(response.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
         assertThat(response.getTotalProductAmount()).isEqualTo(25_000);
