@@ -201,6 +201,24 @@ class PaymentFacadeTest {
         verifyNoInteractions(paymentGateway, paymentCommandService);
     }
 
+    @Test
+    void 결제확정_PortOne조회응답아이디가다르면_실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+        ConfirmPaymentRequest request = request(payment.getPortonePaymentId());
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(PaymentGatewayResponse.of("different-portone-payment-id", "PAID", PAYMENT_AMOUNT));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.confirm(USER_ID, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.EXTERNAL_API_FAILED));
+        verifyNoInteractions(paymentCommandService);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"READY", "PENDING", "VIRTUAL_ACCOUNT_ISSUED"})
     void 결제확정_PG결제가아직완료되지않았으면_내부상태를변경하지않는다(String pgStatus) {

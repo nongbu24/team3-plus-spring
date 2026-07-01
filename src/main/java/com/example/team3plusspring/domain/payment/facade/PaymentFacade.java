@@ -80,8 +80,22 @@ public class PaymentFacade {
 
         // PortOne API로 실제 결제 정보를 조회한다. 클라이언트가 보낸 결제 결과는 그대로 신뢰하지 않는다.
         PaymentGatewayResponse pgPayment = paymentGateway.getPayment(portonePaymentId);
+        validateGatewayPaymentId(portonePaymentId, pgPayment);
 
         return confirmByGatewayStatus(payment, pgPayment);
+    }
+
+    private void validateGatewayPaymentId(
+            String expectedPaymentId,
+            PaymentGatewayResponse pgPayment
+    ) {
+        if (expectedPaymentId.equals(pgPayment.getId())) {
+            return;
+        }
+
+        log.error("PortOne 결제 조회 응답 ID 불일치: expected={}, actual={}",
+                expectedPaymentId, pgPayment.getId());
+        throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
     }
 
     private ConfirmPaymentResponse confirmByGatewayStatus(
