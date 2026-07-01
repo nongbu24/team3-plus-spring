@@ -13,15 +13,11 @@ public class CouponEventListCacheResponse {
 
 	private final List<GetCouponEventListResponse> content;
 	private final long totalElements;
-	private final int page;
-	private final int size;
 
 	public static CouponEventListCacheResponse from(Page<GetCouponEventListResponse> page) {
 		return new CouponEventListCacheResponse(
 			page.getContent(),
-			page.getTotalElements(),
-			page.getNumber(),
-			page.getSize()
+			page.getTotalElements()
 		);
 	}
 }
