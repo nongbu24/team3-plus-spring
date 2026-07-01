@@ -33,6 +33,16 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @PostMapping("/{paymentId}/abort")
+    public ResponseEntity<ApiResponse<Void>> abortPayment(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long paymentId
+    ) {
+        paymentFacade.abort(userDetails.getUserId(), paymentId);
+
+        return ResponseEntity.ok(ApiResponse.success("결제가 중단되었습니다.", (Void) null));
+    }
+
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse<ConfirmPaymentResponse>> confirmPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
