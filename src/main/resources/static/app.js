@@ -1140,7 +1140,7 @@ function renderCart(items, totalAmount) {
       <article class="cart-item">
         <div class="mini-thumb"></div>
         <div>
-          <div class="item-title">${item.productName}</div>
+          <div class="item-title">${escapeHtml(item.productName)}</div>
           <div class="item-meta">수량 ${item.quantity} · 재고 ${item.stock ?? "-"}개</div>
         </div>
         <strong>${money(item.lineAmount)}</strong>
@@ -1187,7 +1187,7 @@ function renderCheckout(total) {
     <article class="checkout-item">
       <div class="mini-thumb"></div>
       <div>
-        <div class="item-title">${item.productName}</div>
+        <div class="item-title">${escapeHtml(item.productName)}</div>
         <div class="item-meta">수량 ${item.quantity}</div>
       </div>
       <strong>${money(item.lineAmount)}</strong>
@@ -1508,8 +1508,8 @@ async function loadProfile() {
     state.currentUser = profile;
     $("#profileName").textContent = `${profile.name}님`;
     $("#profileContact").innerHTML = `
-      <span>${profile.email}</span>
-      <span>${profile.phone || "전화번호 정보가 없습니다."}</span>
+      <span>${escapeHtml(profile.email)}</span>
+      <span>${escapeHtml(profile.phone || "전화번호 정보가 없습니다.")}</span>
     `;
     loadCoupons(false);
   } catch (error) {

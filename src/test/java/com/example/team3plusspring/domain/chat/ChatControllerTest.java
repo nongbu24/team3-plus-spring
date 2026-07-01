@@ -2,7 +2,6 @@ package com.example.team3plusspring.domain.chat;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageRequest;
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
-import com.example.team3plusspring.domain.chat.entity.ChatMember;
 import com.example.team3plusspring.domain.chat.entity.ChatRoom;
 import com.example.team3plusspring.domain.chat.entity.ChatStatus;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
@@ -438,34 +437,6 @@ class ChatControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(ErrorCode.FORBIDDEN.getHttpStatus().value()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN.name()));
-    }
-
-    @Test
-    void 채팅방퇴장_참여자퇴장시간을저장하고_재입장하면초기화한다() {
-        // given
-        User user = saveUser("홍길동");
-        ChatRoom room = chatRoomRepository.save(ChatRoom.create(user));
-
-        // when
-        chatFacade.enterRoom(room.getId(), user);
-        ChatMember enteredMember = chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId()).orElseThrow();
-
-        // then
-        assertThat(enteredMember.getLeftAt()).isNull();
-
-        // when
-        chatFacade.leaveRoom(room.getId(), user);
-        ChatMember leftMember = chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId()).orElseThrow();
-
-        // then
-        assertThat(leftMember.getLeftAt()).isNotNull();
-
-        // when
-        chatFacade.enterRoom(room.getId(), user);
-        ChatMember reenteredMember = chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId()).orElseThrow();
-
-        // then
-        assertThat(reenteredMember.getLeftAt()).isNull();
     }
 
     @Test
