@@ -6,8 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.example.team3plusspring.domain.coupon.entity.CouponEvent;
+import com.example.team3plusspring.domain.coupon.entity.CouponEventStatus;
 
 public interface CouponEventRepositoryCustom {
+
+	boolean existsByNameAndStatus(String name, CouponEventStatus status);
 
 	/**
 	 * 재고가 남아있을 때만(issuedQuantity < totalQuantity) issuedQuantity를 1 증가시키는
