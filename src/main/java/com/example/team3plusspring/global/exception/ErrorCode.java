@@ -78,6 +78,7 @@ public enum ErrorCode {
     PAYMENT_CANCEL_PENDING(HttpStatus.CONFLICT, "결제 취소가 처리 중입니다."),
     PAYMENT_REVIEW_REQUIRED(HttpStatus.CONFLICT, "결제 취소 결과를 확인해야 합니다."),
     PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST, "결제 웹훅 요청이 올바르지 않습니다."),
+    PAYMENT_FREE_AMOUNT_REQUIRED(HttpStatus.BAD_REQUEST, "무료 결제는 최종 결제 금액이 0원일 때만 완료할 수 있습니다."),
     PAYMENT_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 결제 상태 변경입니다."),
 
     // Chat

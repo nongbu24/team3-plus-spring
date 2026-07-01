@@ -54,8 +54,11 @@ public class UserCouponService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_EVENT_NOT_FOUND));
 
         int discountAmount = couponEvent.calculateDiscountAmount(totalProductAmount);
+        if (discountAmount > totalProductAmount) {
+            throw new BusinessException(ErrorCode.ORDER_DISCOUNT_AMOUNT_EXCEEDED);
+        }
 
-        return Math.min(discountAmount, totalProductAmount);
+        return discountAmount;
     }
 
     @Transactional

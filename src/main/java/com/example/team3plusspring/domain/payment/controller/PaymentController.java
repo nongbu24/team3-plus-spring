@@ -34,6 +34,16 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @PostMapping("/{paymentId}/free-complete")
+    public ResponseEntity<ApiResponse<ConfirmPaymentResponse>> completeFreePayment(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long paymentId
+    ) {
+        ConfirmPaymentResponse response = paymentFacade.completeFree(userDetails.getUserId(), paymentId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse<ConfirmPaymentResponse>> confirmPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,

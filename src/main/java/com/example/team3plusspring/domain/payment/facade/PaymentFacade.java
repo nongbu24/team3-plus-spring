@@ -36,6 +36,11 @@ public class PaymentFacade {
         return StartPaymentResponse.from(payment);
     }
 
+    public ConfirmPaymentResponse completeFree(Long userId, Long paymentId) {
+        Payment payment = paymentCommandService.completeFreePayment(userId, paymentId);
+        return ConfirmPaymentResponse.from(payment);
+    }
+
     // 클라이언트 결제 완료 콜백 이후 서버에서 결제를 확정한다.
     public ConfirmPaymentResponse confirm(Long userId, @Valid ConfirmPaymentRequest request) {
         // 결제 조회 + 주문 조회
