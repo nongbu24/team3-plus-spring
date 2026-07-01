@@ -1,12 +1,14 @@
 package com.example.team3plusspring.domain.chat.controller;
 
 import com.example.team3plusspring.domain.chat.dto.ChatRoomEventRequest;
+import com.example.team3plusspring.domain.chat.dto.ChatLeaveResult;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageRequest;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
 import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
+import com.example.team3plusspring.domain.chat.service.ChatStompSubscriptionManager;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -28,6 +30,7 @@ public class ChatController {
     private final ChatFacade chatFacade;
     private final ChatMessagePublisher chatMessagePublisher;
     private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatStompSubscriptionManager chatStompSubscriptionManager;
     private final ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     /**
@@ -115,30 +118,47 @@ public class ChatController {
             throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
 
-        ChatMessageResponse response;
-        boolean shouldPublishSessionCleanupEvent = false;
+        ChatLeaveResult leaveResult;
 
         try {
-            response = chatFacade.leaveRoom(roomId, sender);
-            shouldPublishSessionCleanupEvent = true;
+            leaveResult = chatFacade.leaveRoom(roomId, sender);
         } catch (BusinessException exception) {
             if (exception.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
                 throw exception;
             }
             // 이미 완료된 방은 퇴장 메시지를 새로 저장하지 않고 세션만 정리한다.
-            shouldPublishSessionCleanupEvent = true;
+            cleanupSessionsAfterLeave(roomId, sender.getId(), null);
 
             return;
-        } finally {
-            // 한 사용자가 같은 방을 여러 탭으로 열 수 있으므로 같은 사용자/방 조합을 모두 정리한다.
-            chatSessionRegistry.removeLocalSessions(sender.getId(), roomId);
-
-            if (shouldPublishSessionCleanupEvent) {
-                chatSessionExpiredEventPublisher.publish(roomId, sender.getId());
-            }
         }
 
-        chatMessagePublisher.publish(roomId, response);
+        try {
+            chatMessagePublisher.publish(roomId, leaveResult.getMessage());
+        } finally {
+            cleanupSessionsAfterLeave(roomId, sender.getId(), leaveResult);
+        }
+    }
+
+    private void cleanupSessionsAfterLeave(Long roomId, Long senderId, ChatLeaveResult leaveResult) {
+        if (leaveResult == null || !leaveResult.completedRoom()) {
+            cleanupUserSessions(roomId, senderId);
+
+            return;
+        }
+
+        cleanupUserSessions(roomId, leaveResult.getCompletedCustomerId());
+
+        Long adminId = leaveResult.getCompletedAdminId();
+
+        if (adminId != null && !adminId.equals(leaveResult.getCompletedCustomerId())) {
+            cleanupUserSessions(roomId, adminId);
+        }
+    }
+
+    private void cleanupUserSessions(Long roomId, Long userId) {
+        // 한 사용자가 같은 방을 여러 탭으로 열 수 있으므로 같은 사용자/방 조합을 모두 정리한다.
+        chatStompSubscriptionManager.unsubscribeAll(chatSessionRegistry.removeLocalSessions(userId, roomId));
+        chatSessionExpiredEventPublisher.publish(roomId, userId);
     }
 
     /**

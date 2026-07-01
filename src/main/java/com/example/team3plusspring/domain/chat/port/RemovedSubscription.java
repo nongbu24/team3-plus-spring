@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @EqualsAndHashCode
 @RequiredArgsConstructor
-public class RemovedAdminSubscription {
+public class RemovedSubscription {
     private final String sessionId;
     private final String subscriptionId;
 }

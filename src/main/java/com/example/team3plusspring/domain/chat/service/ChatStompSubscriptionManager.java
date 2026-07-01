@@ -1,6 +1,6 @@
 package com.example.team3plusspring.domain.chat.service;
 
-import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
+import com.example.team3plusspring.domain.chat.port.RemovedSubscription;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
@@ -21,11 +21,11 @@ public class ChatStompSubscriptionManager {
         this.clientInboundChannel = clientInboundChannel;
     }
 
-    public void unsubscribeAll(Set<RemovedAdminSubscription> subscriptions) {
+    public void unsubscribeAll(Set<RemovedSubscription> subscriptions) {
         subscriptions.forEach(this::unsubscribe);
     }
 
-    private void unsubscribe(RemovedAdminSubscription subscription) {
+    private void unsubscribe(RemovedSubscription subscription) {
         if (!StringUtils.hasText(subscription.getSessionId()) || !StringUtils.hasText(subscription.getSubscriptionId())) {
             return;
         }

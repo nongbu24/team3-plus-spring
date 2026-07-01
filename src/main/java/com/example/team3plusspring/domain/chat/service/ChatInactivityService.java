@@ -21,6 +21,7 @@ public class ChatInactivityService {
     private final ChatSessionRegistry chatSessionRegistry;
     private final ChatFacade chatFacade;
     private final ChatMessagePublisher chatMessagePublisher;
+    private final ChatStompSubscriptionManager chatStompSubscriptionManager;
     private final ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     @Scheduled(fixedDelay = 10_000, initialDelay = 10_000)
@@ -42,6 +43,7 @@ public class ChatInactivityService {
     private void leaveExpiredSession(InactiveChatSession session) {
         chatFacade.leaveInactiveRoom(session.getRoomId(), session.getUserId())
                 .ifPresent(response -> chatMessagePublisher.publish(session.getRoomId(), response));
+        chatStompSubscriptionManager.unsubscribeAll(session.getRemovedSubscriptions());
         chatSessionExpiredEventPublisher.publish(session.getRoomId(), session.getUserId());
     }
 }

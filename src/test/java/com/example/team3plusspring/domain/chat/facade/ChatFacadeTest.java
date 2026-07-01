@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.chat.facade;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.dto.ChatLeaveResult;
 import com.example.team3plusspring.domain.chat.entity.ChatMember;
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
 import com.example.team3plusspring.domain.chat.entity.ChatMessageType;
@@ -147,12 +148,14 @@ class ChatFacadeTest {
         });
 
         // when
-        ChatMessageResponse response = chatFacade.leaveRoom(room.getId(), user);
+        ChatLeaveResult result = chatFacade.leaveRoom(room.getId(), user);
 
         // then
         assertThat(room.getStatus()).isEqualTo(ChatStatus.COMPLETED);
         assertThat(joinedMember.getLeftAt()).isNotNull();
-        assertThat(response.getContent()).isEqualTo("홍길동님이 퇴장했습니다");
+        assertThat(result.completedRoom()).isTrue();
+        assertThat(result.getCompletedCustomerId()).isEqualTo(user.getId());
+        assertThat(result.getMessage().getContent()).isEqualTo("홍길동님이 퇴장했습니다");
     }
 
     private User user(Long id) {

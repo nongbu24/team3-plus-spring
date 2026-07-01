@@ -1,7 +1,7 @@
 package com.example.team3plusspring.domain.chat.service;
 
 import com.example.team3plusspring.domain.chat.port.ChatAdminAssignmentEventPublisher;
-import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
+import com.example.team3plusspring.domain.chat.port.RemovedSubscription;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
@@ -25,7 +25,7 @@ class ChatAdminSessionServiceTest {
     void 담당자가배정되면_현재서버의다른관리자구독을무효화하고_배정이벤트를발행한다() {
         // given
         when(chatSessionRegistry.removeAdminSessionsExcept(1L, 10L))
-                .thenReturn(Set.of(new RemovedAdminSubscription("session-1", "sub-1")));
+                .thenReturn(Set.of(new RemovedSubscription("session-1", "sub-1")));
 
         // when
         chatAdminSessionService.handleAdminAssigned(1L, 10L);
@@ -33,7 +33,7 @@ class ChatAdminSessionServiceTest {
         // then
         verify(chatSessionRegistry).removeAdminSessionsExcept(1L, 10L);
         verify(chatStompSubscriptionManager).unsubscribeAll(
-                Set.of(new RemovedAdminSubscription("session-1", "sub-1"))
+                Set.of(new RemovedSubscription("session-1", "sub-1"))
         );
         verify(eventPublisher).publish(1L, 10L);
     }
@@ -42,7 +42,7 @@ class ChatAdminSessionServiceTest {
     void 원격배정이벤트를받으면_현재서버의다른관리자구독만무효화한다() {
         // given
         when(chatSessionRegistry.removeAdminSessionsExcept(1L, 10L))
-                .thenReturn(Set.of(new RemovedAdminSubscription("session-1", "sub-1")));
+                .thenReturn(Set.of(new RemovedSubscription("session-1", "sub-1")));
 
         // when
         chatAdminSessionService.closeOtherAdminSessions(1L, 10L);
@@ -50,7 +50,7 @@ class ChatAdminSessionServiceTest {
         // then
         verify(chatSessionRegistry).removeAdminSessionsExcept(1L, 10L);
         verify(chatStompSubscriptionManager).unsubscribeAll(
-                Set.of(new RemovedAdminSubscription("session-1", "sub-1"))
+                Set.of(new RemovedSubscription("session-1", "sub-1"))
         );
     }
 }

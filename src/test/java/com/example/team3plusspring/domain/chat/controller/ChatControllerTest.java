@@ -3,10 +3,13 @@ package com.example.team3plusspring.domain.chat.controller;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageRequest;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.dto.ChatRoomEventRequest;
+import com.example.team3plusspring.domain.chat.dto.ChatLeaveResult;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
 import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
+import com.example.team3plusspring.domain.chat.port.RemovedSubscription;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
+import com.example.team3plusspring.domain.chat.service.ChatStompSubscriptionManager;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -21,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
@@ -40,6 +44,9 @@ class ChatControllerTest {
 
     @Mock
     ChatSessionRegistry chatSessionRegistry;
+
+    @Mock
+    ChatStompSubscriptionManager chatStompSubscriptionManager;
 
     @Mock
     ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
@@ -190,9 +197,11 @@ class ChatControllerTest {
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
         ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
         ChatMessageResponse response = response(12L, "홍길동님이 퇴장했습니다");
+        Set<RemovedSubscription> removedSubscriptions = Set.of(new RemovedSubscription("session-1", "sub-1"));
 
         when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(true);
-        when(chatFacade.leaveRoom(1L, user)).thenReturn(response);
+        when(chatFacade.leaveRoom(1L, user)).thenReturn(ChatLeaveResult.of(response));
+        when(chatSessionRegistry.removeLocalSessions(user.getId(), 1L)).thenReturn(removedSubscriptions);
 
         // when
         chatController.leaveRoom(request, "session-1", authentication);
@@ -201,8 +210,43 @@ class ChatControllerTest {
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verify(chatFacade).leaveRoom(1L, user);
         verify(chatSessionRegistry).removeLocalSessions(user.getId(), 1L);
+        verify(chatStompSubscriptionManager).unsubscribeAll(removedSubscriptions);
         verify(chatSessionExpiredEventPublisher).publish(1L, user.getId());
         verify(chatMessagePublisher).publish(1L, response);
+    }
+
+    @Test
+    void 명시적퇴장_고객퇴장으로방이완료되면_담당관리자구독도무효화한다() {
+        // given
+        Authentication authentication = authentication();
+        User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
+        ChatMessageResponse response = response(12L, "홍길동님이 퇴장했습니다");
+        Set<RemovedSubscription> customerSubscriptions = Set.of(new RemovedSubscription("session-1", "sub-1"));
+        Set<RemovedSubscription> adminSubscriptions = Set.of(new RemovedSubscription("session-2", "sub-2"));
+
+        when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(true);
+        when(chatFacade.leaveRoom(1L, user)).thenReturn(ChatLeaveResult.completed(response, user.getId(), 2L));
+        when(chatSessionRegistry.removeLocalSessions(user.getId(), 1L)).thenReturn(customerSubscriptions);
+        when(chatSessionRegistry.removeLocalSessions(2L, 1L)).thenReturn(adminSubscriptions);
+
+        // when
+        chatController.leaveRoom(request, "session-1", authentication);
+
+        // then
+        var inOrder = inOrder(
+                chatMessagePublisher,
+                chatSessionRegistry,
+                chatStompSubscriptionManager,
+                chatSessionExpiredEventPublisher
+        );
+        inOrder.verify(chatMessagePublisher).publish(1L, response);
+        inOrder.verify(chatSessionRegistry).removeLocalSessions(user.getId(), 1L);
+        inOrder.verify(chatStompSubscriptionManager).unsubscribeAll(customerSubscriptions);
+        inOrder.verify(chatSessionExpiredEventPublisher).publish(1L, user.getId());
+        inOrder.verify(chatSessionRegistry).removeLocalSessions(2L, 1L);
+        inOrder.verify(chatStompSubscriptionManager).unsubscribeAll(adminSubscriptions);
+        inOrder.verify(chatSessionExpiredEventPublisher).publish(1L, 2L);
     }
 
     @Test
@@ -211,9 +255,11 @@ class ChatControllerTest {
         Authentication authentication = authentication();
         User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
         ChatRoomEventRequest request = ChatRoomEventRequest.of(1L);
+        Set<RemovedSubscription> removedSubscriptions = Set.of(new RemovedSubscription("session-1", "sub-1"));
 
         when(chatSessionRegistry.isEntered("session-1", user.getId(), 1L)).thenReturn(true);
         when(chatFacade.leaveRoom(1L, user)).thenThrow(new BusinessException(ErrorCode.CHAT_ROOM_ALREADY_COMPLETED));
+        when(chatSessionRegistry.removeLocalSessions(user.getId(), 1L)).thenReturn(removedSubscriptions);
 
         // when
         chatController.leaveRoom(request, "session-1", authentication);
@@ -222,6 +268,7 @@ class ChatControllerTest {
         verify(chatSessionRegistry).isEntered("session-1", user.getId(), 1L);
         verify(chatFacade).leaveRoom(1L, user);
         verify(chatSessionRegistry).removeLocalSessions(user.getId(), 1L);
+        verify(chatStompSubscriptionManager).unsubscribeAll(removedSubscriptions);
         verify(chatSessionExpiredEventPublisher).publish(1L, user.getId());
         verifyNoInteractions(chatMessagePublisher);
     }
