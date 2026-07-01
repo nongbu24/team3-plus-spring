@@ -18,7 +18,6 @@ import com.example.team3plusspring.domain.product.service.ProductService;
 import com.example.team3plusspring.domain.user.service.UserService;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -166,7 +165,6 @@ public class OrderFacade {
                 .map(GetOrderListResponse::from);
     }
 
-    @Transactional
     public CancelOrderResponse cancel(Long userId, Long orderId) {
         Payment payment = paymentService.findPaymentForUpdateByOrderId(orderId);
         Order order = orderService.findOrderForUpdate(orderId);
