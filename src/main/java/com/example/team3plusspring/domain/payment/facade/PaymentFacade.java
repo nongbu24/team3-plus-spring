@@ -123,7 +123,9 @@ public class PaymentFacade {
             Payment payment,
             PaymentGatewayResponse pgPayment
     ) {
-        validatePaymentAmount(payment, pgPayment);
+        if (!isPaymentAmountMatched(payment, pgPayment)) {
+            cancelAmountMismatchPayment(payment, pgPayment);
+        }
 
         Payment confirmedPayment = paymentCommandService.completePayment(payment.getId());
         return ConfirmPaymentResponse.from(confirmedPayment);
@@ -139,14 +141,17 @@ public class PaymentFacade {
         throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
     }
 
-    private void validatePaymentAmount(
+    private boolean isPaymentAmountMatched(
             Payment payment,
             PaymentGatewayResponse pgPayment
     ) {
-        if (payment.getPaymentAmount() == pgPayment.getTotalAmount()) {
-            return;
-        }
+        return payment.getPaymentAmount() == pgPayment.getTotalAmount();
+    }
 
+    private void cancelAmountMismatchPayment(
+            Payment payment,
+            PaymentGatewayResponse pgPayment
+    ) {
         log.error("결제 승인 실패 - 금액 불일치: paymentId={}, DB금액={}, PG금액={}",
                 payment.getId(), payment.getPaymentAmount(), pgPayment.getTotalAmount());
 
