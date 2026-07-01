@@ -41,7 +41,7 @@ public class OrderFacade {
     private final CartService cartService;
 
     @Transactional
-    public CreateOrderResponse createDirectOrder(Long userId, @Valid CreateDirectOrderRequest request) {
+    public CreateOrderResponse createDirectOrder(Long userId, CreateDirectOrderRequest request) {
         // 1. user 존재 여부 확인(탈퇴한 회원일 수 있음)
         userService.validateActiveUser(userId);
 
@@ -51,24 +51,12 @@ public class OrderFacade {
                 request.getQuantity()
         );
 
-        // 3. int usedCouponAmount = 0; 설정
-        UserCoupon userCoupon = null;
         int totalProductAmount = product.getPrice() * request.getQuantity();
-        int usedCouponAmount = 0;
-
-        // 4. if CouponId 존재 -> Coupon 조회 (request.getCouponId 활용) -> usedCouponAmount 변경
-        if (request.getUserCouponId() != null) {
-            userCoupon = userCouponService.getUsableCouponForUpdate(userId, request.getUserCouponId());
-            usedCouponAmount = userCouponService.calculateDiscountAmount(userCoupon, totalProductAmount);
-        }
-
-        // 5. Order 생성
-        Order order = orderService.createOrder(userId, totalProductAmount, usedCouponAmount);
-
-        // 6. 쿠폰 사용처리
-        if (userCoupon != null) {
-            userCouponService.useCoupon(userCoupon, order.getId());
-        }
+        Order order = createOrderWithCoupon(
+                userId,
+                request.getUserCouponId(),
+                totalProductAmount
+        );
 
         // 8. OrderItem 생성
         OrderItem orderItem = orderService.createOrderItem(order, product, request.getQuantity());
@@ -87,7 +75,7 @@ public class OrderFacade {
     }
 
     @Transactional
-    public CreateOrderResponse createOrderFromCart(Long userId, @Valid CreateOrderFromCartRequest request) {
+    public CreateOrderResponse createOrderFromCart(Long userId, CreateOrderFromCartRequest request) {
         // 1. user 존재 여부 확인(탈퇴한 회원일 수 있음)
         userService.validateActiveUser(userId);
 
@@ -123,23 +111,11 @@ public class OrderFacade {
                 })
                 .sum();
 
-        // 7. int usedCouponAmount = 0; 설정
-        UserCoupon userCoupon = null;
-        int usedCouponAmount = 0;
-
-        // 8. if CouponId 존재 -> Coupon 조회 -> usedCouponAmount 변경
-        if (request.getUserCouponId() != null) {
-            userCoupon = userCouponService.getUsableCouponForUpdate(userId, request.getUserCouponId());
-            usedCouponAmount = userCouponService.calculateDiscountAmount(userCoupon, totalProductAmount);
-        }
-
-        // 9. Order 생성
-        Order order = orderService.createOrder(userId, totalProductAmount, usedCouponAmount);
-
-        // 10. 쿠폰 사용처리
-        if (userCoupon != null) {
-            userCouponService.useCoupon(userCoupon, order.getId());
-        }
+        Order order = createOrderWithCoupon(
+                userId,
+                request.getUserCouponId(),
+                totalProductAmount
+        );
 
         // 11. CartItem -> OrderItem으로 변환
         List<OrderItem> orderItems = cartItems.stream()
@@ -214,5 +190,23 @@ public class OrderFacade {
         payment.markAsCanceled();
 
         return CancelOrderResponse.of(order, previousStatus);
+    }
+
+    private Order createOrderWithCoupon(Long userId, Long userCouponId, int totalProductAmount) {
+        UserCoupon coupon = null;
+        int discountAmount = 0;
+
+        if (userCouponId != null) {
+            coupon = userCouponService.getUsableCouponForUpdate(userId, userCouponId);
+            discountAmount = userCouponService.calculateDiscountAmount(coupon, totalProductAmount);
+        }
+
+        Order order = orderService.createOrder(userId, totalProductAmount, discountAmount);
+
+        if (coupon != null) {
+            userCouponService.useCoupon(coupon, order.getId());
+        }
+
+        return order;
     }
 }
