@@ -66,46 +66,34 @@ public class ChatbotService {
                 key -> Collections.synchronizedList(new ArrayList<>())
         );
 
-        String prompt = createPrompt(topic, userMessage);
-
-        // 외부 LLM 호출은 오래 걸릴 수 있으므로, 락 안에서는 히스토리를 복사만 한다.
-        List<Message> historySnapshot;
-
         synchronized (history) {
-            historySnapshot = new ArrayList<>(history);
-        }
+            String prompt = createPrompt(topic, userMessage);
+            List<Message> historySnapshot = new ArrayList<>(history);
 
-        String response;
+            String response;
 
-        try {
-            response = chatClient.prompt()
-                    .messages(historySnapshot)
-                    .user(prompt)
-                    .call()
-                    .content();
-        } catch (RuntimeException e) {
-            throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
-        }
+            try {
+                response = chatClient.prompt()
+                        .messages(historySnapshot)
+                        .user(prompt)
+                        .call()
+                        .content();
+            } catch (RuntimeException e) {
+                throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
+            }
 
-        if (response == null || response.isBlank()) {
-            throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
-        }
+            if (response == null || response.isBlank()) {
+                throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
+            }
 
-        String normalizedResponse = normalizeResponse(response);
+            String normalizedResponse = normalizeResponse(response);
 
-        // 응답을 받은 뒤에만 다시 락을 잡고, 실제 공유 히스토리에 이번 대화를 추가한다.
-        synchronized (history) {
             history.add(new UserMessage(userMessage));
             history.add(new AssistantMessage(normalizedResponse));
             trimHistory(history);
+
+            return normalizedResponse;
         }
-
-        return normalizedResponse;
-    }
-
-    // 세션 초기화 (대화 처음부터 다시)
-    public void clearHistory(String sessionId) {
-        historyCache.invalidate(sessionId);
     }
 
     private void trimHistory(List<Message> history) {

@@ -40,8 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || (method.equals("GET") && path.equals("/api/v2/products"))
                 || (method.equals("GET") && path.equals("/api/v1/search/popular"))
                 || (method.equals("POST") && path.equals("/api/payments/webhook"))
-                || (method.equals("POST") && path.equals("/api/chatbot"))
-                || (method.equals("DELETE") && path.startsWith("/api/chatbot/"));
+                || (method.equals("POST") && path.equals("/api/chatbot"));
     }
 
     @Override

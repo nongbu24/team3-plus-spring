@@ -11,7 +11,6 @@ AI 챗봇 질문, 고객의 1:1 문의 채팅방 생성, 채팅방 목록 조회
 | Method | Path | 설명 | 인증 |
 | --- | --- | --- | --- |
 | `POST` | `/api/chatbot` | AI 챗봇 질문 | 불필요 |
-| `DELETE` | `/api/chatbot/{sessionId}` | AI 챗봇 대화 기록 초기화 | 불필요 |
 | `POST` | `/api/chat/rooms/me` | 내 1:1 문의 채팅방 생성 | 필요 |
 | `GET` | `/api/chat/rooms` | 채팅방 목록 조회 | 필요 |
 | `GET` | `/api/chat/rooms/{roomId}` | 채팅방 단건 조회 | 필요 |
@@ -80,7 +79,8 @@ AI 챗봇 질문, 고객의 1:1 문의 채팅방 생성, 채팅방 목록 조회
 - 키워드 후보는 최대 5개까지만 사용해 한 요청에서 상품 검색 쿼리가 과도하게 반복되지 않도록 제한합니다.
 - 키워드 후보 검색 결과가 없으면 정리된 전체 질문을 검색어처럼 사용해 다시 검색합니다.
 - 관련 상품이 있으면 상품명, 설명, 가격, 재고, 카테고리 정보를 사용자 질문과 함께 Claude에게 전달합니다.
-- 챗봇 질문 API는 IP와 `sessionId` 조합 기준으로 분당 최대 10회까지만 허용합니다.
+- 챗봇 질문 API는 IP 전체 기준 분당 최대 10회, 같은 IP와 `sessionId` 조합 기준 분당 최대 10회까지만 허용합니다.
+- 두 기준 중 하나라도 초과하면 요청이 차단됩니다. 따라서 같은 IP에서 `sessionId`를 바꿔도 IP 전체 기준 제한을 넘을 수 없습니다.
 
 ### Errors
 
@@ -88,30 +88,8 @@ AI 챗봇 질문, 고객의 1:1 문의 채팅방 생성, 채팅방 목록 조회
 | --- | --- | --- |
 | `VALIDATION_FAILED` | 400 | 요청 본문 형식 오류 또는 필수 값 누락, 세션 ID 형식 오류, 메시지 길이 초과 |
 | `INVALID_ENUM_VALUE` | 400 | 허용하지 않는 상담 유형 |
-| `CHATBOT_RATE_LIMIT_EXCEEDED` | 429 | 같은 IP와 세션 ID에서 분당 허용 횟수 초과 |
+| `CHATBOT_RATE_LIMIT_EXCEEDED` | 429 | IP 전체 또는 같은 IP와 세션 ID 조합에서 분당 허용 횟수 초과 |
 | `EXTERNAL_API_FAILED` | 502 | Claude API 호출 실패 또는 빈 응답 |
-
-## DELETE `/api/chatbot/{sessionId}`
-
-특정 챗봇 세션의 대화 기록을 초기화합니다.
-
-- 인증: 불필요
-- HTTP Status: `200 OK`
-
-### Path Variables
-
-| 이름 | 타입 | 설명 |
-| --- | --- | --- |
-| `sessionId` | `String` | 초기화할 챗봇 세션 ID. UUID 형식 |
-
-### Response Body
-
-```json
-{
-  "status": 200,
-  "message": "요청이 성공했습니다."
-}
-```
 
 ## POST `/api/chat/rooms/me`
 

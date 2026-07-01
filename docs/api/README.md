@@ -51,7 +51,6 @@
 | 결제 | PortOne 결제창 공개 설정 조회 | GET | `/api/config/portone` | 불필요 |
 | 결제 | PortOne 웹훅 수신 | POST | `/api/payments/webhook` | 웹훅 검증 |
 | 채팅 | AI 챗봇 질문 | POST | `/api/chatbot` | 불필요 |
-| 채팅 | AI 챗봇 대화 기록 초기화 | DELETE | `/api/chatbot/{sessionId}` | 불필요 |
 | 채팅 | 내 1:1 문의 채팅방 생성 | POST | `/api/chat/rooms/me` | 필요 |
 | 채팅 | 채팅방 목록 조회 | GET | `/api/chat/rooms` | 필요 |
 | 채팅 | 채팅방 단건 조회 | GET | `/api/chat/rooms/{roomId}` | 필요 |

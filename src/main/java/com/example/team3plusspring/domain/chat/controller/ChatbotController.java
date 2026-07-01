@@ -7,7 +7,6 @@ import com.example.team3plusspring.domain.chat.service.ChatbotService;
 import com.example.team3plusspring.global.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -35,19 +34,5 @@ public class ChatbotController {
         );
 
         return ResponseEntity.ok(ApiResponse.success(ChatbotResponse.of(request.getSessionId(), response)));
-    }
-
-    @DeleteMapping("/{sessionId}")
-    public ResponseEntity<ApiResponse<Void>> clearHistory(
-            @PathVariable
-            @Pattern(
-                    regexp = ChatbotRequest.SESSION_ID_REGEX,
-                    message = "세션 ID 형식이 올바르지 않습니다."
-            )
-            String sessionId
-    ) {
-        chatbotService.clearHistory(sessionId);
-
-        return ResponseEntity.ok(ApiResponse.<Void>success(null));
     }
 }
