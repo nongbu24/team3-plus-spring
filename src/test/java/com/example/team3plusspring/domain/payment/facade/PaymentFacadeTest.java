@@ -148,7 +148,7 @@ class PaymentFacadeTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"CANCELLED", "VIRTUAL_ACCOUNT_ISSUED", "PARTIAL_CANCELLED", "UNKNOWN"})
+    @ValueSource(strings = {"CANCELLED", "VIRTUAL_ACCOUNT_ISSUED", "PARTIAL_CANCELLED"})
     void 결제중단_지원하지않는PG상태이면_내부상태를변경하지않고실패한다(String pgStatus) {
         // given
         Payment payment = payment();
@@ -163,6 +163,24 @@ class PaymentFacadeTest {
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode())
                                 .isEqualTo(ErrorCode.PAYMENT_ALREADY_PROCESSED));
+        verifyNoInteractions(paymentCommandService);
+    }
+
+    @Test
+    void 결제중단_PG상태를해석할수없으면_외부API오류로실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = order(USER_ID);
+
+        givenPaymentAndOrder(payment, order);
+        when(paymentGateway.getPayment(payment.getPortonePaymentId()))
+                .thenReturn(pgPayment(payment, "UNKNOWN", PAYMENT_AMOUNT));
+
+        // when & then
+        assertThatThrownBy(() -> paymentFacade.abort(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.EXTERNAL_API_FAILED));
         verifyNoInteractions(paymentCommandService);
     }
 

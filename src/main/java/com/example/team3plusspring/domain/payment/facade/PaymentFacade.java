@@ -123,6 +123,7 @@ public class PaymentFacade {
             case PENDING -> throw new BusinessException(
                     ErrorCode.PAYMENT_NOT_COMPLETED
             );
+            case UNKNOWN -> throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
             default -> throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
         }
     }
