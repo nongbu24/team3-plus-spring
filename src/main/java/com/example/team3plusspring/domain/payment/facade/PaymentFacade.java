@@ -36,6 +36,23 @@ public class PaymentFacade {
         return StartPaymentResponse.from(payment);
     }
 
+    public void abort(Long userId, Long paymentId) {
+        Payment payment = paymentService.findPayment(paymentId);
+        Order order = orderService.findOrder(payment.getOrderId());
+
+        validatePaymentOwner(order, userId);
+
+        if (isAlreadyAborted(order, payment)) {
+            return;
+        }
+
+        validateAbortableState(order, payment);
+
+        PaymentGatewayResponse pgPayment = paymentGateway.getPayment(payment.getPortonePaymentId());
+        validateGatewayPaymentId(payment.getPortonePaymentId(), pgPayment);
+        abortByGatewayStatus(payment, pgPayment);
+    }
+
     // 클라이언트 결제 완료 콜백 이후 서버에서 결제를 확정한다.
     public ConfirmPaymentResponse confirm(Long userId, @Valid ConfirmPaymentRequest request) {
         // 결제 조회 + 주문 조회
@@ -94,6 +111,21 @@ public class PaymentFacade {
                 throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
             }
         };
+    }
+
+    private void abortByGatewayStatus(
+            Payment payment,
+            PaymentGatewayResponse pgPayment
+    ) {
+        switch (pgPayment.getStatus()) {
+            case READY -> paymentCommandService.cancelPayment(payment.getId());
+            case FAILED -> paymentCommandService.failPayment(payment.getId());
+            case PENDING -> throw new BusinessException(
+                    ErrorCode.PAYMENT_NOT_COMPLETED
+            );
+            case UNKNOWN -> throw new BusinessException(ErrorCode.EXTERNAL_API_FAILED);
+            default -> throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+        }
     }
 
     private ConfirmPaymentResponse confirmPaidPayment(
@@ -173,6 +205,23 @@ public class PaymentFacade {
     private void validatePaymentOwner(Order order, Long userId) {
         if (!order.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+    }
+
+    private boolean isAlreadyAborted(Order order, Payment payment) {
+        return order.getStatus() == OrderStatus.CANCELED
+                && (payment.getStatus() == PaymentStatus.CANCELED
+                || payment.getStatus() == PaymentStatus.FAILED);
+    }
+
+    private void validateAbortableState(Order order, Payment payment) {
+        if (order.getStatus() == OrderStatus.READY) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_STARTED);
+        }
+
+        if (order.getStatus() != OrderStatus.PAYMENT_PENDING
+                || payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
         }
     }
 
