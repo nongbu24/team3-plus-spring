@@ -140,7 +140,6 @@ public class ProductService {
     }
 
     // 인기 상품 조회
-    @Transactional(readOnly = true)
     public List<GetProductsResponse> getPopularProducts(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<Product> products = productRepository.findPopularProducts(pageable);
