@@ -44,7 +44,7 @@ WHERE (? IS NULL OR p1_0.category_id = ?)
   AND (? IS NULL OR p1_0.name LIKE ? ESCAPE '')
   AND (? IS NULL OR p1_0.status = ?)
 ORDER BY p1_0.created_at DESC
-LIMIT ?
+   LIMIT ?
 ```
 
 ProductRepository의 @Query JPQL이 모든 조건을 `(:param IS NULL OR ...)` 형태로
@@ -76,12 +76,14 @@ SELECT * FROM products WHERE category_id = 1 AND status = 'ON_SALE';
 
 ```sql
 EXPLAIN
-SELECT * FROM products p1_0
+SELECT p1_0.id, p1_0.category_id, p1_0.created_at, p1_0.description,
+       p1_0.name, p1_0.price, p1_0.status, p1_0.stock, p1_0.updated_at
+FROM products p1_0
 WHERE (1 IS NULL OR p1_0.category_id = 1)
   AND ('Galaxy' IS NULL OR p1_0.name LIKE '%Galaxy%')
   AND ('ON_SALE' IS NULL OR p1_0.status = 'ON_SALE')
 ORDER BY p1_0.created_at DESC
-LIMIT 10;
+   LIMIT 10;
 ```
 
 | 항목 | 결과 |
@@ -138,9 +140,13 @@ Backward index scan으로 바뀌었습니다. 정렬을 위한 별도 작업 없
 
 ```sql
 EXPLAIN
-SELECT * FROM products
-WHERE status = 'ON_SALE'
-ORDER BY created_at DESC
+SELECT p1_0.id, p1_0.category_id, p1_0.created_at, p1_0.description,
+       p1_0.name, p1_0.price, p1_0.status, p1_0.stock, p1_0.updated_at
+FROM products p1_0
+WHERE (NULL IS NULL OR p1_0.category_id = NULL)
+  AND (NULL IS NULL OR p1_0.name LIKE '%' ESCAPE '')
+  AND ('ON_SALE' IS NULL OR p1_0.status = 'ON_SALE')
+ORDER BY p1_0.created_at DESC
 LIMIT 10;
 ```
 
@@ -158,8 +164,19 @@ Extra에 Using filesort가 다시 나타난 것이 핵심 근거입니다.
 
 ### idx_product_status_created (status, created_at) 추가 후
 
+실제 API 호출(`GET /api/v1/products?status=ON_SALE`) 시 Hibernate가 생성한
+SQL을 기준으로 EXPLAIN을 확인했습니다.
+
 ```sql
-CREATE INDEX idx_product_status_created ON products(status, created_at);
+EXPLAIN
+SELECT p1_0.id, p1_0.category_id, p1_0.created_at, p1_0.description,
+       p1_0.name, p1_0.price, p1_0.status, p1_0.stock, p1_0.updated_at
+FROM products p1_0
+WHERE (NULL IS NULL OR p1_0.category_id = NULL)
+  AND (NULL IS NULL OR p1_0.name LIKE '%' ESCAPE '')
+  AND ('ON_SALE' IS NULL OR p1_0.status = 'ON_SALE')
+ORDER BY p1_0.created_at DESC
+LIMIT 10;
 ```
 
 | 항목 | 결과 |
@@ -179,10 +196,14 @@ CREATE INDEX idx_product_status_created ON products(status, created_at);
 
 ```sql
 EXPLAIN
-SELECT * FROM products
-WHERE status = 'ON_SALE' AND category_id = 1
-ORDER BY created_at DESC
-LIMIT 10;
+SELECT p1_0.id, p1_0.category_id, p1_0.created_at, p1_0.description,
+       p1_0.name, p1_0.price, p1_0.status, p1_0.stock, p1_0.updated_at
+FROM products p1_0
+WHERE (1 IS NULL OR p1_0.category_id = 1)
+  AND (NULL IS NULL OR p1_0.name LIKE '%' ESCAPE '')
+  AND ('ON_SALE' IS NULL OR p1_0.status = 'ON_SALE')
+ORDER BY p1_0.created_at DESC
+   LIMIT 10;
 ```
 
 | 항목 | 결과 |
