@@ -145,16 +145,19 @@ class CouponIssueConcurrencyTest extends RedisTestSupport {
 		//then
 		CouponEvent result = couponEventRepository.findById(couponEvent.getId()).orElseThrow();
 		long actualIssuedCount = userCouponRepository.countByCouponEventId(couponEvent.getId());
+		long remainingStock = couponStockCounter.getStock(couponEvent.getId());
 
 		System.out.println("성공: " + successCount.get()
 		+ ", 중복발급 거절: " + alreadyIssuedCount.get()
 		+ ", 예상치 못한 오류: " + unexpectedErrorCount.get());
+		System.out.println("실제 발급된 쿠폰 수: " + actualIssuedCount);
+		System.out.println("남은 Redis 재고: " + remainingStock);
 
 		assertThat(successCount.get()).isEqualTo(1);
 		assertThat(alreadyIssuedCount.get()).isEqualTo(threadCount - 1);
 		assertThat(unexpectedErrorCount.get()).isZero();
 		assertThat(actualIssuedCount).isEqualTo(1);
 		assertThat(result.getIssuedQuantity()).isEqualTo(1);
-
+		assertThat(remainingStock).isEqualTo(totalQuantity - 1);
 	}
 }

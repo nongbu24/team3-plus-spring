@@ -55,4 +55,9 @@ public class CouponStockCounter {
 	private String key(Long couponEventId) {
 		return KEY_PREFIX + couponEventId;
 	}
+
+	public long getStock(Long couponEventId) {
+		String value = redisTemplate.opsForValue().get(key(couponEventId));
+		return value != null ? Long.parseLong(value) : 0L;
+	}
 }
