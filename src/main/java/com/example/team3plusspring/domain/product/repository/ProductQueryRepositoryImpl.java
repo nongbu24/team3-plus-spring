@@ -48,6 +48,26 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
         return new PageImpl<>(content, pageable, total != null ? total : 0);
     }
 
+    @Override
+    public List<Product> findPopularProducts(List<ProductStatus> statuses, Pageable pageable) {
+        return queryFactory
+                .selectFrom(product)
+                .where(product.status.in(statuses))
+                .orderBy(product.viewCount.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    @Override
+    public void incrementViewCount(Long id) {
+        queryFactory
+                .update(product)
+                .set(product.viewCount, product.viewCount.add(1))
+                .where(product.id.eq(id))
+                .execute();
+    }
+
     private OrderSpecifier<?> getOrderSpecifier(Pageable pageable) {
         if (!pageable.getSort().isEmpty()) {
             Sort.Order order = pageable.getSort().iterator().next();
