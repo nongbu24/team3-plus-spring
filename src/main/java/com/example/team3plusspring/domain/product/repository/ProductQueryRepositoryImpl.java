@@ -113,6 +113,10 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
 
     @Override
     public Page<Product> findByCategoryIdInAndStatus(List<Long> categoryIds, ProductStatus status, Pageable pageable) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
         List<Product> content = queryFactory
                 .selectFrom(product)
                 .where(
