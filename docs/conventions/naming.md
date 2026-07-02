@@ -40,7 +40,7 @@ check()
 단, 이벤트 처리처럼 의미가 분명한 경우는 허용한다.
 
 ```java
-handleWebhook()
+handlePaymentConfirmed()
 ```
 
 ## Variable Naming

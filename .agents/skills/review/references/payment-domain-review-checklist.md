@@ -17,11 +17,3 @@
 * 주문 금액과 PG 승인 금액을 비교하는지
 * 결제 상태와 주문 상태가 분리되어 있는지
 * 중복 confirm 요청에 안전한지
-
-## Webhook
-
-* PortOne 이벤트 식별자를 안정적으로 받을 수 있는 경우에만 `webhookId`를 unique하게 저장하고, 기본 멱등성은 `portonePaymentId`와 상태 기반으로 보장하는지
-* Webhook payload를 최종 근거로 믿지 않는지
-* Webhook 수신 후에도 PortOne 결제 조회를 수행하는지
-* Client Confirm과 동일한 결제 확정 로직을 재사용하는지
-* 이미 처리된 이벤트에 대해 안전하게 200 OK를 반환하는지

@@ -21,8 +21,6 @@ erDiagram
     orders ||--|| payments : paid_by
     orders ||--o{ user_coupons : uses
 
-    payments ||--o{ webhook_events : verified_by
-
     coupon_events ||--o{ user_coupons : issues
 
     chat_rooms ||--o{ chat_messages : contains
@@ -174,20 +172,6 @@ erDiagram
         DATETIME issued_at "발급일시"
         DATETIME used_at "사용일시"
         DATETIME expired_at "만료일시"
-    }
-
-    webhook_events {
-        BIGINT id PK "웹훅 이벤트 ID"
-        BIGINT payment_id FK "결제 ID"
-        VARCHAR webhook_id UK "PortOne 웹훅 ID"
-        VARCHAR portone_payment_id "PortOne 결제 ID"
-        VARCHAR event_type "웹훅 이벤트 타입"
-        VARCHAR status "처리 상태"
-        TEXT payload "웹훅 원문"
-        VARCHAR reason "처리 사유"
-        DATETIME received_at "수신일시"
-        DATETIME processed_at "처리일시"
-        DATETIME created_at "생성일시"
     }
 
     search_keywords {
@@ -408,24 +392,6 @@ CS 문의 채팅방의 상태와 담당자 정보를 저장합니다.
 
 - 같은 회원이 같은 쿠폰 이벤트에서 중복 발급받지 못하도록 `(user_id, coupon_event_id)`에 UNIQUE 제약을 둡니다.
 
-### webhook_events
-
-PortOne 웹훅 원문과 처리 결과를 저장합니다.
-
-| 논리명 | 컬럼명 | 타입 | NULL | 제약/비고 |
-| --- | --- | --- | --- | --- |
-| 웹훅 이벤트 ID | id | BIGINT | NOT NULL | PK |
-| 결제 ID | payment_id | BIGINT | NULL | FK: payments.id |
-| PortOne 웹훅 ID | webhook_id | VARCHAR(100) | NOT NULL | UNIQUE |
-| PortOne 결제 ID | portone_payment_id | VARCHAR(100) | NULL |  |
-| 웹훅 이벤트 타입 | event_type | VARCHAR(100) | NOT NULL | 예: Transaction.Paid |
-| 처리 상태 | status | VARCHAR(30) | NOT NULL | RECEIVED, PROCESSED, FAILED |
-| 웹훅 원문 | payload | TEXT | NOT NULL |  |
-| 처리 사유 | reason | VARCHAR(100) | NULL | PROCESSED, DUPLICATE_OR_IGNORED 등 |
-| 수신일시 | received_at | DATETIME | NOT NULL |  |
-| 처리일시 | processed_at | DATETIME | NULL |  |
-| 생성일시 | created_at | DATETIME | NOT NULL |  |
-
 ### search_keywords
 
 인기 검색어 조회를 위한 검색어 집계 테이블입니다.
@@ -455,6 +421,5 @@ PortOne 웹훅 원문과 처리 결과를 저장합니다.
 | orders - order_items         | 주문은 여러 주문 상품을 가집니다. |
 | products - order_items       | 상품은 주문 상품 스냅샷으로 기록됩니다. |
 | orders - payments            | 주문은 하나의 결제와 연결됩니다. |
-| payments - webhook_events    | 결제는 여러 웹훅 이벤트와 연결될 수 있습니다. |
 | coupon_events - user_coupons | 쿠폰 이벤트는 여러 회원 쿠폰을 발급합니다. |
 | orders - user_coupons        | 쿠폰을 사용한 경우 회원 쿠폰이 주문과 연결됩니다. |
