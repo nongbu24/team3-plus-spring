@@ -220,3 +220,11 @@ Git Flow를 단순화한 전략을 따르며, 브랜치는 다음 규칙으로 �
 - 동적 쿼리와 락 쿼리는 QueryDSL로 통일합니다.
 - 예외는 `ErrorCode` + `BusinessException` + `GlobalExceptionHandler` 공통 구조를 따르고, `RuntimeException`을 직접 던지지 않습니다.
 - 로그에는 JWT, password, billingKey, secret key, access/refresh token, 카드 전체번호, 개인정보 전체값을 남기지 않습니다.
+
+## 참고 사항
+
+각 기능의 현재 한계와 향후 계획은 다음과 같습니다.
+
+- **상품 조회 인덱스**: 최신순(`created_at`) 정렬 기준으로만 분석했습니다. 가격순(`PRICE_ASC`/`PRICE_DESC`) 정렬은 별도 인덱스 최적화가 필요해 추후 분석할 예정입니다. ([docs/index-performance.md](docs/index-performance.md))
+- **인기 검색어**: Redis ZSet 기반 인기 검색어 기능은 ERD 설계 단계에서 `search_keywords` 테이블까지는 정의했지만 아직 구현하지 않았습니다. 현재는 조회수 기준 인기 상품 조회로만 제공하며, 추후 구현할 예정입니다.
+- **배포/CI-CD**: 이번 범위에서 제외되어 로컬 실행 기준으로만 검증했습니다. 배포 자동화는 추후 진행할 예정입니다.
