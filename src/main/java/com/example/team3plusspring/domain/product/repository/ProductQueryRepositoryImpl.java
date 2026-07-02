@@ -6,6 +6,7 @@ import com.example.team3plusspring.domain.product.entity.QProduct;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class ProductQueryRepositoryImpl implements ProductQueryRepository {
@@ -60,6 +62,85 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
     }
 
     @Override
+    public Optional<Product> findByIdForUpdate(Long productId) {
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(product)
+                        .where(product.id.eq(productId))
+                        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                        .fetchOne()
+        );
+    }
+
+    @Override
+    public List<Product> findAllByIdInForUpdate(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+
+        return queryFactory
+                .selectFrom(product)
+                .where(product.id.in(productIds))
+                .orderBy(product.id.asc())
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .fetch();
+    }
+
+    @Override
+    public Page<Product> findByChatbotKeyword(String keyword, ProductStatus status, Pageable pageable) {
+        List<Product> content = queryFactory
+                .selectFrom(product)
+                .where(
+                        chatbotKeywordLike(keyword),
+                        statusEq(status)
+                )
+                .orderBy(getOrderSpecifier(pageable))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(product.count())
+                .from(product)
+                .where(
+                        chatbotKeywordLike(keyword),
+                        statusEq(status)
+                )
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total != null ? total : 0);
+    }
+
+    @Override
+    public Page<Product> findByCategoryIdInAndStatus(List<Long> categoryIds, ProductStatus status, Pageable pageable) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Product> content = queryFactory
+                .selectFrom(product)
+                .where(
+                        categoryIdIn(categoryIds),
+                        statusEq(status)
+                )
+                .orderBy(getOrderSpecifier(pageable))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(product.count())
+                .from(product)
+                .where(
+                        categoryIdIn(categoryIds),
+                        statusEq(status)
+                )
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total != null ? total : 0);
+    }
+
+    @Override
     public void incrementViewCount(Long id) {
         queryFactory
                 .update(product)
@@ -84,8 +165,18 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
         return categoryId != null ? product.categoryId.eq(categoryId) : null;
     }
 
+    private BooleanExpression categoryIdIn(List<Long> categoryIds) {
+        return categoryIds != null && !categoryIds.isEmpty() ? product.categoryId.in(categoryIds) : null;
+    }
+
     private BooleanExpression keywordLike(String keyword) {
         return keyword != null ? product.name.contains(keyword) : null;
+    }
+
+    private BooleanExpression chatbotKeywordLike(String keyword) {
+        return keyword != null
+                ? product.name.contains(keyword).or(product.description.contains(keyword))
+                : null;
     }
 
     private BooleanExpression statusEq(ProductStatus status) {
