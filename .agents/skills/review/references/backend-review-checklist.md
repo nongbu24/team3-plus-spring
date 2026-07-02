@@ -30,18 +30,15 @@
 
 ## Idempotency
 
-결제/환불/웹훅은 중복 요청을 반드시 고려한다.
+결제/환불은 중복 요청을 반드시 고려한다.
 
 확인 대상:
 
 * 같은 portonePaymentId로 confirm이 여러 번 들어오는 경우
-* Client Confirm과 Webhook이 동시에 들어오는 경우
-* webhookId가 제공되는 경우 같은 webhookId가 여러 번 들어오는 경우
 * 이미 환불된 결제를 다시 환불 요청하는 경우
 
 권장:
 
 * `portone_payment_id` unique
-* `webhook_id`는 PortOne 이벤트 식별자를 안정적으로 받을 수 있을 때만 unique
 * 상태 기반 중복 처리
 * 이미 처리된 요청은 가능한 한 안전하게 성공 응답

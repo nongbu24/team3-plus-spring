@@ -36,12 +36,6 @@ Authorization: Bearer {accessToken}
 /api/admin/**
 ```
 
-PortOne 웹훅은 JWT가 아니라 웹훅 서명을 검증합니다.
-
-```http
-POST /api/payments/webhook
-```
-
 ## 공통 응답
 
 성공 응답은 `status`, `message`, `data`를 사용합니다.
@@ -97,7 +91,6 @@ POST /api/payments/webhook
 ## 멱등성
 
 - 결제 승인 검증은 같은 결제 식별자로 여러 번 요청되어도 최종 결과가 같아야 합니다.
-- PortOne 웹훅은 같은 이벤트가 여러 번 들어올 수 있으므로 중복 처리를 방지해야 합니다.
 - 쿠폰 발급 요청은 같은 회원이 같은 쿠폰 이벤트에 중복 발급받지 못하도록 처리해야 합니다.
 
 ## Enum
@@ -129,14 +122,6 @@ POST /api/payments/webhook
 | `CANCEL_REQUESTED` | PG 결제 취소 처리 중 |
 | `CANCELED` | 결제 취소 |
 | `REVIEW_REQUIRED` | PG 결제 취소 결과 확인 필요 |
-
-### WebhookStatus
-
-| 값 | 설명 |
-| --- | --- |
-| `RECEIVED` | 웹훅 수신 |
-| `PROCESSED` | 처리 완료 |
-| `FAILED` | 처리 실패 |
 
 ### ChatStatus
 
@@ -201,12 +186,9 @@ POST /api/payments/webhook
 | `PAYMENT_CANCEL_PENDING` | 409 | PG 결제 취소 처리 중 |
 | `PAYMENT_REVIEW_REQUIRED` | 409 | PG 결제 취소 결과 확인 필요 |
 | `PAYMENT_STATUS_INVALID` | 409 | 허용되지 않는 결제 상태 변경 |
-| `PAYMENT_WEBHOOK_INVALID` | 400 | 결제 웹훅 요청이 올바르지 않음 |
 | `CHAT_ROOM_NOT_FOUND` | 404 | 채팅방 없음 |
 | `CHAT_ROOM_ACCESS_DENIED` | 403 | 접근 권한이 없는 채팅방 |
 | `CHAT_ROOM_ALREADY_COMPLETED` | 409 | 이미 완료된 채팅방 |
 | `INVALID_CHAT_STATUS_TRANSITION` | 409 | 허용되지 않는 문의 상태 변경 |
 | `ADMIN_NOT_FOUND` | 404 | 관리자 없음 |
 | `POPULAR_SEARCH_KEYWORD_NOT_FOUND` | 404 | 인기 검색어 없음 |
-| `WEBHOOK_SIGNATURE_INVALID` | 400 | 웹훅 서명 검증 실패 |
-| `WEBHOOK_PAYLOAD_INVALID` | 400 | 웹훅 본문 파싱 실패 |
