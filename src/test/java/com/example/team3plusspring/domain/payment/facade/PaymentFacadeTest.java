@@ -74,6 +74,24 @@ class PaymentFacadeTest {
     }
 
     @Test
+    void 무료결제완료_0원결제이면_PG를조회하지않고결제를완료한다() {
+        // given
+        Payment payment = zeroPayment();
+        payment.markAsPaid();
+        when(paymentCommandService.completeFreePayment(USER_ID, PAYMENT_ID)).thenReturn(payment);
+
+        // when
+        ConfirmPaymentResponse response = paymentFacade.completeFree(USER_ID, PAYMENT_ID);
+
+        // then
+        assertThat(response.getPaymentId()).isEqualTo(PAYMENT_ID);
+        assertThat(response.getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(response.getPaymentAmount()).isZero();
+        verify(paymentCommandService).completeFreePayment(USER_ID, PAYMENT_ID);
+        verifyNoInteractions(paymentGateway);
+    }
+
+    @Test
     void 결제중단_PG결제가준비상태이면_결제와주문을취소한다() {
         // given
         Payment payment = payment();
@@ -576,6 +594,12 @@ class PaymentFacadeTest {
 
     private Payment payment() {
         Payment payment = Payment.create(ORDER_ID, PAYMENT_AMOUNT, 0);
+        ReflectionTestUtils.setField(payment, "id", PAYMENT_ID);
+        return payment;
+    }
+
+    private Payment zeroPayment() {
+        Payment payment = Payment.create(ORDER_ID, PAYMENT_AMOUNT, PAYMENT_AMOUNT);
         ReflectionTestUtils.setField(payment, "id", PAYMENT_ID);
         return payment;
     }

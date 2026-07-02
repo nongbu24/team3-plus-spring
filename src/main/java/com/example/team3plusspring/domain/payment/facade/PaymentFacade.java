@@ -17,7 +17,6 @@ import com.example.team3plusspring.domain.payment.service.PaymentCommandService;
 import com.example.team3plusspring.domain.payment.service.PaymentService;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -34,6 +33,11 @@ public class PaymentFacade {
     public StartPaymentResponse start(Long userId, Long paymentId) {
         Payment payment = paymentCommandService.startPayment(userId, paymentId);
         return StartPaymentResponse.from(payment);
+    }
+
+    public ConfirmPaymentResponse completeFree(Long userId, Long paymentId) {
+        Payment payment = paymentCommandService.completeFreePayment(userId, paymentId);
+        return ConfirmPaymentResponse.from(payment);
     }
 
     public void abort(Long userId, Long paymentId) {
@@ -54,7 +58,7 @@ public class PaymentFacade {
     }
 
     // 클라이언트 결제 완료 콜백 이후 서버에서 결제를 확정한다.
-    public ConfirmPaymentResponse confirm(Long userId, @Valid ConfirmPaymentRequest request) {
+    public ConfirmPaymentResponse confirm(Long userId, ConfirmPaymentRequest request) {
         // 결제 조회 + 주문 조회
         Payment payment = paymentService.findPayment(request.getPaymentId());
         Order order = orderService.findOrder(payment.getOrderId());
@@ -182,7 +186,7 @@ public class PaymentFacade {
             throw new BusinessException(ErrorCode.PAYMENT_REVIEW_REQUIRED);
         }
 
-        handleAmountMismatchCancellation(payment, cancellation.status());
+        handleAmountMismatchCancellation(payment, cancellation.getStatus());
     }
 
     private void handleAmountMismatchCancellation(

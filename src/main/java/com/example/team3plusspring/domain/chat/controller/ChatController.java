@@ -1,12 +1,14 @@
 package com.example.team3plusspring.domain.chat.controller;
 
 import com.example.team3plusspring.domain.chat.dto.ChatRoomEventRequest;
+import com.example.team3plusspring.domain.chat.dto.ChatLeaveResult;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageRequest;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
 import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
 import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
+import com.example.team3plusspring.domain.chat.service.ChatStompSubscriptionManager;
 import com.example.team3plusspring.domain.user.entity.User;
 import com.example.team3plusspring.global.exception.BusinessException;
 import com.example.team3plusspring.global.exception.ErrorCode;
@@ -16,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -29,6 +30,7 @@ public class ChatController {
     private final ChatFacade chatFacade;
     private final ChatMessagePublisher chatMessagePublisher;
     private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatStompSubscriptionManager chatStompSubscriptionManager;
     private final ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     /**
@@ -40,56 +42,58 @@ public class ChatController {
      * @param principal STOMP CONNECT 인증을 통과한 사용자 인증 정보
      */
     @MessageMapping("/chat.enter")
-    public void enter(
-            @Payload @Valid ChatRoomEventRequest request,
+    public void enterRoom(
+            @Valid ChatRoomEventRequest request,
             @Header("simpSessionId") String sessionId,
             Principal principal
     ) {
         User sender = getAuthenticatedUser(principal);
+        Long roomId = request.getRoomId();
 
         // 구독하지 않은 방에 enter만 보내는 우회 요청을 막는다.
-        if (!chatSessionRegistry.isSubscribed(sessionId, request.getRoomId())) {
+        if (!chatSessionRegistry.isSubscribed(sessionId, roomId)) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
 
         // 같은 세션에서 같은 방 enter가 반복되면 입장 메시지를 중복 저장하지 않는다.
-        if (!chatSessionRegistry.enter(sessionId, sender.getId(), request.getRoomId())) {
+        if (!chatSessionRegistry.enter(sessionId, sender.getId(), roomId)) {
             return;
         }
 
         ChatMessageResponse response;
 
         try {
-            response = chatFacade.enterRoom(request.getRoomId(), sender);
+            response = chatFacade.enterRoom(roomId, sender);
         } catch (RuntimeException exception) {
             // DB 처리 중 실패하면 위에서 등록한 입장 상태를 되돌려 세션 상태와 DB 상태를 맞춘다.
-            chatSessionRegistry.rollbackEnter(sessionId, sender.getId(), request.getRoomId());
+            chatSessionRegistry.rollbackEnter(sessionId, sender.getId(), roomId);
 
             throw exception;
         }
 
-        chatMessagePublisher.publish(request.getRoomId(), response);
+        chatMessagePublisher.publish(roomId, response);
     }
 
     // 클라이언트가 /pub/chat.send로 보낸 일반 채팅 메시지를 저장하고 구독자에게 발행한다.
     @MessageMapping("/chat.send")
-    public void send(
-            @Payload @Valid ChatMessageRequest request,
+    public void sendMessage(
+            @Valid ChatMessageRequest request,
             @Header("simpSessionId") String sessionId,
             Principal principal
     ) {
         User sender = getAuthenticatedUser(principal);
+        Long roomId = request.getRoomId();
 
         // 메시지 전송은 "구독 + 입장"을 모두 마친 세션에서만 허용한다.
-        if (!chatSessionRegistry.canSend(sessionId, sender.getId(), request.getRoomId())) {
+        if (!chatSessionRegistry.canSend(sessionId, sender.getId(), roomId)) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
 
         ChatMessageResponse response = chatFacade.sendMessage(request, sender);
 
         // 비활성 자동 퇴장 기준 시간이 메시지 전송 시점부터 다시 계산되도록 갱신한다.
-        chatSessionRegistry.refreshRoomActivity(request.getRoomId());
-        chatMessagePublisher.publish(request.getRoomId(), response);
+        chatSessionRegistry.refreshRoomActivity(roomId);
+        chatMessagePublisher.publish(roomId, response);
     }
 
     /**
@@ -101,42 +105,60 @@ public class ChatController {
      * @param principal STOMP CONNECT 인증을 통과한 사용자 인증 정보
      */
     @MessageMapping("/chat.leave")
-    public void leave(
-            @Payload @Valid ChatRoomEventRequest request,
+    public void leaveRoom(
+            @Valid ChatRoomEventRequest request,
             @Header("simpSessionId") String sessionId,
             Principal principal
     ) {
         User sender = getAuthenticatedUser(principal);
+        Long roomId = request.getRoomId();
 
         // enter를 하지 않은 세션은 퇴장 처리 대상이 아니다.
-        if (!chatSessionRegistry.isEntered(sessionId, sender.getId(), request.getRoomId())) {
+        if (!chatSessionRegistry.isEntered(sessionId, sender.getId(), roomId)) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_ACCESS_DENIED);
         }
 
-        ChatMessageResponse response;
-        boolean shouldPublishSessionCleanupEvent = false;
+        ChatLeaveResult leaveResult;
 
         try {
-            response = chatFacade.leaveRoom(request.getRoomId(), sender);
-            shouldPublishSessionCleanupEvent = true;
+            leaveResult = chatFacade.leaveRoom(roomId, sender);
         } catch (BusinessException exception) {
             if (exception.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_COMPLETED) {
                 throw exception;
             }
             // 이미 완료된 방은 퇴장 메시지를 새로 저장하지 않고 세션만 정리한다.
-            shouldPublishSessionCleanupEvent = true;
+            cleanupSessionsAfterLeave(roomId, sender.getId(), null);
 
             return;
-        } finally {
-            // 한 사용자가 같은 방을 여러 탭으로 열 수 있으므로 같은 사용자/방 조합을 모두 정리한다.
-            chatSessionRegistry.removeLocalSessions(sender.getId(), request.getRoomId());
-
-            if (shouldPublishSessionCleanupEvent) {
-                chatSessionExpiredEventPublisher.publish(request.getRoomId(), sender.getId());
-            }
         }
 
-        chatMessagePublisher.publish(request.getRoomId(), response);
+        try {
+            chatMessagePublisher.publish(roomId, leaveResult.getMessage());
+        } finally {
+            cleanupSessionsAfterLeave(roomId, sender.getId(), leaveResult);
+        }
+    }
+
+    private void cleanupSessionsAfterLeave(Long roomId, Long senderId, ChatLeaveResult leaveResult) {
+        if (leaveResult == null || !leaveResult.completedRoom()) {
+            cleanupUserSessions(roomId, senderId);
+
+            return;
+        }
+
+        cleanupUserSessions(roomId, leaveResult.getCompletedCustomerId());
+
+        Long adminId = leaveResult.getCompletedAdminId();
+
+        if (adminId != null && !adminId.equals(leaveResult.getCompletedCustomerId())) {
+            cleanupUserSessions(roomId, adminId);
+        }
+    }
+
+    private void cleanupUserSessions(Long roomId, Long userId) {
+        // 한 사용자가 같은 방을 여러 탭으로 열 수 있으므로 같은 사용자/방 조합을 모두 정리한다.
+        chatStompSubscriptionManager.unsubscribeAll(chatSessionRegistry.removeLocalSessions(userId, roomId));
+        chatSessionExpiredEventPublisher.publish(roomId, userId);
     }
 
     /**

@@ -160,6 +160,37 @@ class OrderFacadeConcurrencyTest extends RedisTestSupport {
     }
 
     @Test
+    void 상품금액보다_큰_쿠폰이면_바로주문을_생성하지않는다() {
+        // given
+        User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));
+        Product product = productRepository.save(Product.create("test product", "payment test", 1_000, 5, 1L));
+        CouponEvent couponEvent = couponEventRepository.save(CouponEvent.create(
+                "too large discount",
+                DiscountType.FIXED,
+                2_000,
+                100,
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1),
+                30
+        ));
+        UserCoupon userCoupon = userCouponRepository.save(UserCoupon.issue(user.getId(), couponEvent.getId(), 30));
+
+        // when & then
+        assertThatThrownBy(() -> orderFacade.createDirectOrder(
+                user.getId(),
+                directOrderRequest(product.getId(), 1, userCoupon.getId())
+        ))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ORDER_DISCOUNT_AMOUNT_EXCEEDED));
+
+        assertThat(orderRepository.count()).isZero();
+        assertThat(orderItemRepository.count()).isZero();
+        assertThat(paymentRepository.count()).isZero();
+        assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(5);
+        assertThat(userCouponRepository.findById(userCoupon.getId()).orElseThrow().getStatus()).isEqualTo(UserCouponStatus.ISSUED);
+    }
+
+    @Test
     void 같은상품을동시에주문하면_재고수량만큼만성공한다() throws Exception {
         // given
         User user = userRepository.save(User.create(uniqueEmail(), "password", "tester", "010-0000-0000"));

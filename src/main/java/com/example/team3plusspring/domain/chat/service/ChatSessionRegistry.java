@@ -4,7 +4,7 @@ import com.example.team3plusspring.domain.chat.local.InMemoryChatActivityStore;
 import com.example.team3plusspring.domain.chat.port.ActiveChatSession;
 import com.example.team3plusspring.domain.chat.port.ChatActivityStore;
 import com.example.team3plusspring.domain.chat.port.InactiveChatSession;
-import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
+import com.example.team3plusspring.domain.chat.port.RemovedSubscription;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -133,26 +133,36 @@ public class ChatSessionRegistry {
                 .collect(Collectors.toSet());
     }
 
-    public synchronized void removeLocalSessions(Long userId, Long roomId) {
+    public synchronized Set<RemovedSubscription> removeLocalSessions(Long userId, Long roomId) {
         SessionRoom sessionRoom = new SessionRoom(userId, roomId);
+        Set<RemovedSubscription> removedSubscriptions = new HashSet<>();
 
         sessionRooms.forEach((sessionId, rooms) -> rooms.remove(sessionRoom));
         sessionRooms.entrySet()
                 .removeIf(entry -> entry.getValue().isEmpty());
 
-        sessionSubscriptions.forEach((sessionId, subscriptions) ->
-                subscriptions.removeIf(subscription -> subscription.isSameUserRoom(userId, roomId))
-        );
+        sessionSubscriptions.forEach((sessionId, subscriptions) -> {
+            Set<SessionSubscription> targetSubscriptions = subscriptions.stream()
+                    .filter(subscription -> subscription.isSameUserRoom(userId, roomId))
+                    .collect(Collectors.toSet());
+
+            targetSubscriptions.forEach(subscription ->
+                    removedSubscriptions.add(new RemovedSubscription(sessionId, subscription.getSubscriptionId()))
+            );
+            subscriptions.removeAll(targetSubscriptions);
+        });
 
         sessionSubscriptions.entrySet()
                 .removeIf(entry -> entry.getValue().isEmpty());
 
         activeSessionCounts.remove(sessionRoom);
         removeRoomActivityIfNoActiveSession(roomId);
+
+        return removedSubscriptions;
     }
 
-    public synchronized Set<RemovedAdminSubscription> removeAdminSessionsExcept(Long roomId, Long assignedAdminId) {
-        Set<RemovedAdminSubscription> removedSubscriptions = new HashSet<>();
+    public synchronized Set<RemovedSubscription> removeAdminSessionsExcept(Long roomId, Long assignedAdminId) {
+        Set<RemovedSubscription> removedSubscriptions = new HashSet<>();
 
         sessionSubscriptions.forEach((sessionId, subscriptions) -> {
             Set<SessionSubscription> targetSubscriptions = subscriptions.stream()
@@ -161,7 +171,7 @@ public class ChatSessionRegistry {
 
             if (!targetSubscriptions.isEmpty()) {
                 targetSubscriptions.forEach(subscription ->
-                        removedSubscriptions.add(new RemovedAdminSubscription(sessionId, subscription.getSubscriptionId()))
+                        removedSubscriptions.add(new RemovedSubscription(sessionId, subscription.getSubscriptionId()))
                 );
                 subscriptions.removeAll(targetSubscriptions);
                 removeEnteredRoom(sessionId, roomId);
@@ -239,9 +249,10 @@ public class ChatSessionRegistry {
     }
 
     private InactiveChatSession expire(SessionRoom sessionRoom) {
-        removeLocalSessions(sessionRoom.getUserId(), sessionRoom.getRoomId());
+        Set<RemovedSubscription> removedSubscriptions =
+                removeLocalSessions(sessionRoom.getUserId(), sessionRoom.getRoomId());
 
-        return new InactiveChatSession(sessionRoom.getUserId(), sessionRoom.getRoomId());
+        return new InactiveChatSession(sessionRoom.getUserId(), sessionRoom.getRoomId(), removedSubscriptions);
     }
 
     private Set<Long> activeRoomIds() {

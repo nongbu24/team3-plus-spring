@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.chat.facade;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.dto.ChatLeaveResult;
 import com.example.team3plusspring.domain.chat.entity.ChatMember;
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
 import com.example.team3plusspring.domain.chat.entity.ChatMessageType;
@@ -127,6 +128,34 @@ class ChatFacadeTest {
         verify(chatMessageRepository).save(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getContent()).isEqualTo("홍길동님이 퇴장했습니다");
         assertThat(messageCaptor.getValue().getMessageType()).isEqualTo(ChatMessageType.SYSTEM);
+    }
+
+    @Test
+    void 명시적퇴장_고객이면_채팅방을완료상태로변경한다() {
+        // given
+        User user = user(1L);
+        ChatRoom room = room(10L, user);
+        ChatMember joinedMember = ChatMember.join(room, user);
+
+        given(chatRoomRepository.findByIdWithLock(room.getId())).willReturn(Optional.of(room));
+        given(chatMemberRepository.findByChatRoomIdAndUserId(room.getId(), user.getId()))
+                .willReturn(Optional.of(joinedMember));
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> {
+            ChatMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", 100L);
+
+            return message;
+        });
+
+        // when
+        ChatLeaveResult result = chatFacade.leaveRoom(room.getId(), user);
+
+        // then
+        assertThat(room.getStatus()).isEqualTo(ChatStatus.COMPLETED);
+        assertThat(joinedMember.getLeftAt()).isNotNull();
+        assertThat(result.completedRoom()).isTrue();
+        assertThat(result.getCompletedCustomerId()).isEqualTo(user.getId());
+        assertThat(result.getMessage().getContent()).isEqualTo("홍길동님이 퇴장했습니다");
     }
 
     private User user(Long id) {

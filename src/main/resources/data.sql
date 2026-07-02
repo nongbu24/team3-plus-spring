@@ -67,20 +67,14 @@ VALUES
     (42, 16, 'LG 코드제로 로봇청소기', '자동 청소와 앱 제어를 지원하는 로봇청소기입니다.', 699000, 6, 520, 'ON_SALE', NOW(), NULL),
     (43, 17, '쿠쿠 전기압력밥솥 6인용', '가정용으로 적합한 6인용 전기압력밥솥입니다.', 249000, 13, 410, 'ON_SALE', NOW(), NULL),
     (44, 17, '필립스 에어프라이어 5L', '기름을 줄여 간편하게 조리할 수 있는 에어프라이어입니다.', 179000, 15, 370, 'ON_SALE', NOW(), NULL),
-
-    -- 품절 상품 5개
     (45, 18, 'LG 휘센 제습기 20L', '습한 계절에 실내 습도를 관리하기 좋은 제습기입니다.', 429000, 0, 160, 'SOLD_OUT', NOW(), NULL),
     (46, 18, '신일 서큘레이터', '공기 순환에 적합한 저소음 서큘레이터입니다.', 99000, 0, 140, 'SOLD_OUT', NOW(), NULL),
     (47, 19, '노트북 파우치 15형', '노트북을 안전하게 보관할 수 있는 기본형 파우치입니다.', 29000, 0, 220, 'SOLD_OUT', NOW(), NULL),
     (48, 19, '스마트폰 투명 케이스', '깔끔한 디자인의 충격 보호 투명 케이스입니다.', 12000, 0, 300, 'SOLD_OUT', NOW(), NULL),
     (49, 20, '전자 메모패드 12형', '간단한 메모와 그림을 남길 수 있는 전자 메모패드입니다.', 39000, 0, 90, 'SOLD_OUT', NOW(), NULL),
-
-    -- 단종 상품 3개
     (50, 20, '휴대용 미니 빔프로젝터 구형', '판매가 종료된 구형 미니 빔프로젝터입니다.', 299000, 0, 45, 'DISCONTINUED', NOW(), NULL),
     (51, 1, 'Galaxy S20 리퍼 상품', '판매가 종료된 구형 스마트폰 리퍼 상품입니다.', 399000, 0, 75, 'DISCONTINUED', NOW(), NULL),
     (52, 3, '구형 사무용 노트북 14형', '더 이상 판매하지 않는 구형 사무용 노트북입니다.', 499000, 0, 35, 'DISCONTINUED', NOW(), NULL),
-
-    -- 결제 테스트용 상품
     (53, 20, '결제 테스트 상품 1000원', 'PortOne 결제 검증 테스트를 위한 1,000원 상품입니다.', 1000, 999, 5, 'ON_SALE', NOW(), NULL);
 
 INSERT INTO users (id, email, password, name, phone, role, created_at, updated_at, deleted_at)
@@ -97,4 +91,16 @@ VALUES
     (10, 'user09@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '장서준', '010-1000-0009', 'USER', NOW(), NULL, NULL),
     (11, 'user10@example.com', '$2a$10$Q/KEclvina.r4fA46zrHSegLUGewXAU8OwXRVmyNXyWc8t0xE6fOS', '임채원', '010-1000-0010', 'USER', NOW(), NULL, NULL);
 
-
+INSERT INTO carts (id, user_id, created_at, updated_at)
+VALUES
+    (1, 1, NOW(), NULL),
+    (2, 2, NOW(), NULL),
+    (3, 3, NOW(), NULL),
+    (4, 4, NOW(), NULL),
+    (5, 5, NOW(), NULL),
+    (6, 6, NOW(), NULL),
+    (7, 7, NOW(), NULL),
+    (8, 8, NOW(), NULL),
+    (9, 9, NOW(), NULL),
+    (10, 10, NOW(), NULL),
+    (11, 11, NOW(), NULL);

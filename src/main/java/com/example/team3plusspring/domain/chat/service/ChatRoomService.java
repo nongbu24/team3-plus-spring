@@ -30,6 +30,7 @@ public class ChatRoomService {
     private final ChatMemberRepository chatMemberRepository;
     private final ChatAdminSessionService chatAdminSessionService;
     private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatStompSubscriptionManager chatStompSubscriptionManager;
     private final ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
 
     @Transactional
@@ -156,7 +157,7 @@ public class ChatRoomService {
     }
 
     private void cleanupUserSessions(Long roomId, Long userId) {
-        chatSessionRegistry.removeLocalSessions(userId, roomId);
+        chatStompSubscriptionManager.unsubscribeAll(chatSessionRegistry.removeLocalSessions(userId, roomId));
         chatSessionExpiredEventPublisher.publish(roomId, userId);
     }
 }

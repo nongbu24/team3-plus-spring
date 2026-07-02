@@ -141,6 +141,64 @@ class PaymentCommandServiceTest {
     }
 
     @Test
+    void 무료결제완료_0원결제이면_결제와주문을완료한다() {
+        // given
+        Payment payment = zeroPayment();
+        Order order = zeroReadyOrder(USER_ID);
+
+        when(paymentService.findPaymentForUpdate(PAYMENT_ID)).thenReturn(payment);
+        when(orderService.findOrderForUpdate(ORDER_ID)).thenReturn(order);
+
+        // when
+        Payment result = paymentCommandService.completeFreePayment(USER_ID, PAYMENT_ID);
+
+        // then
+        assertThat(result).isSameAs(payment);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(payment.getApprovedAt()).isNotNull();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        verifyNoInteractions(productService, userCouponService);
+    }
+
+    @Test
+    void 무료결제완료_이미결제시작된0원결제이면_주문을완료한다() {
+        // given
+        Payment payment = zeroPayment();
+        Order order = zeroReadyOrder(USER_ID);
+        order.markAsPaymentPending();
+
+        when(paymentService.findPaymentForUpdate(PAYMENT_ID)).thenReturn(payment);
+        when(orderService.findOrderForUpdate(ORDER_ID)).thenReturn(order);
+
+        // when
+        Payment result = paymentCommandService.completeFreePayment(USER_ID, PAYMENT_ID);
+
+        // then
+        assertThat(result).isSameAs(payment);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        verifyNoInteractions(productService, userCouponService);
+    }
+
+    @Test
+    void 무료결제완료_0원이아니면_상태를변경하지않고실패한다() {
+        // given
+        Payment payment = payment();
+        Order order = readyOrder(USER_ID);
+
+        when(paymentService.findPaymentForUpdate(PAYMENT_ID)).thenReturn(payment);
+        when(orderService.findOrderForUpdate(ORDER_ID)).thenReturn(order);
+
+        // when & then
+        assertThatThrownBy(() -> paymentCommandService.completeFreePayment(USER_ID, PAYMENT_ID))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PAYMENT_FREE_AMOUNT_REQUIRED));
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY);
+        verifyNoInteractions(productService, userCouponService);
+    }
+
+    @Test
     void 결제실패_결제대기상태이면_주문을취소하고재고와쿠폰을복구한다() {
         // given
         Payment payment = payment();
@@ -338,6 +396,12 @@ class PaymentCommandServiceTest {
         return payment;
     }
 
+    private Payment zeroPayment() {
+        Payment payment = Payment.create(ORDER_ID, 10_000, 10_000);
+        ReflectionTestUtils.setField(payment, "id", PAYMENT_ID);
+        return payment;
+    }
+
     private Order order() {
         Order order = readyOrder(USER_ID);
         order.markAsPaymentPending();
@@ -347,6 +411,12 @@ class PaymentCommandServiceTest {
 
     private Order readyOrder(Long userId) {
         Order order = Order.create(userId, 10_000, 0);
+        ReflectionTestUtils.setField(order, "id", ORDER_ID);
+        return order;
+    }
+
+    private Order zeroReadyOrder(Long userId) {
+        Order order = Order.create(userId, 10_000, 10_000);
         ReflectionTestUtils.setField(order, "id", ORDER_ID);
         return order;
     }

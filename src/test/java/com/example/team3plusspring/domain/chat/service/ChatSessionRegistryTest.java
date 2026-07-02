@@ -3,7 +3,7 @@ package com.example.team3plusspring.domain.chat.service;
 import com.example.team3plusspring.domain.chat.port.ActiveChatSession;
 import com.example.team3plusspring.domain.chat.port.ChatActivityStore;
 import com.example.team3plusspring.domain.chat.port.InactiveChatSession;
-import com.example.team3plusspring.domain.chat.port.RemovedAdminSubscription;
+import com.example.team3plusspring.domain.chat.port.RemovedSubscription;
 import com.example.team3plusspring.domain.user.entity.UserRole;
 import org.junit.jupiter.api.Test;
 
@@ -107,12 +107,17 @@ class ChatSessionRegistryTest {
         chatSessionRegistry.subscribe("session-3", null, 2L, UserRole.USER, 10L);
 
         // when
-        chatSessionRegistry.removeLocalSessions(1L, 10L);
+        Set<RemovedSubscription> removedSubscriptions = chatSessionRegistry.removeLocalSessions(1L, 10L);
 
         // then
         assertThat(chatSessionRegistry.isSubscribed("session-1", 10L)).isFalse();
         assertThat(chatSessionRegistry.isSubscribed("session-2", 10L)).isFalse();
         assertThat(chatSessionRegistry.isSubscribed("session-3", 10L)).isTrue();
+        assertThat(removedSubscriptions)
+                .containsExactlyInAnyOrder(
+                        new RemovedSubscription("session-1", null),
+                        new RemovedSubscription("session-2", null)
+                );
     }
 
     @Test
@@ -144,7 +149,7 @@ class ChatSessionRegistryTest {
 
         // then
         assertThat(removedSubscriptions)
-                .containsExactly(new RemovedAdminSubscription("other-admin", "sub-2"));
+                .containsExactly(new RemovedSubscription("other-admin", "sub-2"));
         assertThat(chatSessionRegistry.isSubscribed("assigned-admin", 10L)).isTrue();
         assertThat(chatSessionRegistry.isSubscribed("other-admin", 10L)).isFalse();
         assertThat(chatSessionRegistry.isSubscribed("customer", 10L)).isTrue();

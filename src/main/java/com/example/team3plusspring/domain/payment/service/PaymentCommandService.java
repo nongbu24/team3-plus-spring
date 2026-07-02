@@ -66,6 +66,37 @@ public class PaymentCommandService {
     }
 
     @Transactional
+    public Payment completeFreePayment(Long userId, Long paymentId) {
+        Payment payment = paymentService.findPaymentForUpdate(paymentId);
+        Order order = orderService.findOrderForUpdate(payment.getOrderId());
+
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+
+        if (payment.getPaymentAmount() != 0) {
+            throw new BusinessException(ErrorCode.PAYMENT_FREE_AMOUNT_REQUIRED);
+        }
+
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            return payment;
+        }
+
+        if (payment.getStatus() != PaymentStatus.PENDING
+                || (order.getStatus() != OrderStatus.READY && order.getStatus() != OrderStatus.PAYMENT_PENDING)) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+        }
+
+        if (order.getStatus() == OrderStatus.READY) {
+            order.markAsPaymentPending();
+        }
+        payment.markAsPaid();
+        order.markAsCompleted();
+
+        return payment;
+    }
+
+    @Transactional
     public void failPayment(Long paymentId) {
         Payment payment = paymentService.findPaymentForUpdate(paymentId);
 

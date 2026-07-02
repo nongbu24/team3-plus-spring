@@ -2,6 +2,7 @@ package com.example.team3plusspring.domain.chat.facade;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageRequest;
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.dto.ChatLeaveResult;
 import com.example.team3plusspring.domain.chat.entity.ChatMember;
 import com.example.team3plusspring.domain.chat.entity.ChatMessage;
 import com.example.team3plusspring.domain.chat.entity.ChatRoom;
@@ -57,11 +58,23 @@ public class ChatFacade {
     }
 
     @Transactional
-    public ChatMessageResponse leaveRoom(Long roomId, User user) {
+    public ChatLeaveResult leaveRoom(Long roomId, User user) {
         ChatRoom chatRoom = findOpenRoom(roomId, user, false);
         leaveIfJoined(chatRoom, user);
 
-        return saveSystemMessage(chatRoom, user, user.getName() + "님이 퇴장했습니다");
+        boolean completedByCustomer = chatRoom.isCustomerUser(user);
+
+        if (completedByCustomer) {
+            chatRoom.complete();
+        }
+
+        ChatMessageResponse response = saveSystemMessage(chatRoom, user, user.getName() + "님이 퇴장했습니다");
+
+        if (completedByCustomer) {
+            return ChatLeaveResult.completed(response, chatRoom.getCustomerId(), chatRoom.getAdminId());
+        }
+
+        return ChatLeaveResult.of(response);
     }
 
     @Transactional
@@ -147,6 +160,7 @@ public class ChatFacade {
 
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             chatAdminSessionService.handleAdminAssigned(roomId, assignedAdminId);
+
             return;
         }
 

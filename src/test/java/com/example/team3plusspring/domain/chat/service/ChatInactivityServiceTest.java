@@ -6,6 +6,7 @@ import com.example.team3plusspring.domain.chat.facade.ChatFacade;
 import com.example.team3plusspring.domain.chat.port.ChatMessagePublisher;
 import com.example.team3plusspring.domain.chat.port.ChatSessionExpiredEventPublisher;
 import com.example.team3plusspring.domain.chat.port.InactiveChatSession;
+import com.example.team3plusspring.domain.chat.port.RemovedSubscription;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +34,9 @@ class ChatInactivityServiceTest {
 
     @Mock
     ChatMessagePublisher chatMessagePublisher;
+
+    @Mock
+    ChatStompSubscriptionManager chatStompSubscriptionManager;
 
     @Mock
     ChatSessionExpiredEventPublisher chatSessionExpiredEventPublisher;
@@ -68,8 +72,10 @@ class ChatInactivityServiceTest {
                 LocalDateTime.of(2026, 6, 25, 10, 30)
         );
 
+        Set<RemovedSubscription> removedSubscriptions = Set.of(new RemovedSubscription("session-1", "sub-1"));
+
         when(chatSessionRegistry.expireInactiveSessions(Duration.ofMinutes(5)))
-                .thenReturn(Set.of(new InactiveChatSession(1L, 10L)));
+                .thenReturn(Set.of(new InactiveChatSession(1L, 10L, removedSubscriptions)));
         when(chatFacade.leaveInactiveRoom(10L, 1L)).thenReturn(Optional.of(response));
 
         // when
@@ -78,6 +84,7 @@ class ChatInactivityServiceTest {
         // then
         verify(chatFacade).leaveInactiveRoom(10L, 1L);
         verify(chatMessagePublisher).publish(10L, response);
+        verify(chatStompSubscriptionManager).unsubscribeAll(removedSubscriptions);
         verify(chatSessionExpiredEventPublisher).publish(10L, 1L);
     }
 }

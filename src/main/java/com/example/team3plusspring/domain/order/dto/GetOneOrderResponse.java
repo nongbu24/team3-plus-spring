@@ -13,6 +13,7 @@ import java.util.List;
 public class GetOneOrderResponse {
 
     private final Long orderId;
+    private final Long paymentId;
     private final String orderNumber;
     private final OrderStatus status;
     private final int totalProductAmount;
@@ -22,9 +23,10 @@ public class GetOneOrderResponse {
     private final LocalDateTime createdAt;
     private final LocalDateTime canceledAt;
 
-    public static GetOneOrderResponse of(Order order, List<OrderItemResponse> items) {
+    public static GetOneOrderResponse of(Order order, Long paymentId, List<OrderItemResponse> items) {
         return new GetOneOrderResponse(
                 order.getId(),
+                paymentId,
                 order.getOrderNumber(),
                 order.getStatus(),
                 order.getTotalProductAmount(),

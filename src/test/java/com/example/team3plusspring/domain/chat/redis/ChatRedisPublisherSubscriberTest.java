@@ -1,8 +1,10 @@
 package com.example.team3plusspring.domain.chat.redis;
 
 import com.example.team3plusspring.domain.chat.dto.ChatMessageResponse;
+import com.example.team3plusspring.domain.chat.port.RemovedSubscription;
 import com.example.team3plusspring.domain.chat.service.ChatAdminSessionService;
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
+import com.example.team3plusspring.domain.chat.service.ChatStompSubscriptionManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -14,6 +16,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -48,6 +51,9 @@ class ChatRedisPublisherSubscriberTest {
 
     @Mock
     ChatSessionRegistry chatSessionRegistry;
+
+    @Mock
+    ChatStompSubscriptionManager chatStompSubscriptionManager;
 
     @Mock
     Message message;
@@ -155,19 +161,23 @@ class ChatRedisPublisherSubscriberTest {
         // given
         ChatSessionExpiredRedisSubscriber subscriber = new ChatSessionExpiredRedisSubscriber(
                 chatSessionExpiredRedisSerializer,
-                chatSessionRegistry
+                chatSessionRegistry,
+                chatStompSubscriptionManager
         );
         ChatSessionExpiredEvent event = new ChatSessionExpiredEvent(1L, 10L);
+        Set<RemovedSubscription> removedSubscriptions = Set.of(new RemovedSubscription("session-1", "sub-1"));
         byte[] body = "body".getBytes(StandardCharsets.UTF_8);
 
         when(message.getBody()).thenReturn(body);
         when(chatSessionExpiredRedisSerializer.deserialize(body)).thenReturn(event);
+        when(chatSessionRegistry.removeLocalSessions(10L, 1L)).thenReturn(removedSubscriptions);
 
         // when
         subscriber.onMessage(message, null);
 
         // then
         verify(chatSessionRegistry).removeLocalSessions(10L, 1L);
+        verify(chatStompSubscriptionManager).unsubscribeAll(removedSubscriptions);
     }
 
     private ChatMessageResponse response() {

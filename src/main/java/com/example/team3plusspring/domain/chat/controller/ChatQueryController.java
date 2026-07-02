@@ -29,14 +29,15 @@ public class ChatQueryController {
 
     /**
      * 관리자가 전체 채팅방의 최근 메시지를 채팅방별로 묶어서 조회한다.
-     * 상담 현황을 한 화면에서 훑어보는 용도라 관리자만 호출할 수 있다.
+     * 상담 현황 모니터링용 읽기 API라 담당자가 다른 방의 메시지도 조회할 수 있다.
+     * 단, 실제 채팅방 단건 조회, 구독, 답장은 담당자 접근 정책을 따른다.
      *
      * @param size 조회할 최근 메시지 개수
      * @return 채팅방 ID와 해당 방의 최근 메시지 목록
      */
     @GetMapping("/messages")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<ChatRoomMessagesResponse>>> getRecentMessagesForAdmin(
+    public ResponseEntity<ApiResponse<List<ChatRoomMessagesResponse>>> getAdminMessages(
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size
     ) {
         List<ChatRoomMessagesResponse> response = chatQueryService.getRecentMessagesGroupedByRoom(size);
@@ -55,7 +56,7 @@ public class ChatQueryController {
      * @return 기준 메시지보다 오래된 채팅 메시지 목록
      */
     @GetMapping("/rooms/{roomId}/messages/before/{lastMessageId}")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesBeforeByRoom(
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesBefore(
             @PathVariable Long roomId,
             @PathVariable Long lastMessageId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -82,7 +83,7 @@ public class ChatQueryController {
      * @return 기준 메시지보다 나중에 생성된 채팅 메시지 목록
      */
     @GetMapping("/rooms/{roomId}/messages/after/{lastMessageId}")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesAfterByRoom(
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesAfter(
             @PathVariable Long roomId,
             @PathVariable Long lastMessageId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -108,7 +109,7 @@ public class ChatQueryController {
      * @return 해당 채팅방의 최근 채팅 메시지 목록
      */
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getRecentMessagesByRoom(
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getRecentMessages(
             @PathVariable Long roomId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size

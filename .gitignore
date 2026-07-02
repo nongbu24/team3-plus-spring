@@ -12,6 +12,7 @@ build/
 application-local.properties
 application-local.yml
 application-local.yaml
+!src/main/resources/application-local.yml
 application-dev.properties
 application-dev.yml
 application-dev.yaml

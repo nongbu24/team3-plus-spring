@@ -1,6 +1,7 @@
 package com.example.team3plusspring.domain.chat.redis;
 
 import com.example.team3plusspring.domain.chat.service.ChatSessionRegistry;
+import com.example.team3plusspring.domain.chat.service.ChatStompSubscriptionManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
@@ -16,6 +17,7 @@ public class ChatSessionExpiredRedisSubscriber implements MessageListener {
     @Qualifier("chatSessionExpiredRedisSerializer")
     private final RedisSerializer<ChatSessionExpiredEvent> chatSessionExpiredRedisSerializer;
     private final ChatSessionRegistry chatSessionRegistry;
+    private final ChatStompSubscriptionManager chatStompSubscriptionManager;
 
     // 만료 이벤트를 받으면 DB 처리는 하지 않고 현재 서버의 로컬 WebSocket 세션만 정리한다.
     @Override
@@ -26,6 +28,8 @@ public class ChatSessionExpiredRedisSubscriber implements MessageListener {
             return;
         }
 
-        chatSessionRegistry.removeLocalSessions(event.getUserId(), event.getRoomId());
+        chatStompSubscriptionManager.unsubscribeAll(
+                chatSessionRegistry.removeLocalSessions(event.getUserId(), event.getRoomId())
+        );
     }
 }

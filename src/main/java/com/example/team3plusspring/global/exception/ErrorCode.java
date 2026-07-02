@@ -79,6 +79,7 @@ public enum ErrorCode {
     PAYMENT_CANCEL_PENDING(HttpStatus.CONFLICT, "결제 취소가 처리 중입니다."),
     PAYMENT_REVIEW_REQUIRED(HttpStatus.CONFLICT, "결제 취소 결과를 확인해야 합니다."),
     PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST, "결제 웹훅 요청이 올바르지 않습니다."),
+    PAYMENT_FREE_AMOUNT_REQUIRED(HttpStatus.BAD_REQUEST, "무료 결제는 최종 결제 금액이 0원일 때만 완료할 수 있습니다."),
     PAYMENT_STATUS_INVALID(HttpStatus.CONFLICT, "올바르지 않은 결제 상태 변경입니다."),
 
     // Chat
@@ -87,6 +88,7 @@ public enum ErrorCode {
     CHAT_ROOM_ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 채팅방입니다."),
     INVALID_CHAT_STATUS_TRANSITION(HttpStatus.CONFLICT, "변경할 수 없는 문의 상태입니다."),
     ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "관리자를 찾을 수 없습니다."),
+    CHATBOT_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "챗봇 요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
 
     // Search
     POPULAR_SEARCH_KEYWORD_NOT_FOUND(HttpStatus.NOT_FOUND, "인기 검색어를 찾을 수 없습니다."),

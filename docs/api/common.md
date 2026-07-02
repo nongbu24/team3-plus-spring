@@ -28,6 +28,7 @@ Authorization: Bearer {accessToken}
 | `GET` | `/api/v1/products` | 상품 목록 조회 |
 | `GET` | `/api/v2/products` | Local Cache 적용 상품 검색 |
 | `GET` | `/api/v1/search/popular` | 인기 검색어 조회 |
+| `POST` | `/api/chatbot` | AI 챗봇 질문 |
 
 관리자 API는 JWT 인증 후 관리자 권한을 추가로 확인합니다.
 

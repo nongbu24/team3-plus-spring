@@ -3,6 +3,7 @@ package com.example.team3plusspring.domain.product.service;
 import com.example.team3plusspring.domain.category.entity.Category;
 import com.example.team3plusspring.domain.category.repository.CategoryRepository;
 import com.example.team3plusspring.domain.order.entity.OrderItem;
+import com.example.team3plusspring.domain.product.dto.ChatbotProductResponse;
 import com.example.team3plusspring.domain.product.dto.GetOneProductResponse;
 import com.example.team3plusspring.domain.product.dto.GetProductsResponse;
 import com.example.team3plusspring.domain.product.entity.Product;
@@ -27,7 +28,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProductService {
-
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
@@ -92,6 +92,32 @@ public class ProductService {
         // DTO 변환
         return products.map(product ->
                 GetProductsResponse.of(product, categoryMap.get(product.getCategoryId()))
+        );
+    }
+
+    public Page<ChatbotProductResponse> searchProductsForChatbot(String keyword, int size) {
+        Pageable pageable = PageRequest.of(0, size, Sort.by("createdAt").descending());
+        List<Category> matchedCategories = categoryRepository.findByNameContaining(keyword);
+        Page<Product> products = matchedCategories.isEmpty()
+                ? productRepository.findByChatbotKeyword(keyword, ProductStatus.ON_SALE, pageable)
+                : productRepository.findByCategoryIdInAndStatus(
+                        matchedCategories.stream().map(Category::getId).toList(),
+                        ProductStatus.ON_SALE,
+                        pageable
+                );
+
+        List<Long> categoryIds = products.getContent()
+                .stream()
+                .map(Product::getCategoryId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Category> categoryMap = categoryRepository.findAllById(categoryIds)
+                .stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
+
+        return products.map(product ->
+                ChatbotProductResponse.of(product, categoryMap.get(product.getCategoryId()))
         );
     }
 
